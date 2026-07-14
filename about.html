@@ -1,0 +1,2111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About · M-Smart Driving School Solution</title>
+<link rel="icon" type="image/x-icon" href="img/favicon_io/favicon.ico">
+<meta name="description" content="M-Smart Driving School Solution — a modern, fully digitised platform built to elevate driving schools in Ghana while preserving safety, compliance, and high training standards.">
+<meta name="robots" content="index, follow">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='%230D1B2A'/%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='%23F59E0B' stroke-width='1.6'/%3E%3Ccircle cx='12' cy='12' r='2.6' fill='%23F59E0B'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════ */
+:root {
+  /* Core palette */
+  --navy:        #0D1B2A;
+  --navy-mid:    #1A2F45;
+  --navy-light:  #243B55;
+  --amber:       #F59E0B;
+  --amber-light: #FEF3C7;
+  --amber-mid:   #FDE68A;
+  --sky:         #EBF4FF;
+  --sky-mid:     #DBEAFE;
+  --teal:        #0EA5E9;
+  --green:       #10B981;
+  --green-light: #D1FAE5;
+  --white:       #FFFFFF;
+  --off-white:   #F8FAFC;
+  --gray-50:     #F9FAFB;
+  --gray-100:    #F3F4F6;
+  --gray-200:    #E5E7EB;
+  --gray-300:    #D1D5DB;
+  --gray-400:    #9CA3AF;
+  --gray-500:    #6B7280;
+  --gray-600:    #4B5563;
+  --gray-700:    #374151;
+  --gray-800:    #1F2937;
+  --text-primary:   #0D1B2A;
+  --text-secondary: #4B5563;
+  --text-muted:     #9CA3AF;
+
+  /* UI */
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  18px;
+  --radius-xl:  24px;
+  --radius-2xl: 32px;
+  --shadow-sm:  0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md:  0 4px 16px rgba(13,27,42,0.08), 0 2px 6px rgba(13,27,42,0.05);
+  --shadow-lg:  0 12px 40px rgba(13,27,42,0.12), 0 4px 12px rgba(13,27,42,0.06);
+  --shadow-xl:  0 24px 64px rgba(13,27,42,0.15), 0 8px 24px rgba(13,27,42,0.08);
+  --shadow-amber: 0 8px 32px rgba(245,158,11,0.25);
+}
+
+/* ═══════════════════════════════════════
+   RESET & BASE
+═══════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 16px; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--white);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+img { display: block; max-width: 100%; }
+:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; border-radius: 4px; }
+
+/* ═══════════════════════════════════════
+   UTILITY
+═══════════════════════════════════════ */
+.container {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); border: 0;
+}
+
+/* ═══════════════════════════════════════
+   ROAD DIVIDER — signature element
+   The dashed centerline motif
+═══════════════════════════════════════ */
+.road-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 72px 0;
+  overflow: hidden;
+}
+.road-divider::before,
+.road-divider::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--amber) 0px, var(--amber) 24px,
+    transparent 24px, transparent 40px
+  );
+  opacity: 0.35;
+}
+.road-divider-icon {
+  width: 40px; height: 40px;
+  background: var(--amber-light);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+
+/* ═══════════════════════════════════════
+   EYEBROW / LABELS
+═══════════════════════════════════════ */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--amber);
+  background: var(--amber-light);
+  border: 1px solid var(--amber-mid);
+  padding: 5px 14px;
+  border-radius: 999px;
+  margin-bottom: 18px;
+}
+.eyebrow::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--amber);
+  flex-shrink: 0;
+}
+
+/* Section heading pattern */
+.section-head { margin-bottom: 48px; }
+.section-head.centered { text-align: center; }
+.section-head.centered .section-lead { margin-left: auto; margin-right: auto; }
+.section-title {
+  font-family: 'Sora', sans-serif;
+  font-size: clamp(26px, 3.5vw, 38px);
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--navy);
+  margin-bottom: 14px;
+  letter-spacing: -0.02em;
+}
+.section-title mark {
+  background: none;
+  color: var(--amber);
+}
+.section-lead {
+  font-size: 16px;
+  line-height: 1.75;
+  color: var(--text-secondary);
+  max-width: 580px;
+}
+
+/* ═══════════════════════════════════════
+   TOP ANNOUNCEMENT BAR
+═══════════════════════════════════════ */
+.announce-bar {
+  background: var(--navy);
+  color: rgba(255,255,255,0.85);
+  text-align: center;
+  padding: 9px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.announce-bar strong { color: var(--amber); }
+
+/* ═══════════════════════════════════════
+   NAV
+═══════════════════════════════════════ */
+.topnav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--gray-200);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+}
+.topnav-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 40px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.nav-brand .logo-mark {
+  width: 38px; height: 38px;
+  background: var(--navy);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+.nav-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+.nav-brand-text .brand-main {
+  font-family: 'Sora', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--navy);
+}
+.nav-brand-text .brand-sub {
+  font-size: 11px;
+  color: var(--gray-500);
+  font-weight: 500;
+}
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.nav-links a {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gray-600);
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  transition: color .15s, background .15s;
+}
+.nav-links a:hover { color: var(--navy); background: var(--gray-50); }
+.nav-links a.active { color: var(--amber); background: var(--amber-light); }
+.nav-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--white);
+  background: var(--navy);
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  transition: background .15s, transform .15s, box-shadow .15s;
+  box-shadow: var(--shadow-sm);
+}
+.nav-cta:hover {
+  background: var(--navy-mid);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+.nav-cta-mobile { display: none; }
+.nav-hamburger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  padding: 6px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background .15s;
+}
+.nav-hamburger:hover { background: var(--gray-100); }
+.nav-hamburger span {
+  width: 22px; height: 2px;
+  background: var(--navy);
+  border-radius: 2px;
+  display: block;
+  transition: transform .3s, opacity .3s;
+}
+
+/* ═══════════════════════════════════════
+   HERO
+═══════════════════════════════════════ */
+.hero {
+  background: linear-gradient(160deg, var(--off-white) 0%, var(--sky) 55%, var(--white) 100%);
+  padding: 96px 40px 80px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 100px;
+  background: linear-gradient(to bottom, transparent, var(--white));
+  pointer-events: none;
+}
+
+/* Road marking stripes in hero background */
+.hero-road-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.hero-road-bg svg {
+  position: absolute;
+  width: 100%; height: 100%;
+}
+
+.hero-layout {
+  max-width: 1120px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 64px;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: 999px;
+  padding: 6px 14px 6px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-700);
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+}
+.hero-badge .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse-dot 2s infinite;
+  flex-shrink: 0;
+}
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.4); }
+  50%       { box-shadow: 0 0 0 5px rgba(16,185,129,0); }
+}
+.hero-title {
+  font-family: 'Sora', sans-serif;
+  font-size: clamp(36px, 4.5vw, 60px);
+  font-weight: 800;
+  line-height: 1.05;
+  color: var(--navy);
+  margin-bottom: 24px;
+  letter-spacing: -0.03em;
+}
+.hero-title .accent { color: var(--amber); }
+.hero-title .underline-word {
+  position: relative;
+  display: inline-block;
+}
+.hero-title .underline-word::after {
+  content: '';
+  position: absolute;
+  left: 0; bottom: -4px;
+  width: 100%; height: 4px;
+  background: linear-gradient(90deg, var(--amber), var(--amber-mid));
+  border-radius: 2px;
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: underline-in 0.6s 0.4s ease forwards;
+}
+@keyframes underline-in {
+  to { transform: scaleX(1); }
+}
+.hero-desc {
+  font-size: 17px;
+  line-height: 1.75;
+  color: var(--text-secondary);
+  margin-bottom: 36px;
+  max-width: 520px;
+}
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 48px;
+}
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--navy);
+  background: var(--amber);
+  padding: 14px 28px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-amber);
+  transition: background .15s, transform .2s, box-shadow .2s;
+}
+.btn-primary:hover {
+  background: #E08C00;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(245,158,11,0.35);
+}
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--navy);
+  background: var(--white);
+  border: 1.5px solid var(--gray-200);
+  padding: 13px 24px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: border-color .15s, transform .2s, box-shadow .2s;
+}
+.btn-secondary:hover {
+  border-color: var(--amber);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.hero-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.hero-pill {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--navy-mid);
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: 999px;
+  padding: 5px 13px;
+  box-shadow: var(--shadow-sm);
+  transition: border-color .15s;
+}
+.hero-pill:hover { border-color: var(--amber); }
+
+/* Hero stats panel */
+.hero-stats-panel {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-xl);
+  padding: 32px;
+  box-shadow: var(--shadow-xl);
+  position: relative;
+}
+.hero-stats-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 32px; right: 32px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--amber), #0EA5E9);
+  border-radius: 0 0 3px 3px;
+}
+.stats-panel-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.stats-panel-title span {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--amber);
+  display: inline-block;
+}
+.stats-grid-2x2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  background: var(--gray-100);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.stat-cell {
+  background: var(--white);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.stat-cell:nth-child(1) { border-radius: var(--radius-md) 0 0 0; }
+.stat-cell:nth-child(2) { border-radius: 0 var(--radius-md) 0 0; }
+.stat-cell:nth-child(3) { border-radius: 0 0 0 var(--radius-md); }
+.stat-cell:nth-child(4) { border-radius: 0 0 var(--radius-md) 0; }
+.stat-value {
+  font-family: 'Sora', sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--navy);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.stat-value .unit {
+  font-size: 16px;
+  color: var(--amber);
+}
+.stat-label {
+  font-size: 11.5px;
+  color: var(--gray-500);
+  font-weight: 500;
+  line-height: 1.3;
+}
+.stats-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--green-light);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+}
+.stats-badge .badge-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.stats-badge p {
+  font-size: 12.5px;
+  color: var(--gray-700);
+  font-weight: 500;
+  line-height: 1.4;
+}
+.stats-badge p strong { color: #065F46; }
+/* Trust logos strip */
+.trust-strip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  flex-wrap: wrap;
+  padding: 32px 40px;
+  background: var(--gray-50);
+  border-top: 1px solid var(--gray-200);
+  border-bottom: 1px solid var(--gray-200);
+  position: relative;
+  z-index: 1;
+}
+.trust-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  white-space: nowrap;
+}
+.trust-badges {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.trust-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-600);
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  padding: 8px 14px;
+  box-shadow: var(--shadow-sm);
+}
+.trust-badge .tb-icon {
+  font-size: 16px;
+}
+
+/* ═══════════════════════════════════════
+   MAIN CONTENT
+═══════════════════════════════════════ */
+.main-content {
+  padding: 80px 0 0;
+}
+
+/* ═══════════════════════════════════════
+   BUSINESS MODEL SECTION
+═══════════════════════════════════════ */
+.biz-section {
+  padding: 0 40px;
+}
+.biz-layout {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+.biz-intro {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 64px;
+  align-items: center;
+  margin-bottom: 56px;
+}
+.biz-visual {
+  position: relative;
+}
+.biz-visual-card {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+  border-radius: var(--radius-xl);
+  padding: 36px;
+  color: white;
+  box-shadow: var(--shadow-xl);
+  position: relative;
+  overflow: hidden;
+}
+.biz-visual-card::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(245,158,11,0.15), transparent 70%);
+  pointer-events: none;
+}
+.biz-visual-card .card-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.5);
+  margin-bottom: 12px;
+}
+.biz-visual-card .card-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 28px;
+  line-height: 1.2;
+}
+.biz-visual-card .card-title span { color: var(--amber); }
+.plan-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  font-size: 13.5px;
+}
+.plan-row:last-child { border-bottom: none; }
+.plan-row .plan-name { color: rgba(255,255,255,0.8); font-weight: 500; }
+.plan-row .plan-tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+.plan-tag.tag-amber { background: rgba(245,158,11,0.2); color: var(--amber); }
+.plan-tag.tag-blue  { background: rgba(14,165,233,0.2); color: #7DD3FC; }
+.plan-tag.tag-green { background: rgba(16,185,129,0.2); color: #6EE7B7; }
+.biz-visual-float {
+  position: absolute;
+  bottom: -16px; right: -16px;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--navy);
+}
+.biz-visual-float .float-icon {
+  width: 32px; height: 32px;
+  background: var(--amber-light);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.biz-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+.biz-card {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  transition: border-color .2s, transform .2s, box-shadow .2s;
+  position: relative;
+  overflow: hidden;
+}
+.biz-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--amber), transparent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .25s ease;
+}
+.biz-card:hover {
+  border-color: var(--amber-mid);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+}
+.biz-card:hover::after { transform: scaleX(1); }
+.biz-card-icon {
+  width: 44px; height: 44px;
+  background: var(--amber-light);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  margin-bottom: 16px;
+}
+.biz-card-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 8px;
+}
+.biz-card p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* ═══════════════════════════════════════
+   FEATURES SECTION
+═══════════════════════════════════════ */
+.features-section {
+  padding: 0 40px;
+  background: var(--gray-50);
+  border-top: 1px solid var(--gray-200);
+  border-bottom: 1px solid var(--gray-200);
+  padding-top: 80px;
+  padding-bottom: 80px;
+}
+.features-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.feature-card {
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  padding: 26px;
+  transition: border-color .2s, transform .2s, box-shadow .2s;
+  position: relative;
+  cursor: default;
+}
+.feature-card:hover {
+  border-color: var(--sky-mid);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+.feature-card:hover .feature-icon-wrap { background: var(--navy); }
+.feature-card:hover .feature-icon-wrap .fi { filter: brightness(10); }
+.feature-num {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  margin-bottom: 14px;
+}
+.feature-icon-wrap {
+  width: 48px; height: 48px;
+  background: var(--sky);
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 16px;
+  font-size: 22px;
+  transition: background .2s;
+}
+.feature-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 12px;
+  line-height: 1.3;
+}
+.feature-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.feature-list li {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+}
+.feature-list li::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--amber);
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+/* ═══════════════════════════════════════
+   VALUE PROPOSITION
+═══════════════════════════════════════ */
+.value-section {
+  padding: 80px 40px;
+}
+.value-inner { max-width: 1120px; margin: 0 auto; }
+.value-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.value-col {
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--gray-200);
+}
+.value-col-head {
+  padding: 28px 32px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.value-col.schools .value-col-head { background: var(--navy); }
+.value-col.learners .value-col-head { background: linear-gradient(135deg, #0EA5E9, #0369A1); }
+.value-col-head-icon {
+  width: 48px; height: 48px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.value-col-head-text h3 {
+  font-family: 'Sora', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 4px;
+}
+.value-col-head-text p {
+  font-size: 13px;
+  color: rgba(255,255,255,0.65);
+}
+.value-col-body {
+  background: var(--white);
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.value-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--gray-100);
+}
+.value-item:last-child { border-bottom: none; }
+.value-item-check {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.value-col.schools .value-item-check { background: var(--amber-light); color: var(--amber); }
+.value-col.learners .value-item-check { background: #DBEAFE; color: #0EA5E9; }
+.value-item-check svg { width: 12px; height: 12px; }
+.value-item p {
+  font-size: 14px;
+  color: var(--gray-700);
+  line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════
+   WHY SECTION (CTA)
+═══════════════════════════════════════ */
+.why-section-wrap {
+  padding: 0 40px 100px;
+}
+.why-section-inner { max-width: 1120px; margin: 0 auto; }
+.why-section {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-light) 100%);
+  border-radius: var(--radius-2xl);
+  padding: 72px 64px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-xl);
+}
+.why-section::before {
+  content: '';
+  position: absolute;
+  top: -120px; left: 50%;
+  transform: translateX(-50%);
+  width: 480px; height: 480px;
+  background: radial-gradient(circle, rgba(245,158,11,0.12) 0%, transparent 65%);
+  pointer-events: none;
+}
+.why-section::after {
+  content: '';
+  position: absolute;
+  bottom: -60px; right: -60px;
+  width: 300px; height: 300px;
+  background: radial-gradient(circle, rgba(14,165,233,0.1) 0%, transparent 65%);
+  pointer-events: none;
+}
+.why-section .eyebrow {
+  background: rgba(245,158,11,0.15);
+  border-color: rgba(245,158,11,0.3);
+  color: var(--amber);
+}
+.why-section h2 {
+  font-family: 'Sora', sans-serif;
+  font-size: clamp(26px, 3.5vw, 40px);
+  font-weight: 800;
+  color: var(--white);
+  margin-bottom: 18px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+  z-index: 1;
+}
+.why-section p {
+  font-size: 16px;
+  line-height: 1.75;
+  color: rgba(255,255,255,0.65);
+  max-width: 560px;
+  margin: 0 auto 40px;
+  position: relative;
+  z-index: 1;
+}
+.why-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 44px;
+  position: relative;
+  z-index: 1;
+}
+.why-tag {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 999px;
+  padding: 6px 16px;
+  transition: background .15s, border-color .15s;
+}
+.why-tag:hover { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.2); }
+.why-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-family: 'Sora', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--navy);
+  background: var(--amber);
+  padding: 16px 36px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-amber);
+  transition: background .15s, transform .2s, box-shadow .2s;
+  position: relative;
+  z-index: 1;
+  letter-spacing: 0.01em;
+}
+.why-cta-btn:hover {
+  background: #E08C00;
+  transform: translateY(-2px);
+  box-shadow: 0 16px 48px rgba(245,158,11,0.4);
+}
+
+/* ═══════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════ */
+footer { background: var(--navy); }
+.footer-top {
+  padding: 64px 40px 48px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.footer-grid {
+  max-width: 1120px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  gap: 48px;
+}
+.footer-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.footer-brand img{ width: 160px; height: auto; }
+.footer-tagline {
+  font-family: 'Sora', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--amber);
+}
+.footer-about {
+  font-size: 13px;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.55);
+  max-width: 280px;
+}
+.footer-social { display: flex; gap: 10px; margin-top: 4px; }
+.fsocial-link {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.7);
+  transition: background .15s, border-color .15s, color .15s;
+}
+.fsocial-link:hover { background: var(--amber); border-color: var(--amber); color: var(--navy); }
+.footer-col-title {
+  font-family: 'Sora', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+  margin-bottom: 18px;
+}
+.footer-links { list-style: none; display: flex; flex-direction: column; gap: 11px; }
+.footer-link {
+  font-size: 13.5px;
+  color: rgba(255,255,255,0.55);
+  transition: color .15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.footer-link:hover { color: var(--amber); }
+.footer-link-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  object-fit: cover;
+  flex-shrink: 0;
+  display: block;
+}
+.footer-contact-item {
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.55);
+  margin-bottom: 11px;
+}
+.footer-contact-item a { color: rgba(255,255,255,0.55); transition: color .15s; }
+.footer-contact-item a:hover { color: var(--amber); }
+.footer-bottom { padding: 22px 40px; }
+.footer-bottom .container {
+  max-width: 1120px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.footer-copy { font-size: 12.5px; color: rgba(255,255,255,0.4); }
+.footer-copy a { color: var(--amber); font-weight: 600; }
+
+
+
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;   /* Align children to the left */
+    text-align: left;          /* Left-align the text */
+    min-width: 0;
+}
+
+
+.glass-profile-inner {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;      /* Vertically align image and text */
+    gap: 24px;                /* Space between image and text */
+}
+
+.profile-img-wrap {
+    flex-shrink: 0;           /* Prevent image from shrinking */
+}
+
+.profile-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    text-align: left;
+    flex: 1;
+}
+
+
+@media (max-width: 860px) {
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 520px) {
+  .footer-grid { grid-template-columns: 1fr; }
+  .footer-top, .footer-bottom { padding-left: 24px; padding-right: 24px; }
+}
+
+/* ═══════════════════════════════════════
+   SCROLL ANIMATIONS
+═══════════════════════════════════════ */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.55s ease, transform 0.55s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+
+/* ═══════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════ */
+/* Glass Profile Card */
+  .glass-profile{
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.13);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-radius: 20px;
+    padding: 24px 24px 20px;
+    margin: 0 auto 28px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.12);
+    max-width: 400px;
+    position: relative;
+    overflow: hidden;
+  }
+  .glass-profile::before{
+    content:'';
+    position:absolute;
+    top:-60px; right:-60px;
+    width:180px; height:180px;
+    background: radial-gradient(circle, rgba(245,158,11,0.18) 0%, transparent 70%);
+    pointer-events:none;
+  }
+  .glass-profile-inner{ display:flex; align-items:center; gap:16px; margin-bottom:16px; }
+.profile-img-wrap{ position:relative; flex-shrink:0; top:-8px; }
+  .profile-img{
+    width:72px; height:72px; border-radius:50%;
+    object-fit:cover; object-position:center 25%;
+    border:2.5px solid rgba(245,158,11,0.6);
+    box-shadow:0 0 0 4px rgba(245,158,11,0.12);
+    display:block;
+  }
+  .profile-img-fallback{
+    width:72px; height:72px; border-radius:50%;
+    background:rgba(245,158,11,0.12);
+    border:2.5px solid rgba(245,158,11,0.6);
+    align-items:center; justify-content:center;
+  }
+  .profile-status-dot{
+    position:absolute; bottom:3px; right:3px;
+    width:13px; height:13px; background:#10B981;
+    border-radius:50%; border:2px solid rgba(13,27,42,0.85);
+    box-shadow:0 0 6px rgba(16,185,129,0.7);
+  }
+  .profile-badge{
+    display:inline-block; font-family:'Inter', sans-serif; font-size:10px;
+    letter-spacing:0.12em; text-transform:uppercase; color:var(--amber);
+    background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.25);
+    border-radius:4px; padding:2px 8px; margin-bottom:5px;
+  }
+  .profile-name{ font-family:'Sora', sans-serif; font-size:19px; font-weight:700; margin:0 0 3px; padding:0; color:#fff; line-height:1.1; text-align:left; }
+.profile-role{ font-size:12.5px; color:rgba(255,255,255,0.6); margin:0; padding:0; text-align:left; }
+  .glass-divider{ height:1px; background:linear-gradient(90deg, rgba(245,158,11,0.4) 0%, rgba(255,255,255,0.05) 100%); margin-bottom:14px; }
+  .profile-bio{ text-align:justify; font-size:13.5px; line-height:1.65; color:rgba(255,255,255,0.72); margin:0 0 18px; }
+  .profile-stats{ display:flex; align-items:center; gap:0; }
+  .stat-item{ flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .stat-num{ font-family:'Sora', sans-serif; font-size:20px; font-weight:700; color:var(--amber); line-height:1; }
+  .stat-label{ font-family:'Inter', sans-serif; font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:rgba(255,255,255,0.5); }
+  .stat-sep{ width:1px; height:32px; background:rgba(255,255,255,0.1); }
+
+  /* Bio clamp + Read More */
+  .profile-bio{
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .bio-readmore{
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: -10px 0 18px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--amber);
+    cursor: pointer;
+    transition: gap .15s ease;
+  }
+  .bio-readmore:hover{ gap: 8px; }
+  .bio-readmore svg{ width: 12px; height: 12px; transition: transform .15s ease; }
+  .bio-readmore:hover svg{ transform: translateX(2px); }
+
+  /* Bio Modal */
+  .bio-modal-overlay{
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    background: rgba(13,27,42,0.78);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    padding: 24px;
+  }
+  .bio-modal-overlay.show{ display: flex; }
+  .bio-modal-card{
+    background: linear-gradient(160deg, var(--navy) 0%, var(--navy-light) 100%);
+    border: 1px solid rgba(255,255,255,0.13);
+    border-radius: var(--radius-xl);
+    max-width: 560px;
+    width: 100%;
+    max-height: 84vh;
+    overflow-y: auto;
+    padding: 32px 32px 28px;
+    box-shadow: var(--shadow-xl);
+    position: relative;
+    animation: bioModalIn .2s ease;
+  }
+  @keyframes bioModalIn{
+    from{ opacity: 0; transform: translateY(14px) scale(.98); }
+    to{ opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .bio-modal-close{
+    position: absolute;
+    top: 18px; right: 18px;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.8);
+    font-size: 16px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .bio-modal-close:hover{ background: rgba(255,255,255,0.16); }
+  .bio-modal-head{
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .bio-modal-img{
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center 25%;
+    border: 2.5px solid rgba(245,158,11,0.6);
+    flex-shrink: 0;
+  }
+  .bio-modal-name{
+    font-family: 'Sora', sans-serif;
+    font-size: 19px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 3px;
+  }
+  .bio-modal-role{
+    font-size: 12.5px;
+    color: rgba(255,255,255,0.6);
+  }
+  .bio-modal-divider{
+    height: 1px;
+    background: linear-gradient(90deg, rgba(245,158,11,0.4) 0%, rgba(255,255,255,0.05) 100%);
+    margin-bottom: 18px;
+  }
+  .bio-modal-text{
+    font-size: 14px;
+    line-height: 1.75;
+    color: rgba(255,255,255,0.78);
+    text-align: justify;
+    white-space: pre-line;
+  }
+
+
+
+
+
+
+
+  @media (max-width: 1024px) {
+    .features-grid { grid-template-columns: repeat(2, 1fr); }
+  .hero-layout { grid-template-columns: 1fr; gap: 40px; }
+  .hero-stats-panel { max-width: 480px; }
+  .biz-intro { grid-template-columns: 1fr; gap: 36px; }
+}
+@media (max-width: 768px) {
+  .container, .biz-section, .features-section, .value-section, .why-section-wrap { padding-left: 24px; padding-right: 24px; }
+  .hero { padding: 64px 24px 56px; }
+  .topnav-inner { padding: 0 16px; }
+  .nav-brand img { width: 140px; height: auto; }
+  .nav-links { display: none; }
+  .nav-cta-desktop { display: none; }
+  .nav-links .nav-cta-mobile {
+    display: inline-flex;
+    width: 100%;
+    justify-content: center;
+    margin-top: 8px;
+  }
+  .nav-hamburger { display: flex; }
+  .nav-brand-text .brand-sub { display: none; }
+  .value-columns { grid-template-columns: 1fr; }
+  .why-section { padding: 48px 32px; }
+  .features-grid { grid-template-columns: 1fr; }
+  .biz-cards { grid-template-columns: 1fr 1fr; }
+  footer { flex-direction: column; align-items: flex-start; }
+  .trust-strip { gap: 16px; }
+  .stats-grid-2x2 { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 520px) {
+  .hero-title { font-size: 32px; }
+  .biz-cards { grid-template-columns: 1fr; }
+  .hero-actions { flex-direction: column; align-items: flex-start; }
+  .trust-badges { gap: 10px; }
+  .nav-brand img { width: 120px; }
+  .announce-bar { font-size: 11.5px; padding: 8px 16px; }
+  .hero-badge { font-size: 11px; text-align: center; }
+  .why-section { padding: 40px 20px; }
+  .glass-profile { padding: 20px 18px 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .reveal { opacity: 1; transform: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Announcement bar ── -->
+<div class="announce-bar">
+  Built for Ghana's Driving Schools — <strong>DVLA Compliant</strong> — Now Accepting School Partners
+</div>
+
+<!-- ── Nav ── -->
+<nav class="topnav" aria-label="Site navigation">
+  <div class="topnav-inner">
+    <a class="nav-brand" href="/" aria-label="M-Smart home">
+      
+        <img src="img/m-smart_driving_school_solution.png" alt="M-Smart Driving School Solution Logo" width="185" height="63" style="border-radius: 10px;"/>
+      
+      
+    </a>
+    <div class="nav-links" role="list">
+      <a href="/" role="listitem">Home</a>
+      <a href="/about" class="active" role="listitem" aria-current="page">About</a>
+      <a class="nav-cta nav-cta-mobile" href="/">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        Find Your School
+      </a>
+    </div>
+    <a class="nav-cta nav-cta-desktop" href="/">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      Find Your School
+    </a>
+    <button class="nav-hamburger" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<!-- ── Hero ── -->
+<section class="hero" aria-label="Introduction">
+  <!-- Road-inspired ambient background -->
+  <div class="hero-road-bg" aria-hidden="true">
+    <svg viewBox="0 0 1400 700" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="roadLineGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#0D1B2A" stop-opacity="0.04"/>
+          <stop offset="100%" stop-color="#0D1B2A" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <!-- Perspective road lines from vanishing point -->
+      <line x1="700" y1="300" x2="0"    y2="700" stroke="url(#roadLineGrad)" stroke-width="2"/>
+      <line x1="700" y1="300" x2="350"  y2="700" stroke="url(#roadLineGrad)" stroke-width="2"/>
+      <line x1="700" y1="300" x2="700"  y2="700" stroke="url(#roadLineGrad)" stroke-width="2"/>
+      <line x1="700" y1="300" x2="1050" y2="700" stroke="url(#roadLineGrad)" stroke-width="2"/>
+      <line x1="700" y1="300" x2="1400" y2="700" stroke="url(#roadLineGrad)" stroke-width="2"/>
+      <!-- Horizon -->
+      <line x1="0" y1="300" x2="1400" y2="300" stroke="#0D1B2A" stroke-width="0.6" stroke-opacity="0.06"/>
+    </svg>
+  </div>
+
+  <div class="hero-layout">
+    <!-- Left: copy -->
+    <div class="hero-copy">
+      <div class="hero-badge">
+        <span class="dot"></span>
+        Marvini Smart Driving School Solution  · Ghana
+      </div>
+      <h1 class="hero-title">
+        Driving Schools,<br>
+        <span class="accent underline-word">Fully Digitised.</span>
+      </h1>
+      <p class="hero-desc">
+        A modern platform built to elevate driving schools across Ghana, preserving safety, compliance and high training standards while automating everything in between.
+      </p>
+      <div class="hero-actions">
+        <a class="btn-primary" href="/">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Find Your Driving School
+        </a>
+        <a class="btn-secondary" href="#features">
+          Explore Features
+        </a>
+      </div>
+      <div class="hero-pills" role="list" aria-label="Platform highlights">
+        <span class="hero-pill" role="listitem">✓ DVLA Aligned</span>
+        <span class="hero-pill" role="listitem">✓ Ghana Road Traffic Regulations</span>
+        <span class="hero-pill" role="listitem">✓ Accredited Instructors</span>
+        <span class="hero-pill" role="listitem">✓ SaaS · Subscription</span>
+      </div>
+    </div>
+
+    <!-- Right: stats panel -->
+    <div class="hero-stats-panel reveal reveal-delay-2" aria-label="Platform statistics">
+      <p class="stats-panel-title"><span></span> Platform at a Glance</p>
+      <div class="stats-grid-2x2" role="list">
+        <div class="stat-cell" role="listitem">
+          <div class="stat-value">8<span class="unit">+</span></div>
+          <div class="stat-label">Integrated modules</div>
+        </div>
+        <div class="stat-cell" role="listitem">
+          <div class="stat-value">100<span class="unit">%</span></div>
+          <div class="stat-label">DVLA compliant records</div>
+        </div>
+        <div class="stat-cell" role="listitem">
+          <div class="stat-value">0<span class="unit">₵</span></div>
+          <div class="stat-label">Cost to learners</div>
+        </div>
+        <div class="stat-cell" role="listitem">
+          <div class="stat-value">24<span class="unit">/7</span></div>
+          <div class="stat-label">Theory access, any device</div>
+        </div>
+      </div>
+      <div class="stats-badge">
+            <p><strong>Built for Ghana.</strong> Local regulations & DVLA standards.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Trust strip -->
+<div class="trust-strip" aria-label="Compliance and trust badges">
+  <span class="trust-label">Trusted by</span>
+  <div class="trust-badges">
+    <div class="trust-badge"><span class="tb-icon">🛡️</span> DVLA Standards</div>
+    <div class="trust-badge"><span class="tb-icon">📱</span> MoMo Payments</div>
+    <div class="trust-badge"><span class="tb-icon">🏫</span> Multi-Branch Ready</div>
+    <div class="trust-badge"><span class="tb-icon">📋</span> Ghana Road Traffic Regulations</div>
+    <div class="trust-badge"><span class="tb-icon">🔒</span> Data Secure</div>
+  </div>
+</div>
+
+<!-- ── Main content ── -->
+<main class="main-content">
+
+  <!-- Business Model -->
+  <section class="biz-section" aria-labelledby="biz-heading">
+    <div class="biz-layout">
+
+      <div class="road-divider" aria-hidden="true">
+        <div class="road-divider-icon">💼</div>
+      </div>
+
+      <div class="biz-intro">
+        <div class="biz-text reveal">
+          <div class="eyebrow">Business Model</div>
+          <h2 class="section-title" id="biz-heading">Affordable &amp; Scalable for <mark>Every School</mark></h2>
+          <p class="section-lead">M-Smart operates on a subscription-based SaaS model, making it accessible for driving schools of all sizes — from single-branch operations to multi-location academies.</p>
+        </div>
+        <div class="biz-visual reveal reveal-delay-2">
+          <div class="biz-visual-card">
+            <p class="card-label">Subscription Plans</p>
+            <h3 class="card-title">Pay what fits<br><span>your school</span></h3>
+            <div class="plan-row">
+              <span class="plan-name">Monthly Plan</span>
+              <span class="plan-tag tag-amber">Flexible</span>
+            </div>
+            <div class="plan-row">
+              <span class="plan-name">Annual Plan</span>
+              <span class="plan-tag tag-blue">Best Value</span>
+            </div>
+            <div class="plan-row">
+              <span class="plan-name">Learner Access</span>
+              <span class="plan-tag tag-green">Free Always</span>
+            </div>
+          </div>
+          <div class="biz-visual-float" aria-hidden="true">
+            <div class="float-icon">🔄</div>
+            <span>Updates always included</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="biz-cards" role="list">
+        <div class="biz-card reveal" role="listitem">
+          <div class="biz-card-icon" aria-hidden="true">📅</div>
+          <p class="biz-card-title">Monthly &amp; Annual Plans</p>
+          <p>Flexible subscription cycles so schools pay the way that suits their cash flow.</p>
+        </div>
+        <div class="biz-card reveal reveal-delay-1" role="listitem">
+          <div class="biz-card-icon" aria-hidden="true">📊</div>
+          <p class="biz-card-title">Tiered Packages</p>
+          <p>Scaled by number of learners, instructors, and branches — you only pay for what you need.</p>
+        </div>
+        <div class="biz-card reveal reveal-delay-2" role="listitem">
+          <div class="biz-card-icon" aria-hidden="true">⚡</div>
+          <p class="biz-card-title">Optional Add-ons</p>
+          <p>Advanced analytics, SMS notifications, and branded learner portals available on demand.</p>
+        </div>
+        <div class="biz-card reveal reveal-delay-3" role="listitem">
+          <div class="biz-card-icon" aria-hidden="true">🎓</div>
+          <p class="biz-card-title">Free for Learners</p>
+          <p>Students pay nothing. Their school's subscription covers full platform access.</p>
+        </div>
+        <div class="biz-card reveal reveal-delay-4" role="listitem">
+          <div class="biz-card-icon" aria-hidden="true">🔧</div>
+          <p class="biz-card-title">Updates Included</p>
+          <p>Continuous improvements and dedicated support are part of every plan — no hidden fees.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features-section" id="features" aria-labelledby="features-heading">
+    <div class="features-inner">
+      <div class="road-divider" aria-hidden="true">
+        <div class="road-divider-icon">🚗</div>
+      </div>
+      <div class="section-head centered reveal">
+        <div class="eyebrow">Core Features</div>
+        <h2 class="section-title" id="features-heading">Everything a Driving School <mark>Needs</mark></h2>
+        <p class="section-lead">Eight integrated modules covering every aspect of school operations, from a learner's first click to their DVLA certification.</p>
+      </div>
+      <div class="features-grid" role="list">
+
+        <div class="feature-card reveal" role="listitem">
+          <p class="feature-num">Module 01</p>
+          <div class="feature-icon-wrap" aria-hidden="true"><span class="fi">📋</span></div>
+          <h3 class="feature-title">Digital Learner Registration &amp; Onboarding</h3>
+          <ul class="feature-list">
+            <li>Online enrolment forms</li>
+            <li>Automated verification and document uploads</li>
+            <li>Instant learner profile creation</li>
+          </ul>
+        </div>
+
+        <div class="feature-card reveal reveal-delay-1" role="listitem">
+          <p class="feature-num">Module 02</p>
+          <div class="feature-icon-wrap" aria-hidden="true"><span class="fi">📅</span></div>
+          <h3 class="feature-title">Smart Scheduling &amp; Instructor Management</h3>
+          <ul class="feature-list">
+            <li>Real-time lesson scheduling</li>
+            <li>Instructor availability tracking</li>
+            <li>Automatic reminders for learners and instructors</li>
+          </ul>
+        </div>
+
+        <div class="feature-card reveal reveal-delay-2" role="listitem">
+          <p class="feature-num">Module 03</p>
+          <div class="feature-icon-wrap" aria-hidden="true"><span class="fi">🚗</span></div>
+          <h3 class="feature-title">Practical Training Tracking</h3>
+          <ul class="feature-list">
+            <li>Digital logbook for each learner</li>
+            <li>Instructor notes and performance scoring</li>
+            <li>Progress dashboards aligned with DVLA requirements</li>
+          </ul>
+        </div>
+
+        <div class="feature-card reveal reveal-delay-3" role="listitem">
+          <p class="feature-num">Module 04</p>
+          <div class="feature-icon-wrap" aria-hidden="true"><span class="fi">📚</span></div>
+          <h3 class="feature-title">Theory Training &amp; Assessment</h3>
+          <ul class="feature-list">
+            <li>Online theory lessons</li>
+            <li>Mock tests based on Ghana's DVLA standards</li>
+            <li>Automated grading and performance analytics</li>
+          </ul>
+        </div>
+
+        <div class="feature-card reveal" role="listitem">
+          <p class="feature-num">Module 05</p>
+          <div class="feature-icon-wrap" aria-hidden="true"><span class="fi">💳</span></div>
+          <h3 class="feature-title">Payments &amp; Financial Management</h3>
+          <ul class="feature-list">
+            <li>Mobile money and card payment integration</li>
+            <li>Automated receipts and invoicing</li>
+            <li>Revenue dashboards for school owners</li>
+          </ul>
+        </div>
+
+        <div class="feature-card reveal reveal-delay-1" role="listitem">
+          <p class="feature-num">Module 06</p>
+          <div class="feature-icon-wrap" aria-hidden="true"><span class="fi">🛡️</span></div>
+          <h3 class="feature-title">Compliance &amp; Reporting</h3>
+          <ul class="feature-list">
+            <li>DVLA-aligned training records</li>
+            <li>Instructor performance reports</li>
+            <li>Audit-ready documentation for inspections</li>
+          </ul>
+        </div>
+
+        <div class="feature-card reveal reveal-delay-2" role="listitem">
+          <p class="feature-num">Module 07</p>
+          <div class="feature-icon-wrap" aria-hidden="true"><span class="fi">🔔</span></div>
+          <h3 class="feature-title">Communication &amp; Notifications</h3>
+          <ul class="feature-list">
+            <li>SMS and in-app alerts</li>
+            <li>Lesson reminders</li>
+            <li>School announcements and learner updates</li>
+          </ul>
+        </div>
+
+        <div class="feature-card reveal reveal-delay-3" role="listitem">
+          <p class="feature-num">Module 08</p>
+          <div class="feature-icon-wrap" aria-hidden="true"><span class="fi">🏢</span></div>
+          <h3 class="feature-title">Multi-Branch Management</h3>
+          <ul class="feature-list">
+            <li>Unified dashboard for schools with multiple branches</li>
+            <li>Branch-level analytics and instructor allocation</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Value Proposition -->
+  <section class="value-section" aria-labelledby="value-heading">
+    <div class="value-inner">
+      <div class="road-divider" aria-hidden="true">
+        <div class="road-divider-icon">⭐</div>
+      </div>
+      <div class="section-head centered reveal">
+        <div class="eyebrow">Value Proposition</div>
+        <h2 class="section-title" id="value-heading">Built for Schools. <mark>Loved by Learners.</mark></h2>
+        <p class="section-lead">M-Smart delivers measurable value on both sides of the training relationship.</p>
+      </div>
+      <div class="value-columns">
+        <div class="value-col schools reveal">
+          <div class="value-col-head">
+            <div class="value-col-head-icon" aria-hidden="true">🏫</div>
+            <div class="value-col-head-text">
+              <h3>For Driving Schools</h3>
+              <p>Run smarter, grow faster</p>
+            </div>
+          </div>
+          <div class="value-col-body">
+            <div class="value-item">
+              <div class="value-item-check" aria-hidden="true">
+                <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 6l3 3 5-5" stroke="#F59E0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <p>Higher operational efficiency through automation</p>
+            </div>
+            <div class="value-item">
+              <div class="value-item-check" aria-hidden="true">
+                <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 6l3 3 5-5" stroke="#F59E0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <p>No more paper logbooks or manual scheduling</p>
+            </div>
+            <div class="value-item">
+              <div class="value-item-check" aria-hidden="true">
+                <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 6l3 3 5-5" stroke="#F59E0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <p>Improved training quality with structured, trackable learner progress</p>
+            </div>
+            <div class="value-item">
+              <div class="value-item-check" aria-hidden="true">
+                <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 6l3 3 5-5" stroke="#F59E0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <p>Increased revenue through better learner retention and streamlined payments</p>
+            </div>
+            <div class="value-item">
+              <div class="value-item-check" aria-hidden="true">
+                <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 6l3 3 5-5" stroke="#F59E0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <p>Professional brand image with a modern digital platform</p>
+            </div>
+            <div class="value-item">
+              <div class="value-item-check" aria-hidden="true">
+                <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 6l3 3 5-5" stroke="#F59E0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <p>Compliance assurance with DVLA standards and Ghana's road safety regulations</p>
+            </div>
+            <div class="value-item">
+              <div class="value-item-check" aria-hidden="true">
+                <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 6l3 3 5-5" stroke="#F59E0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <p>Data-driven decisions using real-time analytics</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="value-col learners reveal reveal-delay-2">
+          <div class="value-col-head">
+            <div class="value-col-head-icon" aria-hidden="true">🧑‍🎓</div>
+            <div class="value-col-head-text">
+              <h3>For Learners</h3>
+              <p>A confident journey to certification</p>
+            </div>
+          </div>
+          <div class="value-col-body">
+            <div class="value-item">
+              <div class="value-item-check" aria-hidden="true">
+                <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 6l3 3 5-5" stroke="#0EA5E9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <p>Convenient digital experience from registration to certification</p>
+            </div>
+            <div class="value-item">
+              <div class="value-item-check" aria-hidden="true">
+                <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 6l3 3 5-5" stroke="#0EA5E9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <p>Clear visibility of training progress and instructor feedback</p>
+            </div>
+            <div class="value-item">
+              <div class="value-item-check" aria-hidden="true">
+                <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 6l3 3 5-5" stroke="#0EA5E9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <p>Access to theory lessons and mock tests anytime, anywhere</p>
+            </div>
+            <div class="value-item">
+              <div class="value-item-check" aria-hidden="true">
+                <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 6l3 3 5-5" stroke="#0EA5E9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <p>Automated reminders for lessons and assessments</p>
+            </div>
+            <div class="value-item">
+              <div class="value-item-check" aria-hidden="true">
+                <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 6l3 3 5-5" stroke="#0EA5E9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <p>Faster, more organised training journey</p>
+            </div>
+            <div class="value-item">
+              <div class="value-item-check" aria-hidden="true">
+                <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 6l3 3 5-5" stroke="#0EA5E9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <p>Confidence in a school that uses modern, transparent systems</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why M-Smart CTA -->
+  <section class="why-section-wrap" aria-labelledby="why-heading">
+    <div class="why-section-inner">
+      <div class="road-divider" aria-hidden="true">
+        <div class="road-divider-icon">🏆</div>
+      </div>
+      <div class="why-section reveal">
+        <div class="glass-profile">
+          <div class="glass-profile-inner">
+            <div class="profile-img-wrap">
+              <img src="img/avatar4.png" alt="Portal Admin" class="profile-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+              <div class="profile-img-fallback" style="display:none;">
+                <svg width="44" height="44" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" fill="#F59E0B"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#F59E0B" stroke-width="1.6" stroke-linecap="round"/></svg>
+              </div>
+              <div class="profile-status-dot"></div>
+            </div>
+                <div class="profile-info">
+              <div class="profile-badge">Role</div>
+              <h3 class="profile-name">Name</h3>
+              <p class="profile-role">M-Smart Driving School Solution</p>
+            </div>
+          </div>
+          <div class="glass-divider"></div>
+          <p class="profile-bio" id="profileBioText">
+            Connecting Ghana's driving schools to a single smart portal — search your school, sign in instantly, and get on the road faster.
+          </p>
+          <button class="bio-readmore" id="bioReadMoreBtn" type="button">
+            Read More
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+          <div class="profile-stats">
+            <div class="stat-item">
+              <span class="stat-num">4</span>
+              <span class="stat-label">Schools</span>
+            </div>
+            <div class="stat-sep"></div>
+            <div class="stat-item">
+              <span class="stat-num">1</span>
+              <span class="stat-label">Regions</span>
+            </div>
+            <div class="stat-sep"></div>
+            <div class="stat-item">
+              <span class="stat-num">1</span>
+              <span class="stat-label">Portal</span>
+            </div>
+          </div>
+        </div>
+        <div class="eyebrow">Why M-Smart Driving School Solution?</div>
+        <h2 id="why-heading">Built for Ghana. Powered by Global-Grade Technology.</h2>
+        <p>Ghana's driving schools deserve a modern, reliable and compliant digital ecosystem that enhances safety, improves training outcomes, 
+          and supports business growth. M-Smart Driving School Solution is built for the Ghanaian context — local regulations, local payment systems, 
+          local training standards.</p>
+        <div class="why-tags" role="list" aria-label="Key platform attributes">
+          <span class="why-tag" role="listitem">Local Regulations</span>
+          <span class="why-tag" role="listitem">MoMo Payments</span>
+          <span class="why-tag" role="listitem">DVLA Standards</span>
+          <span class="why-tag" role="listitem">Road Safety</span>
+          <span class="why-tag" role="listitem">Ghanaian Context</span>
+        </div>
+        <a class="why-cta-btn" href="/">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Find Your Driving School
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Bio Modal -->
+  <div class="bio-modal-overlay" id="bioModalOverlay">
+    <div class="bio-modal-card">
+      <button class="bio-modal-close" id="bioModalClose" aria-label="Close">✕</button>
+      <div class="bio-modal-head">
+        <img src="img/avat.png" alt="Portal Admin" class="bio-modal-img" id="bioModalImg"/>
+        <div>
+          <div class="profile-badge" id="bioModalBadge">Role</div>
+          <h3 class="bio-modal-name" id="bioModalName">Name</h3>
+          <p class="bio-modal-role" id="bioModalRole">M-Smart Driving School Solution</p>
+        </div>
+      </div>
+      <div class="bio-modal-divider"></div>
+      <p class="bio-modal-text" id="bioModalText"></p>
+    </div>
+  </div>
+
+</main>
+
+<!-- ── Footer ── -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-grid">
+
+      <div class="footer-brand">
+        <img src="img/m-smart_driving_school_solution.png" alt="M-Smart Driving School Solution Logo"/>
+        <p class="footer-tagline">Ghana's Leading Driving School Portal</p>
+        <p class="footer-about">A modern, fully digitised platform built to elevate driving schools across Ghana while preserving safety, compliance, and high training standards.</p>
+        <div class="footer-social">
+          <a href="#" class="fsocial-link" aria-label="LinkedIn">in</a>
+          <a href="#" class="fsocial-link" aria-label="Twitter">𝕏</a>
+          <a href="#" class="fsocial-link" aria-label="Facebook">f</a>
+        </div>
+      </div>
+
+      <div class="footer-col">
+        <h4 class="footer-col-title">Quick Links</h4>
+        <ul class="footer-links" role="list">
+          <li><a href="/" class="footer-link">Find Your School</a></li>
+          <li><a href="/about" class="footer-link">About</a></li>
+          <li><a href="/about#features" class="footer-link">Features</a></li>
+          <li><a href="/#registerBtn" class="footer-link">Register a School</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4 class="footer-col-title">Other Companies</h4>
+        <ul class="footer-links" role="list">
+          <li><a href="https://marvini-elite-enterprises.web.app" class="footer-link"><img src="img/Logo/marvini_elite_enterprise_logo1.png" alt="" class="footer-link-icon">Marvini Elite Enterprises</a></li>
+          <li><a href="https://marvini-digital-food-chain.web.app" class="footer-link"><img src="img/Logo/M-Digital Food Chain .png" alt="" class="footer-link-icon">M-Digital Food Chain</a></li>
+          <li><a href="#" class="footer-link"><img src="img/Logo/M-Events & Festivals0.png" alt="" class="footer-link-icon">M-Events & Festivals</a></li>
+          <li><a href="https://marvini-elite-enterprises.web.app/consultancy-training" class="footer-link"><img src="img/Logo/M-Consultancy & Training0.png" alt="" class="footer-link-icon">M-Consultancy & Training</a></li>
+          <li><a href="https://marvini--farms.web.app/" class="footer-link"><img src="img/Logo/M-Farms0.png" alt="" class="footer-link-icon">M-Farms</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4 class="footer-col-title">Contact</h4>
+        <p class="footer-contact-item">Accra, Ghana, West Africa</p>
+        <p class="footer-contact-item">Email: <a href="mailto:baidoo@gmail.com">baidoo@gmail.com</a></p>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div class="container">
+      <p class="footer-copy">© 2026 M-Smart Driving School Solution</p>
+      <p class="footer-copy">Powered by <a href="https://myportfolio-theta-topaz-43.vercel.app/">TrevorMiles</a></p>
+    </div>
+  </div>
+</footer>
+
+<script type="importmap">
+{
+  "imports": {
+    "firebase/app": "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js",
+    "firebase/firestore": "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js"
+  }
+}
+</script>
+<script type="module">
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, getDocs, doc, getDoc } from "firebase/firestore";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA5TnyzHJpcHcM2N-77gkyAaj7yRru3-V0",
+  authDomain: "marvini-smart-driving-school.firebaseapp.com",
+  projectId: "marvini-smart-driving-school",
+  storageBucket: "marvini-smart-driving-school.firebasestorage.app",
+  messagingSenderId: "750557352716",
+  appId: "1:750557352716:web:dcae14b3dacaea88a4ef29",
+  measurementId: "G-RHRMJLDLDK"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Live school & region counts
+try {
+  const querySnapshot = await getDocs(collection(db, "schools"));
+  const schools = [];
+  querySnapshot.forEach((d) => {
+    const data = d.data();
+    schools.push({ loc: data.region || 'Unknown Region' });
+  });
+  const schoolCount = schools.length;
+  const regionCount = new Set(schools.map(s => s.loc).filter(Boolean)).size;
+
+  const statNums = document.querySelectorAll('.glass-profile .stat-num');
+  if (statNums[0]) statNums[0].textContent = schoolCount > 0 ? schoolCount : '0';
+  if (statNums[1]) statNums[1].textContent = regionCount > 0 ? regionCount : '0';
+} catch (e) {
+  console.warn('Stats count:', e.message);
+}
+
+// Portal profile (name, badge, role, bio, image, stat3)
+try {
+  const profSnap = await getDoc(doc(db, 'config', 'portalProfile'));
+  if (profSnap.exists()) {
+    const p = profSnap.data();
+    const profileCard = document.querySelector('.glass-profile');
+    if (profileCard) {
+      if (p.name)       profileCard.querySelector('.profile-name').textContent  = p.name;
+      if (p.badge)      profileCard.querySelector('.profile-badge').textContent = p.badge;
+      if (p.role)       profileCard.querySelector('.profile-role').textContent  = p.role;
+      if (p.bio)        profileCard.querySelector('.profile-bio').textContent   = p.bio;
+      if (p.stat3Num)   profileCard.querySelectorAll('.stat-num')[2].textContent   = p.stat3Num;
+      if (p.stat3Label) profileCard.querySelectorAll('.stat-label')[2].textContent = p.stat3Label;
+      if (p.imgSrc) {
+        const img = profileCard.querySelector('.profile-img');
+        if (img) img.src = p.imgSrc;
+      }
+    }
+  }
+} catch (e) {
+  console.warn('Profile fetch:', e.message);
+}
+</script>
+
+<script>
+/* Bio Read More modal */
+(function(){
+  const readMoreBtn = document.getElementById('bioReadMoreBtn');
+  const overlay     = document.getElementById('bioModalOverlay');
+  const closeBtn    = document.getElementById('bioModalClose');
+  const modalImg    = document.getElementById('bioModalImg');
+  const modalBadge  = document.getElementById('bioModalBadge');
+  const modalName   = document.getElementById('bioModalName');
+  const modalRole   = document.getElementById('bioModalRole');
+  const modalText   = document.getElementById('bioModalText');
+
+  function openBioModal(){
+    const profileCard = document.querySelector('.glass-profile');
+    if (!profileCard) return;
+    const img   = profileCard.querySelector('.profile-img');
+    const badge = profileCard.querySelector('.profile-badge');
+    const name  = profileCard.querySelector('.profile-name');
+    const role  = profileCard.querySelector('.profile-role');
+    const bio   = profileCard.querySelector('#profileBioText');
+
+    if (img && img.src) modalImg.src = img.src;
+    if (badge) modalBadge.textContent = badge.textContent;
+    if (name)  modalName.textContent  = name.textContent;
+    if (role)  modalRole.textContent  = role.textContent;
+    if (bio)   modalText.textContent  = bio.textContent.trim();
+
+    overlay.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeBioModal(){
+    overlay.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  if (readMoreBtn) readMoreBtn.addEventListener('click', openBioModal);
+  if (closeBtn) closeBtn.addEventListener('click', closeBioModal);
+  if (overlay) overlay.addEventListener('click', (e) => { if (e.target === overlay) closeBioModal(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeBioModal(); });
+})();
+
+/* Scroll reveal */
+const reveals = document.querySelectorAll('.reveal');
+const revealObserver = new IntersectionObserver(
+  (entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  },
+  { threshold: 0.1, rootMargin: '0px 0px -48px 0px' }
+);
+reveals.forEach(el => revealObserver.observe(el));
+
+/* Hero elements visible immediately */
+document.querySelectorAll('.hero .reveal').forEach(el => {
+  setTimeout(() => el.classList.add('visible'), 100);
+});
+
+/* Mobile nav toggle */
+const hamburger = document.querySelector('.nav-hamburger');
+const navLinks  = document.querySelector('.nav-links');
+if (hamburger && navLinks) {
+  hamburger.addEventListener('click', () => {
+    const isOpen = navLinks.style.display === 'flex';
+    navLinks.style.display = isOpen ? 'none' : 'flex';
+    navLinks.style.flexDirection = 'column';
+    navLinks.style.position = 'absolute';
+    navLinks.style.top = '64px';
+    navLinks.style.left = '0';
+    navLinks.style.right = '0';
+    navLinks.style.background = 'rgba(255,255,255,0.97)';
+    navLinks.style.backdropFilter = 'blur(16px)';
+    navLinks.style.padding = '12px 24px';
+    navLinks.style.borderBottom = '1px solid #E5E7EB';
+    navLinks.style.boxShadow = '0 8px 24px rgba(0,0,0,0.08)';
+    hamburger.setAttribute('aria-expanded', String(!isOpen));
+    const spans = hamburger.querySelectorAll('span');
+    if (!isOpen) {
+      spans[0].style.transform = 'rotate(45deg) translate(5px, 5px)';
+      spans[1].style.opacity  = '0';
+      spans[2].style.transform = 'rotate(-45deg) translate(5px, -5px)';
+    } else {
+      spans.forEach(s => { s.style.transform = ''; s.style.opacity = ''; });
+    }
+  });
+}
+</script>
+</body>
+</html>

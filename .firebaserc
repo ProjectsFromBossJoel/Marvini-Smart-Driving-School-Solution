@@ -1,0 +1,18 @@
+{
+  "projects": {
+    "default": "marvini-smart-driving-school"
+  },
+  "targets": {
+    "marvini-smart-driving-school": {
+      "hosting": {
+        "main": [
+          "marvini-smart-driving-school"
+        ],
+        "newsite": [
+          "marvini-smart-driving-school-solution"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

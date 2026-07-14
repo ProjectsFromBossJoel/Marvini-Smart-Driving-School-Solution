@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://marvini-smart-driving-school.web.app/sitemap.xml

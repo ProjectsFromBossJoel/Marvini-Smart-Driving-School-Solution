@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin · M-Smart Driving School Solution</title>
+<link rel="icon" type="image/x-icon" href="img/favicon_io/favicon.ico">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='%231B2430'/%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='%23F2A93B' stroke-width='1.6'/%3E%3Ccircle cx='12' cy='12' r='2.6' fill='%23F2A93B'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --asphalt: #1B2430;
+    --asphalt-deep: #11161E;
+    --panel: #19222E;
+    --amber: #F2A93B;
+    --amber-deep: #D88E1F;
+    --chalk: #F7F5F0;
+    --slate: #8A93A3;
+    --slate-dim: #5C6773;
+    --brake: #C1432D;
+    --good: #3FA66A;
+    --border: #2A3442;
+    --radius: 12px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Inter', sans-serif;
+    background:var(--asphalt-deep);
+    color:var(--chalk);
+    min-height:100vh;
+  }
+  a{color:inherit;}
+  button{font-family:inherit;}
+  :focus-visible{ outline:2px solid var(--amber); outline-offset:2px; }
+
+  /* ================= LOGIN ================= */
+  #loginScreen{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .login-card{
+    width:380px;
+    max-width:100%;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    overflow:hidden;
+    box-shadow:0 30px 60px -20px rgba(0,0,0,0.55);
+  }
+  .hazard-strip{
+    height:7px;
+    background:repeating-linear-gradient(-45deg, var(--amber) 0 14px, var(--asphalt-deep) 14px 28px);
+  }
+  .login-card .body{ padding:32px 28px 28px; }
+  .login-brand{ display:flex; align-items:center; gap:12px; margin-bottom:22px; }
+  .login-brand .mark{
+    width:42px; height:42px; border-radius:9px; background:var(--asphalt);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .login-brand h1{ font-family:'Space Grotesk', sans-serif; font-size:17px; margin:0; }
+  .login-brand span{ font-family:'JetBrains Mono', monospace; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--slate); }
+  .field{ margin-bottom:16px; }
+  .field label{ display:block; font-size:12px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; color:var(--slate); margin-bottom:7px; }
+  .field input{
+    width:100%; padding:11px 13px; border-radius:8px; border:1.5px solid var(--border);
+    background:var(--asphalt-deep); color:var(--chalk); font-size:14px; outline:none;
+  }
+  .field input:focus{ border-color:var(--amber-deep); }
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    border:none; border-radius:8px; cursor:pointer;
+    font-family:'Space Grotesk', sans-serif; font-weight:600; letter-spacing:.02em;
+    transition:transform .12s ease, opacity .15s ease, background .15s ease;
+  }
+  .btn-primary{ background:var(--amber); color:var(--asphalt-deep); padding:12px 18px; width:100%; font-size:14px; text-transform:uppercase; }
+  .btn-primary:hover{ background:var(--amber-deep); }
+  .btn-primary:disabled{ opacity:.5; cursor:not-allowed; }
+  .login-error{ color:var(--brake); font-size:12.5px; margin:-6px 0 14px; min-height:14px; }
+  .login-hint{ margin-top:18px; font-size:12px; color:var(--slate-dim); text-align:center; line-height:1.6; }
+
+  /* ================= APP SHELL ================= */
+  #app{ display:none; min-height:100vh; }
+  #app.show{ display:flex; }
+
+  .sidebar{
+    width:230px; flex-shrink:0; background:var(--panel);
+    border-right:1px solid var(--border);
+    display:flex; flex-direction:column;
+    position:sticky; top:0; height:100vh;
+  }
+  .sidebar-brand{ display:flex; align-items:center; gap:10px; padding:20px 18px; border-bottom:1px solid var(--border); }
+  .sidebar-brand .mark{ width:34px; height:34px; border-radius:8px; background:var(--asphalt); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .sidebar-brand strong{ font-family:'Space Grotesk', sans-serif; font-size:14px; display:block; line-height:1.2; }
+  .sidebar-brand small{ font-family:'JetBrains Mono', monospace; font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--slate); }
+
+  .nav{ flex:1; padding:14px 10px; display:flex; flex-direction:column; gap:3px; }
+  .nav-link{
+    display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:8px;
+    color:var(--slate); text-decoration:none; font-size:13.5px; font-weight:600; cursor:pointer;
+    border-left:3px solid transparent;
+  }
+  .nav-link svg{ width:17px; height:17px; flex-shrink:0; }
+  .nav-link:hover{ background:rgba(255,255,255,0.04); color:var(--chalk); }
+  .nav-link.active{ background:rgba(242,169,59,0.1); color:var(--amber); border-left-color:var(--amber); }
+
+  .sidebar-foot{ padding:14px 14px 18px; border-top:1px solid var(--border); }
+  .admin-email{ font-size:11.5px; color:var(--slate-dim); margin:0 0 10px; word-break:break-all; }
+  .btn-logout{
+    width:100%; background:transparent; border:1.5px solid var(--border); color:var(--slate);
+    padding:9px 12px; border-radius:8px; font-size:12.5px; text-transform:uppercase; letter-spacing:.03em;
+  }
+  .btn-logout:hover{ border-color:var(--brake); color:var(--brake); }
+
+  .main{ flex:1; min-width:0; }
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:20px 32px; border-bottom:1px solid var(--border);
+  }
+  .topbar h2{ font-family:'Space Grotesk', sans-serif; font-size:21px; margin:0; }
+  .topbar p{ margin:3px 0 0; font-size:12.5px; color:var(--slate); }
+  .content{ padding:28px 32px 60px; }
+  .page{ display:none; }
+  .page.active{ display:block; }
+
+  /* ---------- Dashboard ---------- */
+  .stat-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:16px; margin-bottom:30px; }
+  .stat-card{
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:18px 20px; position:relative; overflow:hidden;
+  }
+  .stat-card .accent{ position:absolute; top:0; left:0; width:4px; height:100%; background:var(--amber); }
+  .stat-card .label{ font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--slate); margin:0 0 8px; }
+  .stat-card .value{ font-family:'Space Grotesk', sans-serif; font-size:30px; margin:0; }
+  .stat-card .sub{ font-size:11.5px; color:var(--slate-dim); margin:6px 0 0; }
+
+  .panel{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); }
+  .panel-head{ display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); }
+  .panel-head h3{ font-family:'Space Grotesk', sans-serif; font-size:15px; margin:0; }
+
+  /* ---------- Table ---------- */
+  table{ width:100%; border-collapse:collapse; }
+  th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--slate); padding:12px 20px; border-bottom:1px solid var(--border); }
+  td{ padding:13px 20px; font-size:13.5px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  tr:last-child td{ border-bottom:none; }
+  td a.site-link{ color:var(--amber); text-decoration:none; font-weight:600; }
+  td a.site-link:hover{ text-decoration:underline; }
+  .badge{ display:inline-block; font-size:11px; font-weight:600; padding:3px 9px; border-radius:999px; background:rgba(242,169,59,0.12); color:var(--amber); }
+  .row-actions{ display:flex; gap:8px; }
+  .icon-btn{ background:transparent; border:1px solid var(--border); border-radius:7px; padding:6px 8px; color:var(--slate); cursor:pointer; }
+  .icon-btn:hover{ color:var(--chalk); border-color:var(--slate); }
+  .icon-btn.danger:hover{ color:var(--brake); border-color:var(--brake); }
+  .empty-row td{ text-align:center; color:var(--slate-dim); padding:34px 20px; }
+
+  /* ---------- Schools page ---------- */
+  .schools-toolbar{ display:flex; gap:12px; align-items:center; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; }
+  .search-input{
+    flex:1; min-width:200px; max-width:320px; padding:10px 14px; border-radius:8px;
+    border:1.5px solid var(--border); background:var(--panel); color:var(--chalk); font-size:13.5px;
+  }
+  .search-input:focus{ outline:none; border-color:var(--amber-deep); }
+  .btn-add{ background:var(--amber); color:var(--asphalt-deep); padding:10px 18px; font-size:13px; text-transform:uppercase; }
+  .btn-add:hover{ background:var(--amber-deep); }
+
+  /* ---------- Modal / form drawer ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(10,13,18,0.6); display:none;
+    align-items:center; justify-content:center; padding:20px; z-index:50;
+  }
+  .overlay.show{ display:flex; }
+  .modal{
+    width:420px; max-width:100%; background:var(--panel); border:1px solid var(--border);
+    border-radius:var(--radius); overflow:hidden;
+  }
+  .modal-head{ display:flex; align-items:center; justify-content:space-between; padding:18px 22px; border-bottom:1px solid var(--border); }
+  .modal-head h3{ font-family:'Space Grotesk', sans-serif; font-size:16px; margin:0; }
+  .modal-close{ background:transparent; border:none; color:var(--slate); font-size:18px; cursor:pointer; line-height:1; }
+  .modal-body{ padding:20px 22px; }
+  .modal-foot{ display:flex; gap:10px; padding:16px 22px; border-top:1px solid var(--border); }
+  .modal-foot .btn{ flex:1; padding:11px; font-size:13px; text-transform:uppercase; }
+  .btn-secondary{ background:transparent; border:1.5px solid var(--border); color:var(--slate); }
+  .btn-secondary:hover{ border-color:var(--slate); color:var(--chalk); }
+  select.field-select{
+    width:100%; padding:11px 13px; border-radius:8px; border:1.5px solid var(--border);
+    background:var(--asphalt-deep); color:var(--chalk); font-size:14px; outline:none;
+  }
+  select.field-select:focus{ border-color:var(--amber-deep); }
+  .form-error{ color:var(--brake); font-size:12px; margin:0 0 12px; min-height:14px; }
+
+  /* ---------- Reports ---------- */
+  .bar-row{ display:flex; align-items:center; gap:14px; padding:11px 20px; border-bottom:1px solid var(--border); }
+  .bar-row:last-child{ border-bottom:none; }
+  .bar-row .region-name{ width:140px; flex-shrink:0; font-size:13px; }
+  .bar-track{ flex:1; height:10px; border-radius:6px; background:var(--asphalt-deep); overflow:hidden; }
+  .bar-fill{ height:100%; background:var(--amber); border-radius:6px; }
+  .bar-row .count{ width:34px; text-align:right; font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--slate); }
+
+  /* ---------- Toast ---------- */
+  #toast{
+    position:fixed; bottom:24px; right:24px; background:var(--panel); border:1px solid var(--border);
+    border-left:4px solid var(--good); border-radius:9px; padding:13px 18px; font-size:13px;
+    box-shadow:0 16px 30px -10px rgba(0,0,0,0.5); display:none; z-index:80; max-width:320px;
+  }
+  #toast.show{ display:block; }
+  #toast.error{ border-left-color:var(--brake); }
+
+  @media (max-width: 760px){
+    .sidebar{ width:64px; }
+    .sidebar-brand strong, .sidebar-brand small, .nav-link span.label, .admin-email{ display:none; }
+    .sidebar-brand{ justify-content:center; }
+    .nav-link{ justify-content:center; }
+    .btn-logout{ font-size:0; padding:9px; }
+    .content{ padding:22px 16px 50px; }
+    .topbar{ padding:18px 16px; }
+  }
+  @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="hazard-strip"></div>
+    <div class="body">
+      <div class="login-brand">
+        <div class="mark">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" stroke="#F2A93B" stroke-width="1.6"/>
+            <circle cx="12" cy="12" r="2.6" fill="#F2A93B"/>
+            <path d="M12 3V7M12 17V21M3 12H7M17 12H21" stroke="#F2A93B" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <h1>Admin sign in</h1>
+          <span>M-Smart Driving School Solution</span>
+        </div>
+      </div>
+      <form id="loginForm">
+        <div class="field">
+          <label for="loginEmail">Email</label>
+          <input id="loginEmail" type="email" autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label for="loginPassword">Password</label>
+          <input id="loginPassword" type="password" autocomplete="current-password" required>
+        </div>
+        <p class="login-error" id="loginError"></p>
+        <button class="btn btn-primary" type="submit" id="loginSubmit">Sign in</button>
+      </form>
+      <p class="login-hint">Access is limited to admin accounts created in Firebase Authentication for this project.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ================= APP SHELL ================= -->
+<div id="app">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="mark">
+       <img src="img/m-smart_driving_solution -logo.png" alt="M-Smart Driving SchoolSolution Logo" width="46" height="46" style="border-radius: 8px;"/> 
+      </div>
+      <div>
+        <strong>M-Smart Driving School Solution</strong>
+        <small>Admin Panel</small>
+      </div>
+    </div>
+
+    <nav class="nav" id="navList">
+      <a class="nav-link active" data-page="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        <span class="label">Dashboard</span>
+      </a>
+      <a class="nav-link" data-page="schools">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 9.5 12 4l9 5.5"/><path d="M5 10.5V19a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8.5"/><path d="M10 20v-5h4v5"/></svg>
+        <span class="label">Schools</span>
+      </a>
+      <a class="nav-link" data-page="reports">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M3 19h18"/></svg>
+        <span class="label">Reports</span>
+      </a>
+      <a class="nav-link" data-page="profile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke-linecap="round"/></svg>
+        <span class="label">Profile</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-foot">
+      <p class="admin-email" id="adminEmail">—</p>
+      <button class="btn btn-logout" id="logoutBtn">Sign out</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <h2 id="pageTitle">Dashboard</h2>
+        <p id="pageSubtitle">Overview of every driving school on the portal</p>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ---------- DASHBOARD PAGE ---------- -->
+      <section class="page active" id="page-dashboard">
+        <div class="stat-grid">
+          <div class="stat-card"><div class="accent"></div>
+            <p class="label">Total schools</p>
+            <p class="value" id="statTotal">0</p>
+            <p class="sub">Listed on the public portal</p>
+          </div>
+          <div class="stat-card"><div class="accent"></div>
+            <p class="label">Regions covered</p>
+            <p class="value" id="statRegions">0</p>
+            <p class="sub">Out of 16 regions in Ghana</p>
+          </div>
+          <div class="stat-card"><div class="accent"></div>
+            <p class="label">Most recent</p>
+            <p class="value" id="statRecent" style="font-size:18px;">—</p>
+            <p class="sub" id="statRecentSub">No schools yet</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>Recently added</h3>
+          </div>
+          <table>
+            <thead><tr><th>School</th><th>Region</th><th>Contact</th><th>Website</th></tr></thead>
+            <tbody id="recentTableBody">
+              <tr class="empty-row"><td colspan="3">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ---------- SCHOOLS PAGE ---------- -->
+      <section class="page" id="page-schools">
+        <div class="schools-toolbar">
+          <input class="search-input" id="schoolSearch" type="text" placeholder="Search by name or region…">
+          <button class="btn btn-add" id="openAddModal">+ Add school</button>
+        </div>
+        <div class="panel">
+          <table>
+            <thead><tr><th>School</th><th>Region</th><th>Contact</th><th>Website</th><th>Added</th><th></th></tr></thead>
+            <tbody id="schoolsTableBody">
+              <tr class="empty-row"><td colspan="6">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ---------- REPORTS PAGE ---------- -->
+      <section class="page" id="page-reports">
+        <div class="panel">
+          <div class="panel-head"><h3>Schools by region</h3></div>
+          <div id="reportBars">
+            <div class="bar-row"><div class="region-name">Loading…</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- PROFILE PAGE ---------- -->
+      <section class="page" id="page-profile">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
+
+          <!-- Left: Edit Form -->
+          <div class="panel">
+            <div class="panel-head"><h3>Edit Profile Card</h3></div>
+            <div style="padding:22px;">
+
+              <div class="field">
+                <label class="field" for="profName">Display name</label>
+                <input id="profName" type="text" placeholder="e.g. Marvini" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-size:14px;outline:none;">
+              </div>
+
+              <div class="field" style="margin-top:14px;">
+                <label class="field" for="profBadge">Badge label</label>
+                <input id="profBadge" type="text" placeholder="e.g. CEO / Portal Director" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-size:14px;outline:none;">
+              </div>
+
+              <div class="field" style="margin-top:14px;">
+                <label class="field" for="profRole">Role / subtitle</label>
+                <input id="profRole" type="text" placeholder="e.g. M-Smart Driving School Solution" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-size:14px;outline:none;">
+              </div>
+
+              <div class="field" style="margin-top:14px;">
+                <label class="field" for="profBio">Bio text</label>
+                <textarea id="profBio" rows="3" placeholder="Short description shown on the landing page…" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-size:14px;outline:none;resize:vertical;font-family:inherit;"></textarea>
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px;">
+                <div>
+                  <label class="field" style="display:block;font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--slate);margin-bottom:6px;">Stat 1 num <span style="color:var(--slate-dim);font-weight:400;">(auto)</span></label>
+                  <input id="profStat1Num" type="text" value="Live count" disabled style="width:100%;padding:9px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--slate-dim);font-size:13px;outline:none;cursor:not-allowed;">
+                </div>
+                <div>
+                  <label class="field" style="display:block;font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--slate);margin-bottom:6px;">Stat 1 label</label>
+                  <input id="profStat1Label" type="text" placeholder="Schools" style="width:100%;padding:9px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-size:13px;outline:none;">
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px;">
+                <div>
+                  <label class="field" style="display:block;font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--slate);margin-bottom:6px;">Stat 2 num <span style="color:var(--slate-dim);font-weight:400;">(auto)</span></label>
+                  <input id="profStat2Num" type="text" value="Live count" disabled style="width:100%;padding:9px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--slate-dim);font-size:13px;outline:none;cursor:not-allowed;">
+                </div>
+                <div>
+                  <label class="field" style="display:block;font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--slate);margin-bottom:6px;">Stat 2 label</label>
+                  <input id="profStat2Label" type="text" placeholder="Cities" style="width:100%;padding:9px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-size:13px;outline:none;">
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px;">
+                <div>
+                  <label class="field" style="display:block;font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--slate);margin-bottom:6px;">Stat 3 num</label>
+                  <input id="profStat3Num" type="text" placeholder="1" style="width:100%;padding:9px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-size:13px;outline:none;">
+                </div>
+                <div>
+                  <label class="field" style="display:block;font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--slate);margin-bottom:6px;">Stat 3 label</label>
+                  <input id="profStat3Label" type="text" placeholder="Portal" style="width:100%;padding:9px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-size:13px;outline:none;">
+                </div>
+              </div>
+
+              <!-- Image section -->
+              <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+                <p style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--slate);margin:0 0 12px;">Profile image</p>
+
+                <!-- Current/manual path -->
+                <label class="field" style="display:block;font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--slate);margin-bottom:6px;">Image path or URL</label>
+                <input id="profImgSrc" type="text" placeholder="img/avatar4.png  or  https://…" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-size:13px;outline:none;margin-bottom:10px;">
+
+                <!-- Cloudinary upload (stubbed — wire up when ready) -->
+                <div style="border:1.5px dashed var(--border);border-radius:8px;padding:14px;text-align:center;opacity:0.55;" title="Cloudinary upload — configure cloud name & upload preset to activate">
+                  <p style="margin:0 0 4px;font-size:12.5px;color:var(--slate);">☁ Cloudinary upload <span style="font-family:'JetBrains Mono',monospace;font-size:10px;background:rgba(242,169,59,0.12);color:var(--amber);padding:1px 6px;border-radius:3px;margin-left:4px;">coming soon</span></p>
+                  <p style="margin:0;font-size:11px;color:var(--slate-dim);">Cloud name: <code id="cloudNameDisplay" style="color:var(--amber);">—</code> · Preset: <code id="uploadPresetDisplay" style="color:var(--amber);">—</code></p>
+                  <!-- When ready: set CLOUDINARY_CLOUD_NAME + CLOUDINARY_UPLOAD_PRESET in the JS config below -->
+                </div>
+              </div>
+
+              <p id="profSaveError" style="color:var(--brake);font-size:12px;margin:10px 0 0;min-height:14px;"></p>
+              <button id="saveProfileBtn" class="btn btn-primary" style="margin-top:16px;width:100%;padding:12px;font-size:13px;">Save profile</button>
+            </div>
+          </div>
+
+          <!-- Right: Live Preview -->
+          <div>
+            <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--slate);margin:0 0 14px;">Live preview</p>
+            <!-- Glass card preview (mirrors index.html styles inline so it renders correctly here) -->
+            <div id="profilePreview" style="
+              background:rgba(255,255,255,0.07);
+              border:1px solid rgba(255,255,255,0.13);
+              backdrop-filter:blur(18px);
+              -webkit-backdrop-filter:blur(18px);
+              border-radius:20px;
+              padding:24px 24px 20px;
+              box-shadow:0 8px 32px rgba(0,0,0,0.28),inset 0 1px 0 rgba(255,255,255,0.12);
+              position:relative;
+              overflow:hidden;
+              max-width:360px;
+            ">
+              <div style="position:absolute;top:-60px;right:-60px;width:180px;height:180px;background:radial-gradient(circle,rgba(242,169,59,0.18) 0%,transparent 70%);pointer-events:none;"></div>
+              <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+                <div style="position:relative;flex-shrink:0;">
+                  <img id="previewImg" src="img/avatar4.png" alt="Preview"
+                    style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2.5px solid rgba(242,169,59,0.6);box-shadow:0 0 0 4px rgba(242,169,59,0.12);display:block;"
+                    onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 72 72\'%3E%3Ccircle cx=\'36\' cy=\'36\' r=\'36\' fill=\'%23243040\'/%3E%3Ccircle cx=\'36\' cy=\'28\' r=\'14\' fill=\'%23F2A93B\'/%3E%3Cellipse cx=\'36\' cy=\'60\' rx=\'22\' ry=\'16\' fill=\'%23F2A93B\'/%3E%3C/svg%3E'">
+                  <div style="position:absolute;bottom:3px;right:3px;width:13px;height:13px;background:#2ECC71;border-radius:50%;border:2px solid rgba(17,22,30,0.85);box-shadow:0 0 6px rgba(46,204,113,0.7);"></div>
+                </div>
+                <div>
+                  <div id="previewBadge" style="display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#F2A93B;background:rgba(242,169,59,0.12);border:1px solid rgba(242,169,59,0.25);border-radius:4px;padding:2px 8px;margin-bottom:5px;">CEO</div>
+                  <h3 id="previewName" style="font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:700;margin:0 0 3px;color:#F7F5F0;line-height:1.1;">Marvini</h3>
+                  <p id="previewRole" style="font-size:12.5px;color:#8A93A3;margin:0;">M-Smart Driving School Solution</p>
+                </div>
+              </div>
+              <div style="height:1px;background:linear-gradient(90deg,rgba(242,169,59,0.4) 0%,rgba(255,255,255,0.05) 100%);margin-bottom:14px;"></div>
+              <p id="previewBio" style="font-size:13.5px;line-height:1.65;color:rgba(247,245,240,0.72);margin:0 0 18px;">Connecting Ghana's driving schools to a single smart portal — search your school, sign in instantly, and get on the road faster.</p>
+              <div style="display:flex;align-items:center;">
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
+                  <span id="previewS1Num" style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:#F2A93B;line-height:1;">15+</span>
+                  <span id="previewS1Label" style="font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#8A93A3;">Schools</span>
+                </div>
+                <div style="width:1px;height:32px;background:rgba(255,255,255,0.1);"></div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
+                  <span id="previewS2Num" style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:#F2A93B;line-height:1;">10+</span>
+                  <span id="previewS2Label" style="font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#8A93A3;">Cities</span>
+                </div>
+                <div style="width:1px;height:32px;background:rgba(255,255,255,0.1);"></div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
+                  <span id="previewS3Num" style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:#F2A93B;line-height:1;">1</span>
+                  <span id="previewS3Label" style="font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#8A93A3;">Portal</span>
+                </div>
+              </div>
+            </div>
+            <p style="margin-top:10px;font-size:12px;color:var(--slate-dim);">Changes appear live as you type. Hit <strong style="color:var(--chalk);">Save profile</strong> to push to Firestore.</p>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- ================= ADD / EDIT MODAL ================= -->
+<div class="overlay" id="schoolOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modalTitle">Add driving school</h3>
+      <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
+    </div>
+    <form id="schoolForm">
+      <div class="modal-body">
+        <input type="hidden" id="schoolId">
+        <div class="field">
+          <label for="schoolName">School name</label>
+          <input id="schoolName" type="text" placeholder="e.g. Accra Driving Academy" required>
+        </div>
+        <div class="field">
+          <label for="schoolRegion">Region</label>
+          <select id="schoolRegion" class="field-select" required>
+            <option value="" disabled selected>Select a region</option>
+            <option>Greater Accra</option>
+            <option>Ashanti</option>
+            <option>Western</option>
+            <option>Western North</option>
+            <option>Central</option>
+            <option>Eastern</option>
+            <option>Volta</option>
+            <option>Oti</option>
+            <option>Northern</option>
+            <option>North East</option>
+            <option>Savannah</option>
+            <option>Upper East</option>
+            <option>Upper West</option>
+            <option>Bono</option>
+            <option>Bono East</option>
+            <option>Ahafo</option>
+          </select>
+        </div>
+        <div class="field">
+  <label for="schoolEmail">Email address</label>
+  <input id="schoolEmail" type="email" placeholder="school@example.com">
+</div>
+<div class="field">
+  <label for="schoolPhone1">Phone number 1</label>
+  <input id="schoolPhone1" type="tel" placeholder="+233 XX XXX XXXX">
+</div>
+<div class="field">
+  <label for="schoolPhone2">Phone number 2 <span style="color:var(--slate-dim);font-weight:400;">(optional)</span></label>
+  <input id="schoolPhone2" type="tel" placeholder="+233 XX XXX XXXX">
+</div>
+<div class="field">
+  <label for="schoolUrl">Website / login link</label>
+  <input id="schoolUrl" type="url" placeholder="https://example.com/login" required>
+</div>
+<p class="form-error" id="formError"></p>
+
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-secondary" id="modalCancel">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="modalSubmit">Save school</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+  import {
+    getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
+  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+  import {
+    getFirestore, collection, addDoc, updateDoc, deleteDoc, doc,
+    onSnapshot, serverTimestamp, query, orderBy
+  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA5TnyzHJpcHcM2N-77gkyAaj7yRru3-V0",
+    authDomain: "marvini-smart-driving-school.firebaseapp.com",
+    projectId: "marvini-smart-driving-school",
+    storageBucket: "marvini-smart-driving-school.firebasestorage.app",
+    messagingSenderId: "750557352716",
+    appId: "1:750557352716:web:dcae14b3dacaea88a4ef29",
+    measurementId: "G-RHRMJLDLDK"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const schoolsCol = collection(db, "schools");
+
+  // ---------- Elements ----------
+  const loginScreen  = document.getElementById('loginScreen');
+  const appShell      = document.getElementById('app');
+  const loginForm     = document.getElementById('loginForm');
+  const loginError    = document.getElementById('loginError');
+  const loginSubmit   = document.getElementById('loginSubmit');
+  const adminEmailEl  = document.getElementById('adminEmail');
+  const logoutBtn     = document.getElementById('logoutBtn');
+
+  const navLinks      = document.querySelectorAll('.nav-link');
+  const pages          = document.querySelectorAll('.page');
+  const pageTitle      = document.getElementById('pageTitle');
+  const pageSubtitle   = document.getElementById('pageSubtitle');
+
+  const statTotal      = document.getElementById('statTotal');
+  const statRegions    = document.getElementById('statRegions');
+  const statRecent     = document.getElementById('statRecent');
+  const statRecentSub  = document.getElementById('statRecentSub');
+  const recentTableBody= document.getElementById('recentTableBody');
+  const schoolsTableBody = document.getElementById('schoolsTableBody');
+  const schoolSearch   = document.getElementById('schoolSearch');
+  const reportBars     = document.getElementById('reportBars');
+
+  const overlay        = document.getElementById('schoolOverlay');
+  const schoolForm     = document.getElementById('schoolForm');
+  const modalTitle     = document.getElementById('modalTitle');
+  const formError      = document.getElementById('formError');
+  const schoolIdInput  = document.getElementById('schoolId');
+  const schoolNameInput= document.getElementById('schoolName');
+  const schoolRegionInput = document.getElementById('schoolRegion');
+  const schoolUrlInput = document.getElementById('schoolUrl');
+const schoolEmailInput = document.getElementById('schoolEmail');
+const schoolPhone1Input = document.getElementById('schoolPhone1');
+const schoolPhone2Input = document.getElementById('schoolPhone2');
+
+  const PAGE_META = {
+    dashboard: { title: 'Dashboard', sub: 'Overview of every driving school on the portal' },
+    schools:   { title: 'Schools', sub: 'Add, edit, or remove driving schools shown on the login portal' },
+    reports:   { title: 'Reports', sub: 'How schools are distributed across Ghana' },
+    profile:   { title: 'Portal Profile', sub: 'Edit the profile card shown on the public landing page' }
+  };
+
+  let allSchools = [];
+
+  function updateProfileLiveStats(){
+    const schoolCount = allSchools.length;
+    const regionCount = new Set(allSchools.map(s => s.region).filter(Boolean)).size;
+    const previewS1NumEl = document.getElementById('previewS1Num');
+    const previewS2NumEl = document.getElementById('previewS2Num');
+    if (previewS1NumEl) previewS1NumEl.textContent = schoolCount;
+    if (previewS2NumEl) previewS2NumEl.textContent = regionCount;
+  }
+
+  // ---------- Auth ----------
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    loginError.textContent = '';
+    loginSubmit.disabled = true;
+    loginSubmit.textContent = 'Signing in…';
+    try {
+      await signInWithEmailAndPassword(
+        auth,
+        document.getElementById('loginEmail').value.trim(),
+        document.getElementById('loginPassword').value
+      );
+    } catch (err) {
+      loginError.textContent = 'Could not sign in. Check the email and password and try again.';
+    } finally {
+      loginSubmit.disabled = false;
+      loginSubmit.textContent = 'Sign in';
+    }
+  });
+
+  logoutBtn.addEventListener('click', () => signOut(auth));
+
+  let unsubscribeSchools = null;
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      loginScreen.style.display = 'none';
+      appShell.classList.add('show');
+      adminEmailEl.textContent = user.email;
+      if (!unsubscribeSchools) startSchoolsListener();
+      loadProfile();
+    } else {
+      appShell.classList.remove('show');
+      loginScreen.style.display = 'flex';
+      if (unsubscribeSchools) { unsubscribeSchools(); unsubscribeSchools = null; }
+    }
+  });
+
+  // ---------- Navigation ----------
+  navLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      const target = link.dataset.page;
+      navLinks.forEach(l => l.classList.toggle('active', l === link));
+      pages.forEach(p => p.classList.toggle('active', p.id === `page-${target}`));
+      pageTitle.textContent = PAGE_META[target].title;
+      pageSubtitle.textContent = PAGE_META[target].sub;
+    });
+  });
+
+  // ---------- Firestore listener ----------
+  function startSchoolsListener(){
+    const q = query(schoolsCol, orderBy('createdAt', 'desc'));
+    unsubscribeSchools = onSnapshot(q, (snap) => {
+      allSchools = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderDashboard();
+      renderSchoolsTable(schoolSearch.value);
+      renderReports();
+      updateProfileLiveStats();
+    }, (err) => {
+      showToast('Could not load schools: ' + err.message, true);
+    });
+  }
+
+  function fmtDate(ts){
+    if (!ts || !ts.toDate) return '—';
+    return ts.toDate().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+  }
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ---------- Dashboard ----------
+  function renderDashboard(){
+    statTotal.textContent = allSchools.length;
+    const regions = new Set(allSchools.map(s => s.region).filter(Boolean));
+    statRegions.textContent = regions.size;
+
+    if (allSchools.length === 0){
+      statRecent.textContent = '—';
+      statRecentSub.textContent = 'No schools yet';
+      recentTableBody.innerHTML = `<tr class="empty-row"><td colspan="4">No schools yet. Add your first one from the Schools page.</td></tr>`;
+      return;
+    }
+
+    const newest = allSchools[0];
+    statRecent.textContent = newest.name;
+    statRecentSub.textContent = `Added ${fmtDate(newest.createdAt)}`;
+
+    recentTableBody.innerHTML = allSchools.slice(0, 5).map(s => `
+  <tr>
+    <td>${escapeHtml(s.name)}</td>
+    <td><span class="badge">${escapeHtml(s.region || '—')}</span></td>
+    <td>
+      ${s.email ? `<div><a href="mailto:${escapeHtml(s.email)}" style="color:var(--slate);text-decoration:none;font-size:12px;">${escapeHtml(s.email)}</a></div>` : ''}
+      ${s.phone1 ? `<div style="font-size:12px;color:var(--slate);">${escapeHtml(s.phone1)}</div>` : ''}
+      ${s.phone2 ? `<div style="font-size:12px;color:var(--slate-dim);">${escapeHtml(s.phone2)}</div>` : ''}
+      ${!s.email && !s.phone1 && !s.phone2 ? '<span style="color:var(--slate-dim);font-size:12px;">—</span>' : ''}
+    </td>
+    <td><a class="site-link" href="${escapeHtml(s.url)}" target="_blank" rel="noopener">${escapeHtml(s.url)}</a></td>
+  </tr>
+`).join('');
+  }
+
+  // ---------- Schools table ----------
+  function renderSchoolsTable(filterTerm){
+    const term = (filterTerm || '').trim().toLowerCase();
+    const filtered = allSchools.filter(s =>
+      (s.name || '').toLowerCase().includes(term) || (s.region || '').toLowerCase().includes(term)
+    );
+
+    if (filtered.length === 0){
+      schoolsTableBody.innerHTML = `<tr class="empty-row"><td colspan="6">${
+        allSchools.length === 0
+            ? 'No schools yet. Click "Add school" to create the first one.'
+            : 'No schools match that search.'
+        }</td></tr>`;
+      return;
+    }
+
+    schoolsTableBody.innerHTML = filtered.map(s => {
+  let contactInfo = '';
+  if (s.email) contactInfo += `<div><a href="mailto:${escapeHtml(s.email)}" style="color:var(--slate);text-decoration:none;font-size:12px;">${escapeHtml(s.email)}</a></div>`;
+  if (s.phone1) contactInfo += `<div style="font-size:12px;color:var(--slate);">${escapeHtml(s.phone1)}</div>`;
+  if (s.phone2) contactInfo += `<div style="font-size:12px;color:var(--slate-dim);">${escapeHtml(s.phone2)}</div>`;
+  if (!contactInfo) contactInfo = '<span style="color:var(--slate-dim);font-size:12px;">—</span>';
+  
+  return `
+    <tr>
+      <td>${escapeHtml(s.name)}</td>
+      <td><span class="badge">${escapeHtml(s.region || '—')}</span></td>
+      <td>${contactInfo}</td>
+      <td><a class="site-link" href="${escapeHtml(s.url)}" target="_blank" rel="noopener">${escapeHtml(s.url)}</a></td>
+      <td>${fmtDate(s.createdAt)}</td>
+      <td>
+        <div class="row-actions">
+          <button class="icon-btn" data-edit="${s.id}" title="Edit">✎</button>
+          <button class="icon-btn danger" data-delete="${s.id}" title="Delete">🗑</button>
+        </div>
+      </td>
+    </tr>
+  `;
+}).join('');
+  }
+
+  schoolSearch.addEventListener('input', () => renderSchoolsTable(schoolSearch.value));
+
+  schoolsTableBody.addEventListener('click', (e) => {
+    const editId = e.target.dataset.edit;
+    const deleteId = e.target.dataset.delete;
+    if (editId) openModal(allSchools.find(s => s.id === editId));
+    if (deleteId) handleDelete(deleteId);
+  });
+
+  async function handleDelete(id){
+    const school = allSchools.find(s => s.id === id);
+    if (!school) return;
+    const ok = confirm(`Remove "${school.name}" from the portal? This can't be undone.`);
+    if (!ok) return;
+    try {
+      await deleteDoc(doc(db, 'schools', id));
+      showToast(`Removed ${school.name}.`);
+    } catch (err) {
+      showToast('Could not delete: ' + err.message, true);
+    }
+  }
+
+  // ---------- Reports ----------
+  function renderReports(){
+    if (allSchools.length === 0){
+      reportBars.innerHTML = `<div class="bar-row"><div class="region-name">No schools yet</div></div>`;
+      return;
+    }
+    const counts = {};
+    allSchools.forEach(s => { const r = s.region || 'Unspecified'; counts[r] = (counts[r] || 0) + 1; });
+    const max = Math.max(...Object.values(counts));
+    const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+
+    reportBars.innerHTML = sorted.map(([region, count]) => `
+      <div class="bar-row">
+        <div class="region-name">${escapeHtml(region)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${(count/max*100).toFixed(0)}%"></div></div>
+        <div class="count">${count}</div>
+      </div>
+    `).join('');
+  }
+
+  // ---------- Add / Edit modal ----------
+  const openAddModal = document.getElementById('openAddModal');
+  const modalClose   = document.getElementById('modalClose');
+  const modalCancel  = document.getElementById('modalCancel');
+
+  openAddModal.addEventListener('click', () => openModal(null));
+  modalClose.addEventListener('click', closeModal);
+  modalCancel.addEventListener('click', closeModal);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+
+  function openModal(school){
+  formError.textContent = '';
+  schoolForm.reset();
+  if (school){
+    modalTitle.textContent = 'Edit driving school';
+    schoolIdInput.value = school.id;
+    schoolNameInput.value = school.name || '';
+    schoolRegionInput.value = school.region || '';
+    schoolEmailInput.value = school.email || '';
+    schoolPhone1Input.value = school.phone1 || '';
+    schoolPhone2Input.value = school.phone2 || '';
+    schoolUrlInput.value = school.url || '';
+  } else {
+    modalTitle.textContent = 'Add driving school';
+    schoolIdInput.value = '';
+  }
+  overlay.classList.add('show');
+  schoolNameInput.focus();
+}
+
+  function closeModal(){
+    overlay.classList.remove('show');
+  }
+
+  schoolForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  formError.textContent = '';
+
+  const name = schoolNameInput.value.trim();
+  const region = schoolRegionInput.value;
+  const email = schoolEmailInput.value.trim();
+  const phone1 = schoolPhone1Input.value.trim();
+  const phone2 = schoolPhone2Input.value.trim();
+  let url = schoolUrlInput.value.trim();
+
+  if (!name || !region || !url){
+    formError.textContent = 'Fill in the school name, region, and website link.';
+    return;
+  }
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+
+  // Prepare data object with only non-empty optional fields
+  const data = { name, region, url };
+  if (email) data.email = email;
+  if (phone1) data.phone1 = phone1;
+  if (phone2) data.phone2 = phone2;
+
+  const id = schoolIdInput.value;
+  const submitBtn = document.getElementById('modalSubmit');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Saving…';
+
+  try {
+    if (id){
+      await updateDoc(doc(db, 'schools', id), data);
+      showToast(`Updated ${name}.`);
+    } else {
+      await addDoc(schoolsCol, { ...data, createdAt: serverTimestamp() });
+      showToast(`Added ${name}.`);
+    }
+    closeModal();
+  } catch (err) {
+    formError.textContent = 'Could not save: ' + err.message;
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Save school';
+  }
+});
+
+  // =====================================================
+  // ---------- PROFILE PAGE -------------------------
+  // =====================================================
+
+  // ── Cloudinary config (stub — fill in when ready) ──
+  const CLOUDINARY_CLOUD_NAME   = '';   // e.g. 'drs2xpwho'
+  const CLOUDINARY_UPLOAD_PRESET = '';  // e.g. 'msmart_unsigned'
+
+  // Show config in UI
+  document.getElementById('cloudNameDisplay').textContent   = CLOUDINARY_CLOUD_NAME   || '(not set)';
+  document.getElementById('uploadPresetDisplay').textContent = CLOUDINARY_UPLOAD_PRESET || '(not set)';
+
+  const profDoc = doc(db, 'config', 'portalProfile');
+
+  // Profile field refs
+  const profName       = document.getElementById('profName');
+  const profBadge      = document.getElementById('profBadge');
+  const profRole       = document.getElementById('profRole');
+  const profBio        = document.getElementById('profBio');
+  const profStat1Num   = document.getElementById('profStat1Num');
+  const profStat1Label = document.getElementById('profStat1Label');
+  const profStat2Num   = document.getElementById('profStat2Num');
+  const profStat2Label = document.getElementById('profStat2Label');
+  const profStat3Num   = document.getElementById('profStat3Num');
+  const profStat3Label = document.getElementById('profStat3Label');
+  const profImgSrc     = document.getElementById('profImgSrc');
+  const profSaveError  = document.getElementById('profSaveError');
+  const saveProfileBtn = document.getElementById('saveProfileBtn');
+
+  // Preview refs
+  const previewImg     = document.getElementById('previewImg');
+  const previewBadge   = document.getElementById('previewBadge');
+  const previewName    = document.getElementById('previewName');
+  const previewRole    = document.getElementById('previewRole');
+  const previewBio     = document.getElementById('previewBio');
+  const previewS1Num   = document.getElementById('previewS1Num');
+  const previewS1Label = document.getElementById('previewS1Label');
+  const previewS2Num   = document.getElementById('previewS2Num');
+  const previewS2Label = document.getElementById('previewS2Label');
+  const previewS3Num   = document.getElementById('previewS3Num');
+  const previewS3Label = document.getElementById('previewS3Label');
+
+  // Live preview wiring
+  function wirePreview(inputEl, previewEl, isImg = false) {
+    inputEl.addEventListener('input', () => {
+      if (isImg) {
+        previewEl.src = inputEl.value.trim() || 'img/avatar4.png';
+      } else {
+        previewEl.textContent = inputEl.value.trim() || previewEl.textContent;
+      }
+    });
+  }
+  wirePreview(profName,       previewName);
+  wirePreview(profBadge,      previewBadge);
+  wirePreview(profRole,       previewRole);
+  wirePreview(profBio,        previewBio);
+  wirePreview(profStat1Num,   previewS1Num);
+  wirePreview(profStat1Label, previewS1Label);
+  wirePreview(profStat2Num,   previewS2Num);
+  wirePreview(profStat2Label, previewS2Label);
+  wirePreview(profStat3Num,   previewS3Num);
+  wirePreview(profStat3Label, previewS3Label);
+  wirePreview(profImgSrc,     previewImg, true);
+
+  // Load profile from Firestore
+  async function loadProfile() {
+    try {
+      const { getDoc } = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js");
+      const snap = await getDoc(profDoc);
+      if (!snap.exists()) return; // use defaults already in fields
+      const d = snap.data();
+      profName.value        = d.name        || '';
+      profBadge.value       = d.badge       || '';
+      profRole.value        = d.role        || '';
+      profBio.value         = d.bio         || '';
+      profStat1Num.value    = d.stat1Num    || '';
+      profStat1Label.value  = d.stat1Label  || '';
+      profStat2Num.value    = d.stat2Num    || '';
+      profStat2Label.value  = d.stat2Label  || '';
+      profStat3Num.value    = d.stat3Num    || '';
+      profStat3Label.value  = d.stat3Label  || '';
+      profImgSrc.value      = d.imgSrc      || 'img/avatar4.png';
+      // Sync preview
+      if (d.name)       previewName.textContent   = d.name;
+      if (d.badge)      previewBadge.textContent  = d.badge;
+      if (d.role)       previewRole.textContent   = d.role;
+      if (d.bio)        previewBio.textContent    = d.bio;
+      if (d.stat1Num)   previewS1Num.textContent  = d.stat1Num;
+      if (d.stat1Label) previewS1Label.textContent= d.stat1Label;
+      if (d.stat2Num)   previewS2Num.textContent  = d.stat2Num;
+      if (d.stat2Label) previewS2Label.textContent= d.stat2Label;
+      if (d.stat3Num)   previewS3Num.textContent  = d.stat3Num;
+      if (d.stat3Label) previewS3Label.textContent= d.stat3Label;
+      if (d.imgSrc)     previewImg.src            = d.imgSrc;
+    } catch (err) {
+      console.warn('Profile load:', err.message);
+    }
+  }
+
+  // Save profile to Firestore
+  saveProfileBtn.addEventListener('click', async () => {
+    profSaveError.textContent = '';
+    if (!profName.value.trim()) {
+      profSaveError.textContent = 'Display name is required.';
+      return;
+    }
+    saveProfileBtn.disabled = true;
+    saveProfileBtn.textContent = 'Saving…';
+    try {
+      const { setDoc } = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js");
+      await setDoc(profDoc, {
+        name:       profName.value.trim(),
+        badge:      profBadge.value.trim(),
+        role:       profRole.value.trim(),
+        bio:        profBio.value.trim(),
+        stat1Num:   profStat1Num.value.trim(),
+        stat1Label: profStat1Label.value.trim(),
+        stat2Num:   profStat2Num.value.trim(),
+        stat2Label: profStat2Label.value.trim(),
+        stat3Num:   profStat3Num.value.trim(),
+        stat3Label: profStat3Label.value.trim(),
+        imgSrc:     profImgSrc.value.trim() || 'img/avatar4.png',
+      });
+      showToast('Profile saved — changes are now live on the portal.');
+    } catch (err) {
+      profSaveError.textContent = 'Could not save: ' + err.message;
+    } finally {
+      saveProfileBtn.disabled = false;
+      saveProfileBtn.textContent = 'Save profile';
+    }
+  });
+
+  // ---------- Toast ----------
+  let toastTimer = null;
+  function showToast(message, isError){
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.classList.toggle('error', !!isError);
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
+  }
+</script>
+</body>
+</html>

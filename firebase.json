@@ -1,0 +1,44 @@
+{
+  "hosting": [
+    {
+      "target": "main",
+      "public": ".",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+
+      "redirects": [
+        {
+          "source": "**",
+          "destination": "https://marvini-smart-driving-school-solution.web.app",
+          "type": 301
+        }
+      ]
+    },
+    {
+      "target": "newsite",
+      "public": ".",
+      "cleanUrls": true,
+
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+
+      "headers": [
+        {
+          "source": "**",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "no-store"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

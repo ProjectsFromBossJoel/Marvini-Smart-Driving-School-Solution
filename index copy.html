@@ -1,0 +1,1718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M-Smart Driving School Solution | Find Your Driving School &amp; Login Portal Ghana</title>
+    <link rel="icon" type="image/x-icon" href="img/favicon_io/favicon.ico">
+    <meta name="description" content="Marvini M-Smart Driving School Solution is Ghana's single sign-in hub for driving schools. Search your driving school by name or city — Accra, Kumasi, Takoradi, Tema, Cape Coast and more — and go straight to its login page.">
+    <meta name="keywords" content="Marvini, M-Smart Driving School Solution, Marvini Smart Driving School, driving school Ghana, driving school login, driving school portal, Accra driving school, driving school hub, Kumasi driving school, learn to drive Ghana, driving instructor login, road safety Ghana">
+    <meta name="author" content="M-Smart Driving School Solution">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://marvini-smart-driving-school-solution.web.app/">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='9' fill='%231B2430'/%3E%3Ccircle cx='12' cy='12' r='9' fill='none' stroke='%23F2A93B' stroke-width='1.6'/%3E%3Ccircle cx='12' cy='12' r='2.6' fill='%23F2A93B'/%3E%3C/svg%3E">
+    <meta name="theme-color" content="#1B2430">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="M-Smart Driving School Solution">
+    <meta property="og:title" content="M-Smart Driving School Solution | Find Your Driving School &amp; Login Portal">
+    <meta property="og:description" content="Search for your driving school by name or city and go straight to its own login page — one portal for every driving school in Ghana.">
+    <meta property="og:url" content="https://marvini-smart-driving-school-solution.web.app/">
+    <meta property="og:locale" content="en_GH">
+
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="M-Smart Driving School Solution | Find Your Driving School &amp; Login Portal">
+    <meta name="twitter:description" content="Search for your driving school by name or city and go straight to its own login page — one portal for every driving school in Ghana.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --asphalt: #1B2430;
+            --asphalt-deep: #11161E;
+            --amber: #F2A93B;
+            --amber-deep: #D88E1F;
+            --chalk: #F7F5F0;
+            --slate: #8A93A3;
+            --brake: #C1432D;
+            --line-white: rgba(247, 245, 240, 0.92);
+            --card-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.45);
+            --radius: 14px;
+        }
+        * {
+            box-sizing: border-box;
+        }
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--asphalt-deep);
+            color: var(--chalk);
+            height: 100vh;
+            height: calc(var(--vh, 1vh) * 100);
+        }
+        /* ---------- Road scene (signature element) ---------- */
+        .scene {
+            position: relative;
+            height: 100vh;
+            height: calc(var(--vh, 1vh) * 100);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 4vw 6vw;
+            overflow: hidden;
+        }
+        .scene svg.road-bg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.4;
+        }
+        .horizon-fade {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(17, 22, 30, 0.15) 0%, rgba(17, 22, 30, 0.55) 55%, rgba(17, 22, 30, 0.92) 100%);
+            z-index: 1;
+        }
+        /* ---------- Background photo slideshow (12 images, pure CSS crossfade) ---------- */
+        .bg-slideshow {
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            overflow: hidden;
+            background: var(--asphalt-deep);
+        }
+        .bg-slide {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            animation: bgSlideFade 96s ease-in-out infinite;
+            will-change: opacity, transform;
+        }
+        .bg-slide:nth-child(1)  { animation-delay: 0s;  }
+        .bg-slide:nth-child(2)  { animation-delay: 8s;  }
+        .bg-slide:nth-child(3)  { animation-delay: 16s; }
+        .bg-slide:nth-child(4)  { animation-delay: 24s; }
+        .bg-slide:nth-child(5)  { animation-delay: 32s; }
+        .bg-slide:nth-child(6)  { animation-delay: 40s; }
+        .bg-slide:nth-child(7)  { animation-delay: 48s; }
+        .bg-slide:nth-child(8)  { animation-delay: 56s; }
+        .bg-slide:nth-child(9)  { animation-delay: 64s; }
+        .bg-slide:nth-child(10) { animation-delay: 72s; }
+        .bg-slide:nth-child(11) { animation-delay: 80s; }
+        .bg-slide:nth-child(12) { animation-delay: 88s; }
+
+        @keyframes bgSlideFade {
+            0%    { opacity: 0; transform: scale(1);    }
+            4%    { opacity: 1; transform: scale(1.02); }
+            8.3%  { opacity: 1; transform: scale(1.06); }
+            12.3% { opacity: 0; transform: scale(1.08); }
+            100%  { opacity: 0; transform: scale(1.08); }
+        }
+        .scene-caption {
+            position: absolute;
+            left: 6vw;
+            bottom: 12vh;
+            z-index: 2;
+            max-width: 480px;
+        }
+        .scene-caption .eyebrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--amber);
+            margin: 0 0 10px 0;
+        }
+        .scene-caption h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(28px, 4vw, 20px);
+            line-height: 1.08;
+            margin: 0 0 12px 0;
+            color: var(--chalk);
+        }
+        .scene-caption p {
+            font-size: 15px;
+            line-height: 1.6;
+            color: var(--slate);
+            margin: 0;
+        }
+
+        /* ---------- Card ---------- */
+        .card {
+            position: relative;
+            z-index: 2;
+            width: 420px;
+            max-width: 92vw;
+            background: var(--chalk);
+            border-radius: var(--radius);
+            box-shadow: var(--card-shadow);
+            overflow: hidden;
+            color: var(--asphalt-deep);
+        }
+        .hazard-strip {
+            height: 8px;
+            width: 100%;
+            background: repeating-linear-gradient(-45deg, var(--amber) 0 14px, var(--asphalt-deep) 14px 28px);
+        }
+        .card-body {
+            padding: 22px 32px 20px 32px;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+        .brand-mark {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            background: var(--asphalt);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .brand-text h2 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 18px;
+            margin: 0 0 2px 0;
+            color: var(--asphalt-deep);
+        }
+        .brand-text span {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--slate);
+        }
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, var(--amber) 0%, rgba(0, 0, 0, 0.08) 40%);
+            margin-bottom: 14px;
+        }
+        label.field-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #5A6172;
+            margin-bottom: 8px;
+        }
+
+        /* ---------- Combobox ---------- */
+        .combobox {
+            position: relative;
+            margin-bottom: 18px;
+        }
+        .combo-input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+            border: 1.5px solid #DEDAD0;
+            border-radius: 9px;
+            background: #fff;
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+        .combo-input-wrap.open,
+        .combo-input-wrap:focus-within {
+            border-color: var(--amber-deep);
+            box-shadow: 0 0 0 3px rgba(242, 169, 59, 0.18);
+        }
+        .combo-input-wrap input {
+            flex: 1;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 14.5px;
+            font-family: 'Inter', sans-serif;
+            color: var(--asphalt-deep);
+            padding: 13px 6px 13px 14px;
+        }
+        .combo-input-wrap input::placeholder {
+            color: #A9A4A4;
+        }
+        .combo-caret {
+            padding: 0 12px;
+            color: #9A9388;
+            font-size: 11px;
+            pointer-events: none;
+            transition: transform .15s ease;
+        }
+        .combo-input-wrap.open .combo-caret {
+            transform: rotate(180deg);
+        }
+        .combo-list {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            max-height: 230px;
+            overflow-y: auto;
+            background: #fff;
+            border: 1px solid #E7E3D9;
+            border-radius: 9px;
+            box-shadow: 0 18px 38px -12px rgba(0, 0, 0, 0.28);
+            z-index: 10;
+            display: none;
+        }
+        .combo-list.show {
+            display: block;
+        }
+        .combo-option {
+            padding: 11px 14px;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .combo-option:hover,
+        .combo-option.active {
+            background: #FBF1DD;
+        }
+        .combo-option .loc {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10.5px;
+            color: #A39B8C;
+            flex-shrink: 0;
+        }
+        .combo-empty {
+            padding: 16px 14px;
+            font-size: 13px;
+            color: #A39B8C;
+            text-align: center;
+        }
+
+        /* ---------- Buttons ---------- */
+        .btn {
+            display: block;
+            width: 100%;
+            text-align: center;
+            padding: 14px 18px;
+            border-radius: 9px;
+            border: none;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14.5px;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: transform .12s ease, box-shadow .12s ease, opacity .15s ease;
+            text-decoration: none;
+        }
+        .btn-primary {
+            background: var(--amber);
+            color: var(--asphalt-deep);
+            box-shadow: 0 10px 22px -8px rgba(242, 169, 59, 0.55);
+            margin-bottom: 12px;
+        }
+        .btn-primary:not(:disabled):hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 26px -8px rgba(242, 169, 59, 0.65);
+        }
+        .btn-primary:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .btn-ghost {
+            background: transparent;
+            color: var(--asphalt-deep);
+            border: 1.5px solid #DEDAD0;
+        }
+        .btn-ghost:hover {
+            border-color: var(--asphalt-deep);
+        }
+
+        .hint {
+            margin-top: 8px;
+            font-size: 12.5px;
+            color: #A39B8C;
+            text-align: center;
+            min-height: 16px;
+        }
+        .hint.error {
+            color: var(--brake);
+            font-weight: 600;
+        }
+
+        .footnote {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid #ECE8DE;
+            font-size: 12px;
+            color: #9A9388;
+            text-align: center;
+            line-height: 1.5;
+        }
+        .footnote a {
+            color: var(--amber-deep);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+                .footnote a {
+            color: var(--amber-deep);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .about-link {
+            display: inline-block;
+            color: var(--amber-deep);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 4px 14px;
+            border-radius: 999px;
+            background: rgba(242, 169, 59, 0.08);
+            border: 1px solid rgba(242, 169, 59, 0.2);
+            transition: background 0.2s, transform 0.2s;
+            animation: breathe 2.5s ease-in-out infinite;
+        }
+        .about-link:hover {
+            background: var(--amber);
+            color: var(--asphalt-deep);
+            transform: scale(1.06);
+            animation-play-state: paused;
+        }
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.04); }
+        }
+
+        /* ---------- Footer inside scene ---------- */
+        footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 3;
+        }
+        footer>div {
+            padding: 10px 20px !important;
+        }
+        footer p {
+            margin: 2px 0 !important;
+        }
+
+        /* ---------- Responsive ---------- */
+        /* ---------- Glass Profile Card ---------- */
+        .glass-profile {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.13);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border-radius: 20px;
+            padding: 24px 24px 20px;
+            margin-bottom: 28px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+            max-width: 400px;
+            position: relative;
+            overflow: hidden;
+        }
+        .glass-profile::before {
+            content: '';
+            position: absolute;
+            top: -60px;
+            right: -60px;
+            width: 180px;
+            height: 180px;
+            background: radial-gradient(circle, rgba(242, 169, 59, 0.18) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .glass-profile-inner {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .profile-img-wrap {
+            position: relative;
+            flex-shrink: 0;
+        }
+        .profile-img {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            object-fit: cover;
+            object-position: center 25%;
+            border: 2.5px solid rgba(242, 169, 59, 0.6);
+            box-shadow: 0 0 0 4px rgba(242, 169, 59, 0.12);
+            display: block;
+        }
+        .profile-img-fallback {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: rgba(242, 169, 59, 0.12);
+            border: 2.5px solid rgba(242, 169, 59, 0.6);
+            align-items: center;
+            justify-content: center;
+        }
+        .profile-status-dot {
+            position: absolute;
+            bottom: 3px;
+            right: 3px;
+            width: 13px;
+            height: 13px;
+            background: #2ECC71;
+            border-radius: 50%;
+            border: 2px solid rgba(17, 22, 30, 0.85);
+            box-shadow: 0 0 6px rgba(46, 204, 113, 0.7);
+        }
+        .profile-badge {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--amber);
+            background: rgba(242, 169, 59, 0.12);
+            border: 1px solid rgba(242, 169, 59, 0.25);
+            border-radius: 4px;
+            padding: 2px 8px;
+            margin-bottom: 5px;
+        }
+        .profile-name {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 19px;
+            font-weight: 700;
+            margin: 0 0 3px;
+            color: var(--chalk);
+            line-height: 1.1;
+        }
+        .profile-role {
+            font-size: 12.5px;
+            color: var(--slate);
+            margin: 0;
+        }
+        .glass-divider {
+            height: 1px;
+            background: linear-gradient(90deg, rgba(242, 169, 59, 0.4) 0%, rgba(255, 255, 255, 0.05) 100%);
+            margin-bottom: 14px;
+        }
+        .profile-bio {
+            text-align: justify;
+            font-size: 13.5px;
+            line-height: 1.65;
+            color: rgba(247, 245, 240, 0.72);
+            margin: 0 0 18px;
+        }
+        .profile-stats {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+        .stat-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }
+        .stat-num {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--amber);
+            line-height: 1;
+        }
+        .stat-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--slate);
+        }
+        .stat-sep {
+            width: 1px;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .stats-mini-card {
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.13);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border-radius: 18px;
+            padding: 18px 24px;
+            margin-top: 28px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+            display: flex;
+            align-items: center;
+            gap: 0;
+            max-width: 360px;
+        }
+
+        /* ---------- Site Footer ---------- */
+        .site-footer {
+            background: var(--asphalt-deep);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 3;
+            max-height: 34vh;
+            overflow-y: auto;
+        }
+        .footer-top {
+            padding: 20px 40px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .footer-grid {
+            max-width: 1120px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+        }
+        .footer-links-row {
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+        .footer-col-companies {
+            text-align: center;
+        }
+        .footer-brand {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .footer-brand img {
+            width: 64px;
+            height: auto;
+            border-radius: 8px;
+        }
+        .footer-tagline {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--amber);
+        }
+        .footer-about {
+            font-size: 11.5px;
+            line-height: 1.5;
+            color: var(--slate);
+            max-width: 260px;
+        }
+        .footer-social {
+            display: flex;
+            gap: 8px;
+            margin-top: 2px;
+        }
+        .fsocial-link {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: background .15s, border-color .15s, color .15s;
+        }
+        .fsocial-link:hover {
+            background: var(--amber);
+            border-color: var(--amber);
+            color: var(--asphalt-deep);
+        }
+        .footer-col-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--chalk);
+            margin-bottom: 8px;
+        }
+        .footer-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin: 0;
+            padding: 0;
+        }
+        .footer-links-row {
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 24px;
+            justify-content: center;
+        }
+        .footer-links-middle {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 24px;
+            justify-content: center;
+            align-items: center;
+        }
+        .footer-link {
+            font-size: 13px;
+            color: var(--slate);
+            text-decoration: none;
+            transition: color .15s;
+        }
+        .footer-link:hover {
+            color: var(--amber);
+        }
+        .footer-contact-item {
+            font-size: 13px;
+            line-height: 1.7;
+            color: var(--slate);
+            margin: 0 0 10px;
+        }
+        .footer-contact-item a {
+            color: var(--slate);
+            text-decoration: none;
+            transition: color .15s;
+        }
+        .footer-contact-item a:hover {
+            color: var(--amber);
+        }
+        .footer-bottom {
+            padding: 10px 40px;
+        }
+        .footer-bottom-row {
+            max-width: 1120px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .footer-copy {
+            font-size: 12px;
+            color: var(--slate);
+            margin: 0;
+        }
+        .footer-copy a {
+            color: var(--amber);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+
+        /* ========== GLASS NAVIGATION ========== */
+.glass-nav {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    background: rgba(17, 22, 30, 0.55);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0 6vw;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: var(--chalk);
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    font-size: 1.2rem;
+}
+.nav-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.nav-toggle span {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: var(--chalk);
+    transition: transform 0.2s, opacity 0.2s;
+}
+.nav-toggle.open span:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+}
+.nav-toggle.open span:nth-child(2) {
+    opacity: 0;
+}
+.nav-toggle.open span:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+}
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+.nav-item {
+    position: relative;
+    color: var(--slate);
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+.dropdown-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--chalk);
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: 999px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+.dropdown-btn:hover {
+    background: rgba(242, 169, 59, 0.18);
+    border-color: var(--amber);
+    color: var(--amber);
+}
+.dropdown-btn.open {
+    background: rgba(242, 169, 59, 0.22);
+    border-color: var(--amber);
+    color: var(--amber);
+}
+.dropdown-btn i {
+    font-size: 0.7rem;
+    transition: transform 0.2s;
+}
+.dropdown-btn.open i {
+    transform: rotate(180deg);
+}
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 10px;
+    background: rgba(17, 22, 30, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    padding: 12px 0;
+    min-width: 240px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateX(-50%) translateY(8px);
+    transition: all 0.25s ease;
+    list-style: none;
+    margin: 0;
+}
+.dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+.dropdown-menu li a {
+    display: block;
+    padding: 10px 20px;
+    color: var(--chalk);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+.dropdown-menu li a:hover {
+    background: rgba(242, 169, 59, 0.15);
+    color: var(--amber);
+}
+.dropdown-menu li a.parent-link {
+    color: var(--amber);
+    font-weight: 700;
+}
+.btn-about, .btn-contact {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.15);
+    color: var(--chalk);
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+.btn-about:hover, .btn-contact:hover {
+    background: rgba(242, 169, 59, 0.15);
+    border-color: var(--amber);
+    color: var(--amber);
+}
+/* Responsive for mobile */
+@media (max-width: 860px) {
+    .glass-nav {
+        padding: 0 4vw;
+        height: 60px;
+        position: relative;
+    }
+    .nav-toggle {
+        display: flex;
+    }
+    .nav-links {
+        position: absolute;
+        top: 60px;
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        width: 100%;
+        margin-top: 0;
+        padding: 16px 5vw 20px;
+        background: rgba(17, 22, 30, 0.95);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        display: none;
+    }
+    .nav-links.show {
+        display: flex;
+    }
+    .nav-links a {
+        width: 100%;
+        text-align: center;
+        box-sizing: border-box;
+    }
+}
+
+.sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip: rect(0 0 0 0);
+            white-space: nowrap;
+        }
+
+
+        /* ========== FOOTER THREE-COLUMN GRID ========== */
+.footer-grid-three {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 16px;
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+.footer-icons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+    perspective: 900px;
+}
+.footer-icons a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: background 0.2s, border-color 0.2s;
+    padding: 0;
+    flex-shrink: 0;
+    transform-style: preserve-3d;
+    will-change: transform, opacity;
+}
+.footer-icons a img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    border-radius: 4px;
+}
+.footer-icons a:hover {
+    background: rgba(242, 169, 59, 0.15);
+    border-color: var(--amber);
+    transform: translateY(-2px);
+}
+@media (min-width: 861px) {
+    .footer-icons a:nth-child(n+6) {
+        display: none;
+    }
+}
+.footer-copy {
+    text-align: center;
+}
+.footer-grid-three > *:first-child {
+    text-align: left;
+}
+.footer-grid-three > *:last-child {
+    text-align: right;
+}
+
+/* ========== ACTIVE HOME BUTTON ========== */
+.btn-home.active {
+    background: rgba(242, 169, 59, 0.22);
+    border: 1px solid var(--amber);
+    color: var(--amber);
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    text-decoration: none;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: all 0.2s;
+}
+.btn-home.active:hover {
+    background: var(--amber);
+    color: var(--asphalt-deep);
+}
+
+
+        @media (max-width:520px) {
+            .footer-top,
+            .footer-bottom {
+                padding-left: 24px;
+                padding-right: 24px;
+            }
+            .footer-bottom-row {
+                justify-content: center;
+                text-align: center;
+            }
+            .footer-links-row {
+                flex-direction: column;
+                align-items: center;
+                gap: 8px;
+            }
+            .footer-grid-three {
+                grid-template-columns: 1fr;
+                gap: 10px;
+                padding: 0;
+            }
+            .footer-grid-three > *:first-child,
+            .footer-grid-three > *:last-child {
+                text-align: center;
+                order: 2;
+            }
+            .footer-icons {
+                order: 1;
+                padding: 4px calc(50% - 22px);
+            }
+            .site-footer {
+                max-height: 46vh;
+            }
+        }
+
+        @media (max-width: 860px) {
+            .scene {
+                justify-content: center;
+                padding: 6vw 5vw;
+            }
+            .scene-caption {
+                display: none;
+            }
+            .footer-icons {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                scroll-snap-type: none;
+                -webkit-overflow-scrolling: touch;
+                overscroll-behavior-x: contain;
+                scroll-behavior: auto;
+                padding: 4px 0;
+                scrollbar-width: none;
+                -ms-overflow-style: none;
+            }
+            .footer-icons::-webkit-scrollbar {
+                display: none;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+        
+    </style>
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "Marvini M-Smart Driving School Solution",
+            "url": "https://marvini-smart-driving-school-solution.web.app/",
+            "description": "Single sign-in portal for driving schools across Ghana. Search by driving school name or city and go straight to that school's login page.",
+            "potentialAction": {
+                "@type": "SearchAction",
+                "target": "https://marvini-smart-driving-school-solution.web.app/?school={search_term_string}",
+                "query-input": "required name=search_term_string"
+            }
+        }
+    </script>
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            "name": "Driving schools on M-Smart Driving School Solution",
+            "itemListElement": [
+                { "@type": "ListItem", "position": 1, "name": "Accra Driving Academy", "url": "https://accra-driving-academy.example.com/login" },
+                { "@type": "ListItem", "position": 2, "name": "Kumasi Crown Drivers' School", "url": "https://kumasicrown-drivers.example.com/login" },
+                { "@type": "ListItem", "position": 3, "name": "Takoradi Safe Wheels Institute", "url": "https://safewheels-takoradi.example.com/login" },
+                { "@type": "ListItem", "position": 4, "name": "Tema Pro Motorists School", "url": "https://tema-promotorists.example.com/login" },
+                { "@type": "ListItem", "position": 5, "name": "Cape Coast Highway Drivers' Hub", "url": "https://highwaydrivershub.example.com/login" },
+                { "@type": "ListItem", "position": 6, "name": "Tamale Northern Drive School", "url": "https://northerndrive-tamale.example.com/login" },
+                { "@type": "ListItem", "position": 7, "name": "Sunyani Steady Hands Driving School", "url": "https://steadyhands-sunyani.example.com/login" },
+                { "@type": "ListItem", "position": 8, "name": "Koforidua Eastgate Driving School", "url": "https://eastgate-koforidua.example.com/login" },
+                { "@type": "ListItem", "position": 9, "name": "Ho Volta Driving Institute", "url": "https://voltadriving-ho.example.com/login" },
+                { "@type": "ListItem", "position": 10, "name": "Wa Upper Reach Drivers' School", "url": "https://upperreach-wa.example.com/login" },
+                { "@type": "ListItem", "position": 11, "name": "Bolgatanga Northstar Driving School", "url": "https://northstar-bolga.example.com/login" },
+                { "@type": "ListItem", "position": 12, "name": "Sekondi Coastal Drivers' Academy", "url": "https://coastaldrivers-sekondi.example.com/login" },
+                { "@type": "ListItem", "position": 13, "name": "Obuasi Goldfields Driving School", "url": "https://goldfields-obuasi.example.com/login" },
+                { "@type": "ListItem", "position": 14, "name": "Madina Capital Road Drivers' School", "url": "https://capitalroad-madina.example.com/login" },
+                { "@type": "ListItem", "position": 15, "name": "Achimota Greenlight Driving School", "url": "https://greenlight-achimota.example.com/login" }
+            ]
+        }
+    </script>
+</head>
+<body>
+
+    <!-- ========== GLASS NAVIGATION ========== -->
+    <nav class="glass-nav">
+        <a href="#" class="nav-brand">
+            <img src="img/m-smart_driving_school_solution.png" alt="Marvini Logo" width="150" height="55" style="border-radius: 5px;">
+        </a>
+        <div class="nav-links">
+            <a href="https://marvini-elite-enterprises.web.app" class="btn-home active">Home</a>
+            <a href="about.html" class="btn-about">About Us</a>
+            <a href="mailto:trevorisadude@gmail.com" class="btn-contact">Contact Us</a>
+        </div>
+    </nav>
+
+    <main class="scene" style="position:relative;">
+        <!-- Background photo slideshow -->
+        <div class="bg-slideshow" aria-hidden="true">
+            <div class="bg-slide" style="background-image:url('img/cars/car\ lot1.avif');"></div>
+            <div class="bg-slide" style="background-image:url('img/cars/car\ lot2.avif');"></div>
+            <div class="bg-slide" style="background-image:url('img/cars/car\ lot3.avif');"></div>
+            <div class="bg-slide" style="background-image:url('img/cars/car\ lot4.avif');"></div>
+            <div class="bg-slide" style="background-image:url('img/cars/car\ lot5.avif');"></div>
+            <div class="bg-slide" style="background-image:url('img/cars/car\ lot6.avif');"></div>
+            <div class="bg-slide" style="background-image:url('img/cars/car\ lot7.avif');"></div>
+            <div class="bg-slide" style="background-image:url('img/cars/car\ lot\ 8.avif');"></div>
+            <div class="bg-slide" style="background-image:url('img/cars/car\ lot9.avif');"></div>
+            <div class="bg-slide" style="background-image:url('img/cars/car\ lot10.avif');"></div>
+            <div class="bg-slide" style="background-image:url('img/cars/car\ lot11.avif');"></div>
+            <div class="bg-slide" style="background-image:url('img/cars/car\ lot12.avif');"></div>
+        </div>
+        <div class="horizon-fade"></div>
+
+        <div class="scene-caption">
+            <p class="eyebrow">Marvini Smart Driving School Solution</p>
+            <h1>M-Smart Driving School Solution.</h1>
+            <p>Pick your driving school below and we'll take you straight to their website, no more bookmarking a dozen different sites.</p>
+
+            <div class="stats-mini-card">
+                <div class="stat-item">
+                    <span class="stat-num" id="statCardSchools">0</span>
+                    <span class="stat-label">Schools</span>
+                </div>
+                <div class="stat-sep"></div>
+                <div class="stat-item">
+                    <span class="stat-num" id="statCardRegions">0</span>
+                    <span class="stat-label">Regions</span>
+                </div>
+                <div class="stat-sep"></div>
+                <div class="stat-item">
+                    <span class="stat-num">1</span>
+                    <span class="stat-label">Portal</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login card -->
+        <div class="card">
+            <div class="hazard-strip"></div>
+            <div class="card-body">
+                <div class="brand">
+                    <div class="brand-mark">
+                        <img src="img/m-smart_driving_solution -logo.png" alt="M-Smart Driving SchoolSolution Logo" width="50" height="50" style="border-radius: 10px;"/>
+                    </div>
+                    <div class="brand-text">
+                        <h2>M-Smart Driving School Solution</h2>
+                        <span>Ghana's leading driving school portal</span>
+                    </div>
+                </div>
+                <div class="divider"></div>
+
+                <label class="field-label" for="schoolInput">Select your driving school</label>
+                <div class="combobox" id="combobox">
+                    <div class="combo-input-wrap" id="comboWrap">
+                        <input type="text" id="schoolInput" autocomplete="off" placeholder="Loading schools…" aria-expanded="false" role="combobox" />
+                        <span class="combo-caret" aria-hidden="true">▾</span>
+                    </div>
+                    <div class="combo-list" id="comboList" role="listbox"></div>
+                </div>
+
+                <button class="btn btn-primary" id="loginBtn" disabled>Next</button>
+                <a class="btn btn-ghost" href="#" id="registerBtn">Register a new driving school</a>
+
+                <p class="hint" id="hintText">Loading schools from database…</p>
+
+
+                <div class="footnote">
+                    Can't find your school, or need to update its website link? <a href="mailto:trevorisadude@gmail.com" id="contactLink">Contact the portal team</a>.<br>
+                    <br><a href="about.html" class="about-link">About M-Smart Driving School Solution</a>
+                </div>
+
+                <!-- Register Modal -->
+                <div id="registerModal" style="
+                display:none;
+                position:fixed;
+                inset:0;
+                z-index:100;
+                align-items:center;
+                justify-content:center;
+                background:rgba(17,22,30,0.72);
+                backdrop-filter:blur(4px);
+            ">
+            <div style="
+            background:var(--chalk);
+            border-radius:var(--radius);
+            box-shadow:var(--card-shadow);
+            width:420px;
+            max-width:92vw;
+            overflow:hidden;
+            color:var(--asphalt-deep);
+            animation:modalIn .2s ease;
+        ">
+        <div style="
+        height:8px;
+        background:repeating-linear-gradient(-45deg, var(--amber) 0 14px, var(--asphalt-deep) 14px 28px);
+    "></div>
+    <div style="padding:32px 32px 28px;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;">
+            <div>
+                <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:var(--amber);margin:0 0 6px;">Register a Driving School</p>
+                <h3 style="font-family:'Space Grotesk',sans-serif;font-size:20px;margin:0;color:var(--asphalt-deep);">Get your school listed</h3>
+            </div>
+            <button id="closeRegisterModal" style="
+            background:none;border:none;cursor:pointer;
+            font-size:20px;color:#9A9388;padding:0;line-height:1;
+            margin-top:2px;
+        " aria-label="Close">✕</button>
+    </div>
+    <div style="height:1px;background:linear-gradient(90deg,var(--amber) 0%,rgba(0,0,0,0.08) 40%);margin-bottom:20px;"></div>
+    <p style="font-size:14px;line-height:1.7;color:#5A6172;margin:0 0 20px;">
+        Want your driving school added to the M-Smart portal? Reach out to the portal team and we'll get you set up with your own login page.
+    </p>
+    <a href="mailto:trevorisadude@gmail.com?subject=Register%20My%20Driving%20School%20on%20M-Smart&body=School%20Name%3A%0ACity%2FRegion%3A%0AWebsite%2FLogin%20URL%3A%0AContact%20Person%3A%0APhone%3A"
+    style="
+    display:block;
+    width:100%;
+    text-align:center;
+    padding:13px 18px;
+    border-radius:9px;
+    background:var(--amber);
+    color:var(--asphalt-deep);
+    font-family:'Space Grotesk',sans-serif;
+    font-size:14.5px;
+    font-weight:600;
+    letter-spacing:0.03em;
+    text-transform:uppercase;
+    text-decoration:none;
+    box-shadow:0 10px 22px -8px rgba(242,169,59,0.55);
+    box-sizing:border-box;
+">
+Contact the Portal Team
+</a>
+<p style="margin:14px 0 0;font-size:12px;color:#A39B8C;text-align:center;">
+    We'll respond within 1–2 business days.
+</p>
+</div>
+</div>
+</div>
+<style>
+    @keyframes modalIn{
+        from{ opacity:0; transform:translateY(12px); }
+        to{ opacity:1; transform:translateY(0); }
+    }
+</style>
+
+</div>
+</div>
+
+<nav class="sr-only" aria-label="All driving schools on M-Smart Driving School Solution">
+    <ul id="schoolListNav">
+        <li>Loading schools…</li>
+    </ul>
+</nav>
+<footer class="site-footer">
+    <div class="footer-bottom">
+        <div class="footer-grid-three">
+            <p class="footer-copy">© 2026 M-Smart Driving School Solution</p>
+            <div class="footer-icons">
+                <a href="https://marvini-elite-enterprises.web.app" title="Marvini Elite Enterprises"><img src="img/Logo/marvini_elite_enterprise_logo1.png" alt="Marvini Elite"></a>
+                <a href="https://marvini-digital-food-chain.web.app/" title="M‑Digital Food Chain"><img src="img/Logo/M-Digital Food Chain .png" alt="M‑Digital Food Chain"></a>
+                <a href="#" title="M‑Events &amp; Festivals"><img src="img/Logo/M-Events & Festivals0.png" alt="M‑Events &amp; Festivals"></a>
+                <a href="#" title="M‑Farms"><img src="img/Logo/M-Farms0.png" alt="M‑Farms"></a>
+                <a href="#" title="M‑Training &amp; Consultancy"><img src="img/Logo/M-Consultancy & Training0.png" alt="M‑Training &amp; Consultancy"></a>
+            </div>
+            <p class="footer-copy">Powered by <a href="https://myportfolio-theta-topaz-43.vercel.app/">TrevorMiles</a></p>
+        </div>
+    </div>
+</footer>
+</main>
+
+<script>
+    // Fix mobile 100vh address-bar clipping so the footer is never pushed off-screen
+    function setViewportHeight() {
+        document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
+    }
+    setViewportHeight();
+    window.addEventListener('resize', setViewportHeight);
+    window.addEventListener('orientationchange', setViewportHeight);
+
+    // BlackBerry-style infinite "wheel" coverflow for the subsidiary logo strip
+    (function () {
+        const track = document.getElementById('footerIcons');
+        if (!track) return;
+        // Only run the loop-scroll behavior where the strip actually scrolls (mobile/tablet)
+        if (window.innerWidth > 860) return;
+
+        const items = () => Array.from(track.querySelectorAll('a'));
+        const SET_COUNT = 5; // logos are quintupled in the HTML — extra copies give
+                              // buffer room on both sides so the real scroll edge
+                              // (scrollLeft 0 or max) is never actually reached.
+        const MIDDLE_LAP = 2; // 0-indexed: center in the 3rd of 5 laps
+
+        let lapWidth = 0;
+        function measureLap() {
+            lapWidth = track.scrollWidth / SET_COUNT;
+        }
+
+        function centerOnMiddleLap() {
+            measureLap();
+            if (lapWidth > 0) {
+                const offsetWithinLap = track.scrollLeft % lapWidth || 0;
+                track.scrollLeft = lapWidth * MIDDLE_LAP + offsetWithinLap;
+            }
+        }
+
+        let ticking = false;
+        function updateWheel() {
+            const trackRect = track.getBoundingClientRect();
+            const centerX = trackRect.left + trackRect.width / 2;
+            items().forEach((item) => {
+                const r = item.getBoundingClientRect();
+                const itemCenter = r.left + r.width / 2;
+                const delta = (itemCenter - centerX) / (trackRect.width / 2);
+                const clamped = Math.max(-1, Math.min(1, delta));
+                const rotateY = clamped * 55;
+                const scale = 1 - Math.abs(clamped) * 0.35;
+                const opacity = 1 - Math.abs(clamped) * 0.55;
+                item.style.transform = `rotateY(${rotateY}deg) scale(${scale})`;
+                item.style.opacity = opacity;
+            });
+            ticking = false;
+        }
+
+        function loopCheck() {
+            if (!lapWidth) return;
+            // Keep scrollLeft within a full lap on either side of the middle
+            // lap. A full-lap safe zone (not half) matters because a "lap"
+            // is only 5 logos wide — a half-lap threshold sits mid-lap, right
+            // between logo 2 and 3, so scrolling to see the 4th/5th logo
+            // (or the 1st logo of the neighboring lap) would already cross
+            // it and yank you away before you could ever focus on the first
+            // or last logo in a lap. A full-lap zone means you can freely
+            // scroll through all 5 logos in either direction with no
+            // correction firing until you're a whole lap away from center.
+            while (track.scrollLeft < lapWidth * (MIDDLE_LAP - 1)) {
+                track.scrollLeft += lapWidth;
+            }
+            while (track.scrollLeft > lapWidth * (MIDDLE_LAP + 1)) {
+                track.scrollLeft -= lapWidth;
+            }
+        }
+
+        track.addEventListener('scroll', () => {
+            if (!ticking) {
+                requestAnimationFrame(() => {
+                    updateWheel();
+                    loopCheck();
+                });
+                ticking = true;
+            }
+        }, { passive: true });
+
+        window.addEventListener('resize', () => {
+            measureLap();
+            updateWheel();
+        });
+
+        // Wait for logo images to load so scrollWidth is measured correctly,
+        // then start centered in the middle lap.
+        const imgs = items().map(a => a.querySelector('img')).filter(Boolean);
+        let loaded = 0;
+        let started = false;
+        function onAllLoaded() {
+            if (started) return;
+            started = true;
+            centerOnMiddleLap();
+            updateWheel();
+        }
+        if (imgs.length === 0) {
+            setTimeout(onAllLoaded, 150);
+        } else {
+            imgs.forEach(img => {
+                if (img.complete) {
+                    loaded++;
+                } else {
+                    img.addEventListener('load', () => { loaded++; if (loaded === imgs.length) onAllLoaded(); });
+                    img.addEventListener('error', () => { loaded++; if (loaded === imgs.length) onAllLoaded(); });
+                }
+            });
+            if (loaded === imgs.length) onAllLoaded();
+            setTimeout(onAllLoaded, 400); // fallback safety net, runs only once
+        }
+    })();
+</script>
+<script type="importmap">
+    {
+        "imports": {
+            "firebase/app": "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js",
+            "firebase/firestore": "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js"
+        }
+    }
+</script>
+<script type="module">
+    import { initializeApp } from "firebase/app";
+    import { getFirestore, collection, getDocs } from "firebase/firestore";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyA5TnyzHJpcHcM2N-77gkyAaj7yRru3-V0",
+        authDomain: "marvini-smart-driving-school.firebaseapp.com",
+        projectId: "marvini-smart-driving-school",
+        storageBucket: "marvini-smart-driving-school.firebasestorage.app",
+        messagingSenderId: "750557352716",
+        appId: "1:750557352716:web:dcae14b3dacaea88a4ef29",
+        measurementId: "G-RHRMJLDLDK"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Global schools array
+    window.schools = [];
+
+    // DOM Elements
+    const input = document.getElementById('schoolInput');
+    const wrap = document.getElementById('comboWrap');
+    const list = document.getElementById('comboList');
+    const loginBtn = document.getElementById('loginBtn');
+    const hint = document.getElementById('hintText');
+
+    let selected = null;
+    let activeIndex = -1;
+
+    // Render list function
+    window.renderList = function(filter) {
+        const term = (filter || '').trim().toLowerCase();
+        const filtered = window.schools.filter(s =>
+            s.name.toLowerCase().includes(term) || s.loc.toLowerCase().includes(term)
+        );
+
+        list.innerHTML = '';
+        activeIndex = -1;
+
+        if (window.schools.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'combo-empty';
+            empty.textContent = 'No driving schools available yet.';
+            list.appendChild(empty);
+            return;
+        }
+
+        if (filtered.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'combo-empty';
+            empty.textContent = 'No driving school matches that search.';
+            list.appendChild(empty);
+            return;
+        }
+
+        filtered.forEach((school) => {
+            const opt = document.createElement('div');
+            opt.className = 'combo-option';
+            opt.setAttribute('role', 'option');
+            opt.dataset.url = school.url;
+            opt.dataset.name = school.name;
+
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = school.name;
+            const locSpan = document.createElement('span');
+            locSpan.className = 'loc';
+            locSpan.textContent = school.loc;
+
+            opt.appendChild(nameSpan);
+            opt.appendChild(locSpan);
+
+            opt.addEventListener('click', () => window.selectSchool(school, opt));
+            list.appendChild(opt);
+        });
+    };
+
+    // Select school function
+    window.selectSchool = function(school, optEl) {
+        selected = school;
+        input.value = school.name;
+        window.closeList();
+        loginBtn.disabled = false;
+        hint.classList.remove('error');
+        hint.textContent = `Ready to sign in to ${school.name}.`;
+    };
+
+    // Open/Close list functions
+    window.openList = function() {
+        list.classList.add('show');
+        wrap.classList.add('open');
+        input.setAttribute('aria-expanded', 'true');
+    };
+
+    window.closeList = function() {
+        list.classList.remove('show');
+        wrap.classList.remove('open');
+        input.setAttribute('aria-expanded', 'false');
+    };
+
+    // Load schools from Firestore
+    async function loadSchools() {
+        try {
+            const querySnapshot = await getDocs(collection(db, "schools"));
+            window.schools = [];
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                window.schools.push({
+                    name: data.name || 'Unnamed School',
+                    loc: data.region || 'Unknown Region',
+                    url: data.url || '#'
+                });
+            });
+            window.schools.sort((a, b) => a.name.localeCompare(b.name));
+
+            // Update UI
+            window.renderList('');
+            if (window.schools.length === 0) {
+                input.placeholder = 'No schools available';
+                loginBtn.disabled = true;
+                hint.textContent = 'No driving schools available yet.';
+            } else {
+                input.placeholder = 'Type or choose a driving school…';
+                loginBtn.disabled = true;
+                hint.textContent = 'Choose a school to enable the next button.';
+            }
+
+            // Update nav
+            const navList = document.getElementById('schoolListNav');
+            if (window.schools.length === 0) {
+                navList.innerHTML = '<li>No schools available</li>';
+            } else {
+                navList.innerHTML = window.schools.map(s =>
+                    `<li><a href="${s.url}">${s.name} — ${s.loc} driving school login</a></li>`
+                ).join('');
+            }
+
+        } catch (error) {
+            console.error("Error loading schools:", error);
+            hint.textContent = 'Could not load schools. Please try again later.';
+            hint.classList.add('error');
+            input.placeholder = 'Error loading schools';
+        }
+    }
+
+    // Event Listeners
+    input.addEventListener('focus', () => {
+        window.renderList(input.value === (selected && selected.name) ? '' : input.value);
+        window.openList();
+    });
+
+    input.addEventListener('input', () => {
+        selected = null;
+        loginBtn.disabled = true;
+        hint.classList.remove('error');
+        hint.textContent = window.schools.length > 0 ? 'Choose a school to enable the next button.' : 'Loading schools…';
+        window.renderList(input.value);
+        window.openList();
+    });
+
+    input.addEventListener('keydown', (e) => {
+        const options = list.querySelectorAll('.combo-option');
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (!list.classList.contains('show')) { window.openList(); return; }
+            activeIndex = Math.min(activeIndex + 1, options.length - 1);
+            highlight(options);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            activeIndex = Math.max(activeIndex - 1, 0);
+            highlight(options);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (activeIndex >= 0 && options[activeIndex]) {
+                const name = options[activeIndex].dataset.name;
+                const school = window.schools.find(s => s.name === name);
+                if (school) window.selectSchool(school, options[activeIndex]);
+            }
+        } else if (e.key === 'Escape') {
+            window.closeList();
+        }
+    });
+
+    function highlight(options) {
+        options.forEach(o => o.classList.remove('active'));
+        if (options[activeIndex]) {
+            options[activeIndex].classList.add('active');
+            options[activeIndex].scrollIntoView({ block: 'nearest' });
+        }
+    }
+
+    document.addEventListener('click', (e) => {
+        if (!document.getElementById('combobox').contains(e.target)) {
+            window.closeList();
+        }
+    });
+
+    loginBtn.addEventListener('click', () => {
+        if (!selected) {
+            hint.classList.add('error');
+            hint.textContent = 'Please choose a driving school first.';
+            return;
+        }
+        window.open(selected.url, '_blank');
+    });
+
+    const navToggle = document.getElementById('navToggle');
+    const navLinks = document.getElementById('navLinks');
+    if (navToggle && navLinks) {
+        navToggle.addEventListener('click', () => {
+            const isOpen = navLinks.classList.toggle('show');
+            navToggle.classList.toggle('open', isOpen);
+            navToggle.setAttribute('aria-expanded', isOpen);
+        });
+        navLinks.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                navLinks.classList.remove('show');
+                navToggle.classList.remove('open');
+                navToggle.setAttribute('aria-expanded', 'false');
+            });
+        });
+    }
+
+    const registerModal = document.getElementById('registerModal');
+
+    document.getElementById('registerBtn').addEventListener('click', (e) => {
+        e.preventDefault();
+        registerModal.style.display = 'flex';
+    });
+
+    document.getElementById('closeRegisterModal').addEventListener('click', () => {
+        registerModal.style.display = 'none';
+    });
+
+    registerModal.addEventListener('click', (e) => {
+        if (e.target === registerModal) registerModal.style.display = 'none';
+    });
+
+    document.getElementById('contactLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        registerModal.style.display = 'flex';
+    });
+
+    const footerRegisterBtn = document.getElementById('footerRegisterBtn');
+    if (footerRegisterBtn) {
+        footerRegisterBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            registerModal.style.display = 'flex';
+        });
+    }
+
+    // Initialize - load schools + profile + live stats
+    await loadSchools();
+
+    // Live school & region counts from Firestore
+    try {
+        const schoolCardNum = document.getElementById('statCardSchools');
+        const regionCardNum = document.getElementById('statCardRegions');
+        const schoolCount = window.schools.length;
+        const regionCount = new Set(window.schools.map(s => s.loc).filter(Boolean)).size;
+        schoolCardNum.textContent = schoolCount > 0 ? schoolCount : '0';
+        regionCardNum.textContent = regionCount > 0 ? regionCount : '0';
+    } catch (e) {
+        console.warn('Stats count:', e.message);
+    }
+
+    // Load portal profile from Firestore config doc
+    try {
+        const { doc: fsDoc, getDoc } = await import("firebase/firestore");
+        const profSnap = await getDoc(fsDoc(db, 'config', 'portalProfile'));
+        if (profSnap.exists()) {
+            const p = profSnap.data();
+            if (p.name) document.querySelector('.profile-name').textContent = p.name;
+            if (p.badge) document.querySelector('.profile-badge').textContent = p.badge;
+            if (p.role) document.querySelector('.profile-role').textContent = p.role;
+            if (p.bio) document.querySelector('.profile-bio').textContent = p.bio;
+            // stat3 (Portal) is the only one still editable from profile
+            if (p.stat3Num) document.querySelectorAll('.stat-num')[2].textContent = p.stat3Num;
+            if (p.stat3Label) document.querySelectorAll('.stat-label')[2].textContent = p.stat3Label;
+            if (p.imgSrc) {
+                const img = document.querySelector('.profile-img');
+                if (img) img.src = p.imgSrc; // respects existing onerror fallback
+            }
+        }
+    } catch (e) {
+        console.warn('Profile fetch:', e.message);
+    }
+</script>
+
+
+
+</body>
+</html>

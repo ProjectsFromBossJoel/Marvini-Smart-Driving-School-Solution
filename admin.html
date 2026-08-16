@@ -86,6 +86,13 @@
   .login-error{ color:var(--brake); font-size:12.5px; margin:-6px 0 14px; min-height:14px; }
   .login-hint{ margin-top:18px; font-size:12px; color:var(--slate-dim); text-align:center; line-height:1.6; }
 
+    /* Users page cards hover */
+  #usersSchoolCardsGrid .stat-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--amber);
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+
   /* ================= APP SHELL ================= */
   #app{ display:none; min-height:100vh; }
   #app.show{ display:flex; }
@@ -270,23 +277,45 @@
     </div>
 
     <nav class="nav" id="navList">
-      <a class="nav-link active" data-page="dashboard">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
-        <span class="label">Dashboard</span>
-      </a>
-      <a class="nav-link" data-page="schools">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 9.5 12 4l9 5.5"/><path d="M5 10.5V19a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8.5"/><path d="M10 20v-5h4v5"/></svg>
-        <span class="label">Schools</span>
-      </a>
-      <a class="nav-link" data-page="reports">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M3 19h18"/></svg>
-        <span class="label">Reports</span>
-      </a>
-      <a class="nav-link" data-page="profile">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke-linecap="round"/></svg>
-        <span class="label">Profile</span>
-      </a>
-    </nav>
+  <a class="nav-link active" data-page="dashboard">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+    <span class="label">Dashboard</span>
+  </a>
+  <a class="nav-link" data-page="schools">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 9.5 12 4l9 5.5"/><path d="M5 10.5V19a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8.5"/><path d="M10 20v-5h4v5"/></svg>
+    <span class="label">Schools</span>
+  </a>
+  <a class="nav-link" data-page="reports">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19V9"/><path d="M10 19V5"/><path d="M16 19v-7"/><path d="M3 19h18"/></svg>
+    <span class="label">Reports</span>
+  </a>
+
+  <div class="nav-section-label">Content</div>
+
+  <a class="nav-link" data-page="lessons">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4V8z"/></svg>
+    <span class="label">Lessons</span>
+  </a>
+  <a class="nav-link" data-page="quizzes">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 12l2 2 4-4"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>
+    <span class="label">Quizzes</span>
+  </a>
+
+  <a class="nav-link" data-page="users">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </svg>
+  <span class="label">Users</span>
+</a>
+
+  <a class="nav-link" data-page="profile">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke-linecap="round"/></svg>
+    <span class="label">Profile</span>
+  </a>
+</nav>
 
     <div class="sidebar-foot">
       <p class="admin-email" id="adminEmail">—</p>
@@ -499,6 +528,125 @@
         </div>
       </section>
 
+
+            <!-- ---------- USERS PAGE ---------- -->
+      <section class="page" id="page-users">
+        <!-- School cards view (default) -->
+        <div id="usersSchoolGridView">
+          <div class="users-toolbar" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <div>
+              <h3 style="font-family:'Space Grotesk',sans-serif;font-size:18px;margin:0;">Schools</h3>
+              <p style="color:var(--slate);font-size:13px;margin:4px 0 0;">Click a school to manage its users</p>
+            </div>
+            <button class="btn btn-outline" onclick="showAllUsers()" style="background:var(--panel);border:1px solid var(--border);color:var(--slate);padding:8px 16px;border-radius:8px;cursor:pointer;">
+              <i class="fas fa-users"></i> All users
+            </button>
+          </div>
+          <div id="usersSchoolCardsGrid" class="stat-grid" style="grid-template-columns:repeat(auto-fill, minmax(200px,1fr));">
+            <div style="grid-column:1/-1;text-align:center;color:var(--slate-dim);padding:40px;">Loading schools…</div>
+          </div>
+        </div>
+
+        <!-- Users table view (hidden by default) -->
+        <div id="usersTableView" style="display:none;">
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap;">
+            <button class="btn btn-outline" onclick="backToSchoolsGrid()" style="background:var(--panel);border:1px solid var(--border);color:var(--slate);padding:8px 16px;border-radius:8px;cursor:pointer;">
+              <i class="fas fa-arrow-left"></i> Back to schools
+            </button>
+            <h3 id="usersTableTitle" style="font-family:'Space Grotesk',sans-serif;font-size:18px;margin:0;">Users</h3>
+            <div style="flex:1;min-width:150px;"></div>
+            <input type="text" id="usersSearchInput" placeholder="Search by name or email…" style="padding:8px 14px;border-radius:8px;border:1.5px solid var(--border);background:var(--panel);color:var(--chalk);font-size:13px;outline:none;flex:1;min-width:180px;">
+            <select id="usersRoleFilter" style="padding:8px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--panel);color:var(--chalk);font-size:13px;outline:none;">
+              <option value="">All roles</option>
+              <option value="student">Student</option>
+              <option value="instructor">Instructor</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div class="panel">
+            <div style="overflow-x:auto;">
+              <table>
+                <thead><tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>School</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr></thead>
+                <tbody id="usersTableBody">
+                  <tr class="empty-row"><td colspan="6">Loading users…</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ LESSONS PAGE (Platform-wide) ═══ -->
+<section class="page" id="page-marvini-lessons">
+  <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+    <div>
+      <div class="page-title" id="marviniLessonsPageTitle">Video Lessons</div>
+      <div class="page-sub" id="marviniLessonsPageSub">Manage platform-wide video lessons (shared across all schools).</div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-outline" id="marviniLessonBackBtn" onclick="marviniLessonFolderGoUp()" style="display:none;"><i class="fas fa-arrow-left"></i> Back</button>
+      <button class="btn btn-outline" onclick="marviniOpenAddFolderModal()"><i class="fas fa-folder-plus"></i> New folder</button>
+      <button class="btn btn-gold" id="marviniLessonAddLessonBtn" onclick="marviniOpenLessonQuizPrompt()" style="display:none;"><i class="fas fa-plus"></i> Add lesson</button>
+    </div>
+  </div>
+
+  <div id="marviniLessonBreadcrumb" style="font-size:12px;color:var(--text-muted);margin-bottom:16px;display:none;"></div>
+
+  <div class="stat-grid" id="marviniLessonFoldersGrid" style="grid-template-columns:repeat(4,1fr); margin-bottom:24px;">
+    <div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:32px;">Loading folders…</div>
+  </div>
+
+  <div class="card" id="marviniLessonTableCard" style="display:none;">
+    <div style="overflow-x:auto">
+      <table class="data-table">
+        <thead><tr><th>Title</th><th>Category</th><th>Duration</th><th>Completion avg.</th><th>Published</th><th>Actions</th></tr></thead>
+        <tbody id="marviniLessonsTable">
+          <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:32px;">No lessons in this folder yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ QUIZZES PAGE (Platform-wide) ═══ -->
+<section class="page" id="page-marvini-quizzes">
+  <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+    <div>
+      <div class="page-title" id="marviniQuizPageTitle">Quizzes</div>
+      <div class="page-sub" id="marviniQuizPageSub">Manage platform-wide quizzes and questions (shared across all schools).</div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn btn-outline" id="marviniQuizBackBtn" onclick="marviniQuizFolderGoUp()" style="display:none;"><i class="fas fa-arrow-left"></i> Back</button>
+      <button class="btn btn-outline" onclick="marviniOpenAddQuizCategoryModal()"><i class="fas fa-folder-plus"></i> New category</button>
+      <button class="btn btn-gold" id="marviniQuizAddQuizBtn" onclick="marviniOpenAddQuizModal()" style="display:none;"><i class="fas fa-plus"></i> Add quiz</button>
+    </div>
+  </div>
+
+  <div id="marviniQuizBreadcrumb" style="font-size:12px;color:var(--text-muted);margin-bottom:16px;display:none;"></div>
+
+  <div class="stat-grid" id="marviniQuizFoldersGrid" style="grid-template-columns:repeat(4,1fr); margin-bottom:24px;">
+    <div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:32px;">Loading categories…</div>
+  </div>
+
+  <div class="card" id="marviniQuizTableCard" style="display:none;">
+    <div style="overflow-x:auto">
+      <table class="data-table">
+        <thead><tr><th>Quiz title</th><th>Questions</th><th>Pass mark</th><th>Avg. score</th><th>Completion</th><th>Actions</th></tr></thead>
+        <tbody id="marviniAdminQuizTable">
+          <tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:32px;">No quizzes in this category yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
     </div>
   </div>
 </div>
@@ -566,17 +714,306 @@
   </div>
 </div>
 
+<!-- ================= MARVINI LESSON & QUIZ MODALS ================= -->
+
+<!-- ── ADD LESSON FOLDER MODAL ── -->
+<div class="overlay" id="marviniAddFolderModal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-head">
+      <div class="modal-title" id="marviniAddFolderModalTitle">New course folder</div>
+      <button class="modal-close" onclick="marviniCloseAddFolderModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="field" id="marviniNewFolderCourseGroup">
+        <label for="marviniNewFolderCourseSelect">Course <span style="color:var(--brake)">*</span></label>
+        <select id="marviniNewFolderCourseSelect" class="field-select">
+          <option value="">Select course…</option>
+        </select>
+        <div id="marviniNewFolderParentHint" style="font-size:11px;color:var(--slate-dim);margin-top:6px;">This folder will be created at the top level.</div>
+      </div>
+      <div class="field" id="marviniNewFolderTitleGroup" style="display:none;">
+        <label for="marviniNewFolderTitle">Subfolder title <span style="color:var(--brake)">*</span></label>
+        <input type="text" id="marviniNewFolderTitle" class="form-input" placeholder="e.g. Advanced" />
+      </div>
+      <div class="field" id="marviniNewFolderDescGroup" style="display:none;">
+        <label for="marviniNewFolderDescription">Description</label>
+        <textarea id="marviniNewFolderDescription" class="form-textarea" placeholder="Brief description of this subfolder…"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="marviniCloseAddFolderModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="marviniCreateLessonFolder()"><i class="fas fa-folder-plus"></i> Create folder</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADD / EDIT LESSON MODAL ── -->
+<div class="overlay" id="marviniLessonModal">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-head">
+      <div class="modal-title" id="marviniLessonModalTitle">Add video lesson</div>
+      <button class="modal-close" onclick="marviniCloseLessonModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="marviniEditLessonId" />
+      <div class="field">
+        <label for="marviniLessonFolder">Course folder <span style="color:var(--brake)">*</span></label>
+        <select id="marviniLessonFolder" class="field-select"></select>
+      </div>
+      <div class="field">
+        <label for="marviniLessonTitle">Lesson title <span style="color:var(--brake)">*</span></label>
+        <input type="text" id="marviniLessonTitle" class="form-input" placeholder="e.g. Road signs — warning signs" />
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="marviniLessonCategory">Category</label>
+          <select id="marviniLessonCategory" class="field-select">
+            <option value="Theory">Theory</option>
+            <option value="Road safety">Road safety</option>
+            <option value="Practical tips">Practical tips</option>
+            <option value="DVLA prep">DVLA prep</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="marviniLessonDuration">Duration</label>
+          <input type="text" id="marviniLessonDuration" class="form-input" placeholder="e.g. 8:30" />
+        </div>
+      </div>
+      <div class="field">
+        <label for="marviniLessonVideoFile">Video file <span style="color:var(--brake)">*</span></label>
+        <div id="marviniLessonVideoUploadArea" style="padding:12px 16px;background:var(--asphalt-deep);border:1.5px dashed var(--border);border-radius:var(--radius);cursor:pointer;text-align:center;" onclick="document.getElementById('marviniLessonVideoFile').click()">
+          <i class="fas fa-video" style="color:var(--amber);margin-right:6px;"></i>
+          <span id="marviniLessonVideoText" style="font-size:12px;color:var(--slate-dim);">Tap to upload lesson video (MP4)</span>
+        </div>
+        <input type="file" id="marviniLessonVideoFile" accept="video/*" style="display:none" onchange="marviniPreviewLessonVideo(this)" />
+        <video id="marviniLessonVideoPreview" controls style="display:none;width:100%;margin-top:8px;border-radius:8px;border:1px solid var(--border);"></video>
+        <div id="marviniLessonUploadProgressWrap" style="display:none;margin-top:10px;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--slate-dim);margin-bottom:4px;">
+            <span id="marviniLessonUploadProgressLabel">Uploading video…</span>
+            <span id="marviniLessonUploadProgressPct">0%</span>
+          </div>
+          <div style="height:8px;background:var(--asphalt-deep);border-radius:50px;overflow:hidden;">
+            <div id="marviniLessonUploadProgressBar" style="height:100%;width:0%;background:var(--amber);border-radius:50px;transition:width 0.15s ease;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="marviniLessonThumbFile">Thumbnail image</label>
+        <div id="marviniLessonThumbUploadArea" style="padding:12px 16px;background:var(--asphalt-deep);border:1.5px dashed var(--border);border-radius:var(--radius);cursor:pointer;text-align:center;" onclick="document.getElementById('marviniLessonThumbFile').click()">
+          <i class="fas fa-image" style="color:var(--amber);margin-right:6px;"></i>
+          <span id="marviniLessonThumbText" style="font-size:12px;color:var(--slate-dim);">Tap to upload thumbnail (leave blank for auto)</span>
+        </div>
+        <input type="file" id="marviniLessonThumbFile" accept="image/*" style="display:none" onchange="marviniPreviewLessonThumb(this)" />
+        <img id="marviniLessonThumbPreview" src="" style="display:none;max-width:160px;margin-top:8px;border-radius:8px;border:1px solid var(--border);" />
+      </div>
+      <div class="field">
+        <label for="marviniLessonAssignedQuiz">Assign to quiz <span style="font-weight:normal;color:var(--slate-dim);">(optional)</span></label>
+        <select id="marviniLessonAssignedQuiz" class="field-select">
+          <option value="">No quiz — don't auto-launch</option>
+        </select>
+        <div style="font-size:11px;color:var(--slate-dim);margin-top:4px;">When set, this quiz will automatically pop up for the student right after they finish watching the video.</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="marviniCloseLessonModal()">Cancel</button>
+      <button class="btn btn-primary" id="marviniLessonSaveBtn" onclick="marviniSaveLesson()"><i class="fas fa-save"></i> Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── LESSON QUIZ ASSIGNMENT PROMPT ── -->
+<div class="overlay" id="marviniLessonQuizPromptModal">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-head">
+      <div class="modal-title">Assign a quiz?</div>
+      <button class="modal-close" onclick="marviniCloseLessonQuizPrompt()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:var(--chalk);line-height:1.6;">
+        Will you assign this video lesson to a quiz? If yes, make sure to upload or create a quiz first so you can find it in the dropdown to assign to the video lesson.
+      </p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="marviniHandleLessonQuizPromptNo()">No, just add lesson</button>
+      <button class="btn btn-primary" onclick="marviniHandleLessonQuizPromptYes()"><i class="fas fa-tasks"></i> Yes, create/upload quiz</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADD QUIZ CATEGORY MODAL ── -->
+<div class="overlay" id="marviniAddQuizCategoryModal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-head">
+      <div class="modal-title" id="marviniAddQuizCategoryModalTitle">New course folder</div>
+      <button class="modal-close" onclick="marviniCloseAddQuizCategoryModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="marviniEditQuizCategoryId" />
+      <div class="field" id="marviniNewQuizCategoryCourseGroup">
+        <label for="marviniNewQuizCategoryCourseSelect">Course <span style="color:var(--brake)">*</span></label>
+        <select id="marviniNewQuizCategoryCourseSelect" class="field-select">
+          <option value="">Select course…</option>
+        </select>
+        <div id="marviniNewQuizCategoryParentHint" style="font-size:11px;color:var(--slate-dim);margin-top:6px;">This folder will be created at the top level.</div>
+      </div>
+      <div class="field" id="marviniNewQuizCategoryTitleGroup" style="display:none;">
+        <label for="marviniNewQuizCategoryTitle">Category name <span style="color:var(--brake)">*</span></label>
+        <input type="text" id="marviniNewQuizCategoryTitle" class="form-input" placeholder="e.g. Defensive Driving" />
+      </div>
+      <div class="field" id="marviniNewQuizCategoryDescGroup" style="display:none;">
+        <label for="marviniNewQuizCategoryDescription">Description</label>
+        <textarea id="marviniNewQuizCategoryDescription" class="form-textarea" placeholder="Brief description of this category…"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="marviniCloseAddQuizCategoryModal()">Cancel</button>
+      <button class="btn btn-primary" id="marviniQuizCategorySaveBtn" onclick="marviniSaveQuizCategory()"><i class="fas fa-folder-plus"></i> Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADD / EDIT QUIZ MODAL ── -->
+<div class="overlay" id="marviniEditQuizModal">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-head">
+      <div class="modal-title" id="marviniEditQuizModalTitle">New quiz</div>
+      <button class="modal-close" onclick="marviniCloseEditQuizModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="marviniEditQuizId" />
+      <div class="form-row">
+        <div class="field">
+          <label for="marviniEditQuizTitle">Quiz title <span style="color:var(--brake)">*</span></label>
+          <input type="text" id="marviniEditQuizTitle" class="form-input" placeholder="e.g. Highway Code — General" />
+        </div>
+        <div class="field">
+          <label for="marviniEditQuizPassMark">Pass mark (%)</label>
+          <input type="number" id="marviniEditQuizPassMark" class="form-input" value="60" min="1" max="100" />
+        </div>
+      </div>
+      <div id="marviniQuizQuestionsSection" style="display:none;">
+        <div class="bio-section" style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="bio-section-title" style="margin-bottom:0;">Questions <span id="marviniQuizQuestionCount" style="color:var(--slate-dim);font-weight:normal;"></span></div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-outline btn-icon" title="Import CSV" onclick="marviniOpenQuizCsvModal()"><i class="fas fa-file-csv"></i></button>
+            <button class="btn btn-outline btn-icon" title="Add question" onclick="marviniOpenAddQuestionModal()"><i class="fas fa-plus"></i></button>
+          </div>
+        </div>
+        <div id="marviniQuizQuestionsList" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;">
+          <div style="color:var(--slate-dim);font-size:13px;">No questions yet.</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="marviniQuizDeleteBtn" style="display:none;" onclick="marviniDeleteQuizFromModal()"><i class="fas fa-trash"></i> Delete quiz</button>
+      <button class="btn btn-secondary" onclick="marviniCloseEditQuizModal()">Close</button>
+      <button class="btn btn-primary" onclick="marviniSaveQuizMeta()"><i class="fas fa-save"></i> Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── ADD / EDIT QUESTION MODAL ── -->
+<div class="overlay" id="marviniAddQuestionModal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-head">
+      <div class="modal-title" id="marviniAddQuestionModalTitle">Add question</div>
+      <button class="modal-close" onclick="marviniCloseAddQuestionModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="marviniEditQuestionId" />
+      <div class="field">
+        <label for="marviniQBuilderText">Question text <span style="color:var(--brake)">*</span></label>
+        <textarea id="marviniQBuilderText" class="form-textarea" placeholder="e.g. What does this road sign mean?"></textarea>
+      </div>
+      <div class="field">
+        <label for="marviniQBuilderImgFile">Image <span style="font-weight:normal;color:var(--slate-dim);">(optional)</span></label>
+        <div id="marviniQBuilderImgUploadArea" style="padding:10px 14px;background:var(--asphalt-deep);border:1.5px dashed var(--border);border-radius:var(--radius);cursor:pointer;text-align:center;" onclick="document.getElementById('marviniQBuilderImgFile').click()">
+          <i class="fas fa-image" style="color:var(--amber);margin-right:6px;"></i>
+          <span id="marviniQBuilderImgText" style="font-size:12px;color:var(--slate-dim);">Tap to upload an image</span>
+        </div>
+        <input type="file" id="marviniQBuilderImgFile" accept="image/*" style="display:none" onchange="marviniPreviewQuestionImage(this)" />
+        <img id="marviniQBuilderImgPreview" src="" style="display:none;max-width:100%;max-height:140px;border-radius:8px;margin-top:8px;border:1px solid var(--border);" />
+      </div>
+      <div class="field"><label for="marviniQBuilderOptA">Option A <span style="color:var(--brake)">*</span></label><input type="text" id="marviniQBuilderOptA" class="form-input" /></div>
+      <div class="field"><label for="marviniQBuilderOptB">Option B <span style="color:var(--brake)">*</span></label><input type="text" id="marviniQBuilderOptB" class="form-input" /></div>
+      <div class="field"><label for="marviniQBuilderOptC">Option C</label><input type="text" id="marviniQBuilderOptC" class="form-input" /></div>
+      <div class="field"><label for="marviniQBuilderOptD">Option D</label><input type="text" id="marviniQBuilderOptD" class="form-input" /></div>
+      <div class="field">
+        <label for="marviniQBuilderCorrect">Correct answer <span style="color:var(--brake)">*</span></label>
+        <select id="marviniQBuilderCorrect" class="field-select">
+          <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="marviniCloseAddQuestionModal()">Cancel</button>
+      <button class="btn btn-primary" id="marviniQBuilderSaveBtn" onclick="marviniSaveQuestion()"><i class="fas fa-save"></i> Save question</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CSV IMPORT MODAL ── -->
+<div class="overlay" id="marviniQuizCsvModal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-head">
+      <div class="modal-title">Import questions from CSV</div>
+      <button class="modal-close" onclick="marviniCloseQuizCsvModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--slate-dim);margin-bottom:14px;line-height:1.6;">
+        CSV columns, in order: <strong style="color:var(--amber);">question, imageUrl, optionA, optionB, optionC, optionD, correct</strong><br/>
+        <code style="color:var(--chalk);">imageUrl</code> is optional — leave blank if no image. <code style="color:var(--chalk);">correct</code> must be A, B, C, or D.<br/>
+        First row is treated as a header and skipped.
+      </div>
+      <div class="field">
+        <input type="file" id="marviniQuizCsvFile" accept=".csv" class="form-input" />
+      </div>
+      <div id="marviniQuizCsvPreview" style="font-size:12px;color:var(--slate-dim);"></div>
+      <div id="marviniQuizCsvProgressWrap" style="display:none;margin-top:14px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--slate-dim);margin-bottom:4px;">
+          <span id="marviniQuizCsvProgressLabel">Importing questions…</span>
+          <span id="marviniQuizCsvProgressPct">0%</span>
+        </div>
+        <div style="height:8px;background:var(--asphalt-deep);border-radius:50px;overflow:hidden;">
+          <div id="marviniQuizCsvProgressBar" style="height:100%;width:0%;background:var(--amber);border-radius:50px;transition:width 0.15s ease;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="marviniCloseQuizCsvModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="marviniImportQuizCsv()"><i class="fas fa-file-import"></i> Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CONFIRMATION MODAL ── -->
+<div class="overlay" id="marviniConfirmModal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-head">
+      <div class="modal-title" id="marviniConfirmTitle">Confirm</div>
+      <button class="modal-close" onclick="marviniCloseConfirm(false)"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <p id="marviniConfirmMsg" style="font-size:14px;color:var(--chalk);line-height:1.6;"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="marviniCloseConfirm(false)">Cancel</button>
+      <button class="btn btn-primary" id="marviniConfirmOkBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
   import {
-    getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut
-  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+  getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
   import {
-    getFirestore, collection, addDoc, updateDoc, deleteDoc, doc,
-    onSnapshot, serverTimestamp, query, orderBy
-  } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+  getFirestore, collection, addDoc, updateDoc, deleteDoc, doc,
+  onSnapshot, serverTimestamp, query, orderBy, getDoc, getDocs
+} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyA5TnyzHJpcHcM2N-77gkyAaj7yRru3-V0",
@@ -629,10 +1066,48 @@ const schoolPhone1Input = document.getElementById('schoolPhone1');
 const schoolPhone2Input = document.getElementById('schoolPhone2');
 
   const PAGE_META = {
-    dashboard: { title: 'Dashboard', sub: 'Overview of every driving school on the portal' },
-    schools:   { title: 'Schools', sub: 'Add, edit, or remove driving schools shown on the login portal' },
-    reports:   { title: 'Reports', sub: 'How schools are distributed across Ghana' },
-    profile:   { title: 'Portal Profile', sub: 'Edit the profile card shown on the public landing page' }
+  dashboard: { title: 'Dashboard', sub: 'Overview of every driving school on the portal' },
+  schools:   { title: 'Schools', sub: 'Add, edit, or remove driving schools shown on the login portal' },
+  reports:   { title: 'Reports', sub: 'How schools are distributed across Ghana' },
+  lessons:   { title: 'Video Lessons', sub: 'Manage platform-wide video lessons (shared across all schools).' },
+  quizzes:   { title: 'Quizzes', sub: 'Manage platform-wide quizzes and questions (shared across all schools).' },
+  users:     { title: 'Users', sub: 'Manage users across all driving schools' },
+  profile:   { title: 'Portal Profile', sub: 'Edit the profile card shown on the public landing page' }
+};
+
+  // ---------- GLOBAL PAGE NAVIGATION ----------
+  window.showPage = async function(pageName, navLinkElement) {
+    // Hide all pages, show the target
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const targetPage = document.getElementById(`page-${pageName}`);
+    if (targetPage) targetPage.classList.add('active');
+
+    // Update nav active state
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    if (navLinkElement) {
+      navLinkElement.classList.add('active');
+    } else {
+      const link = document.querySelector(`.nav-link[data-page="${pageName}"]`);
+      if (link) link.classList.add('active');
+    }
+
+    // Update title / subtitle
+    const meta = PAGE_META[pageName];
+    if (meta) {
+      document.getElementById('pageTitle').textContent = meta.title;
+      document.getElementById('pageSubtitle').textContent = meta.sub;
+    }
+
+    // Load dynamic data if needed
+    if (pageName === 'lessons' && typeof marviniLoadLessons === 'function') {
+      await marviniLoadLessons();
+    }
+    if (pageName === 'quizzes' && typeof marviniLoadQuizzes === 'function') {
+      await marviniLoadQuizzes();
+    }
+    if (pageName === 'profile' && typeof loadProfile === 'function') {
+      loadProfile();
+    }
   };
 
   let allSchools = [];
@@ -688,10 +1163,7 @@ const schoolPhone2Input = document.getElementById('schoolPhone2');
   navLinks.forEach(link => {
     link.addEventListener('click', () => {
       const target = link.dataset.page;
-      navLinks.forEach(l => l.classList.toggle('active', l === link));
-      pages.forEach(p => p.classList.toggle('active', p.id === `page-${target}`));
-      pageTitle.textContent = PAGE_META[target].title;
-      pageSubtitle.textContent = PAGE_META[target].sub;
+      window.showPage(target, link);
     });
   });
 
@@ -715,8 +1187,9 @@ const schoolPhone2Input = document.getElementById('schoolPhone2');
   }
 
   function escapeHtml(str){
-    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+window.escapeHtml = escapeHtml;
 
   // ---------- Dashboard ----------
   function renderDashboard(){
@@ -793,18 +1266,21 @@ const schoolPhone2Input = document.getElementById('schoolPhone2');
 
   schoolSearch.addEventListener('input', () => renderSchoolsTable(schoolSearch.value));
 
-  schoolsTableBody.addEventListener('click', (e) => {
+    schoolsTableBody.addEventListener('click', (e) => {
     const editId = e.target.dataset.edit;
     const deleteId = e.target.dataset.delete;
-    if (editId) openModal(allSchools.find(s => s.id === editId));
+    if (editId) openSchoolModal(allSchools.find(s => s.id === editId));
     if (deleteId) handleDelete(deleteId);
   });
 
   async function handleDelete(id){
     const school = allSchools.find(s => s.id === id);
     if (!school) return;
-    const ok = confirm(`Remove "${school.name}" from the portal? This can't be undone.`);
-    if (!ok) return;
+    const confirmed = await marviniShowConfirm(
+      'Delete school',
+      `Remove "${school.name}" from the portal? This cannot be undone.`
+    );
+    if (!confirmed) return;
     try {
       await deleteDoc(doc(db, 'schools', id));
       showToast(`Removed ${school.name}.`);
@@ -833,39 +1309,51 @@ const schoolPhone2Input = document.getElementById('schoolPhone2');
     `).join('');
   }
 
-  // ---------- Add / Edit modal ----------
+ 
+    // ---------- UNIVERSAL MODAL CONTROLS (exposed to window for app.js) ----------
+  function openModal(overlayId) {
+    const el = document.getElementById(overlayId);
+    if (el) el.classList.add('show');
+  }
+  function closeModal(overlayId) {
+    const el = document.getElementById(overlayId);
+    if (el) el.classList.remove('show');
+  }
+  // Make them global so app.js can call them
+  window.openModal = openModal;
+  window.closeModal = closeModal;
+
+  // ---------- SCHOOL-SPECIFIC MODAL ----------
   const openAddModal = document.getElementById('openAddModal');
   const modalClose   = document.getElementById('modalClose');
   const modalCancel  = document.getElementById('modalCancel');
 
-  openAddModal.addEventListener('click', () => openModal(null));
-  modalClose.addEventListener('click', closeModal);
-  modalCancel.addEventListener('click', closeModal);
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
-
-  function openModal(school){
-  formError.textContent = '';
-  schoolForm.reset();
-  if (school){
-    modalTitle.textContent = 'Edit driving school';
-    schoolIdInput.value = school.id;
-    schoolNameInput.value = school.name || '';
-    schoolRegionInput.value = school.region || '';
-    schoolEmailInput.value = school.email || '';
-    schoolPhone1Input.value = school.phone1 || '';
-    schoolPhone2Input.value = school.phone2 || '';
-    schoolUrlInput.value = school.url || '';
-  } else {
-    modalTitle.textContent = 'Add driving school';
-    schoolIdInput.value = '';
+  function openSchoolModal(school) {
+    formError.textContent = '';
+    schoolForm.reset();
+    if (school) {
+      modalTitle.textContent = 'Edit driving school';
+      schoolIdInput.value = school.id;
+      schoolNameInput.value = school.name || '';
+      schoolRegionInput.value = school.region || '';
+      schoolEmailInput.value = school.email || '';
+      schoolPhone1Input.value = school.phone1 || '';
+      schoolPhone2Input.value = school.phone2 || '';
+      schoolUrlInput.value = school.url || '';
+    } else {
+      modalTitle.textContent = 'Add driving school';
+      schoolIdInput.value = '';
+    }
+    openModal('schoolOverlay');
+    schoolNameInput.focus();
   }
-  overlay.classList.add('show');
-  schoolNameInput.focus();
-}
 
-  function closeModal(){
-    overlay.classList.remove('show');
-  }
+  openAddModal.addEventListener('click', () => openSchoolModal(null));
+  modalClose.addEventListener('click', () => closeModal('schoolOverlay'));
+  modalCancel.addEventListener('click', () => closeModal('schoolOverlay'));
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closeModal('schoolOverlay');
+  });
 
   schoolForm.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -903,7 +1391,7 @@ const schoolPhone2Input = document.getElementById('schoolPhone2');
       await addDoc(schoolsCol, { ...data, createdAt: serverTimestamp() });
       showToast(`Added ${name}.`);
     }
-    closeModal();
+    closeModal('schoolOverlay');
   } catch (err) {
     formError.textContent = 'Could not save: ' + err.message;
   } finally {
@@ -1047,13 +1535,399 @@ const schoolPhone2Input = document.getElementById('schoolPhone2');
   // ---------- Toast ----------
   let toastTimer = null;
   function showToast(message, isError){
-    const toast = document.getElementById('toast');
-    toast.textContent = message;
-    toast.classList.toggle('error', !!isError);
-    toast.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.toggle('error', !!isError);
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
+}
+window.showToast = showToast;
+
+  // ============================================================
+  // ---------- USERS MANAGEMENT ----------
+  // ============================================================
+
+  let allUsers = [];
+  let allSchoolsList = [];
+  let usersUnsubscribe = null;
+  let instructorsUnsubscribe = null;
+  let currentUsersFilterSchoolId = null; // null = all schools
+
+  // Helper to merge users and instructors
+  function mergeUsersAndInstructors(usersData, instructorsData) {
+    // Create a map by id to avoid duplicates
+    const userMap = {};
+    usersData.forEach(u => userMap[u.id] = { ...u });
+    instructorsData.forEach(i => {
+      // Map instructor fields to match user fields
+      const mapped = {
+        id: i.id,
+        firstName: i.firstname || i.firstName || '',
+        lastName: i.lastname || i.lastName || '',
+        email: i.email || '',
+        role: 'instructor',  // override
+        status: i.status || 'active',
+        schoolId: i.schoolId || null,
+        // Keep original data if needed
+        ...i
+      };
+      // If there's already a user with this id (unlikely), merge; otherwise add
+      if (userMap[i.id]) {
+        // Merge, but keep instructor role
+        userMap[i.id] = { ...userMap[i.id], ...mapped, role: 'instructor' };
+      } else {
+        userMap[i.id] = mapped;
+      }
+    });
+    return Object.values(userMap);
   }
+
+  // Listen to users collection
+  function startUsersListener() {
+    if (usersUnsubscribe) return;
+    const usersCol = collection(db, "users");
+    usersUnsubscribe = onSnapshot(usersCol, (usersSnap) => {
+      const usersData = usersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // If instructors listener not active, we need to fetch instructors once
+      if (!instructorsUnsubscribe) {
+        // Get instructors once and merge
+        getDocs(collection(db, "instructors")).then((instructorsSnap) => {
+          const instructorsData = instructorsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+          allUsers = mergeUsersAndInstructors(usersData, instructorsData);
+          renderUsersView();
+        }).catch(err => {
+          showToast('Could not load instructors: ' + err.message, true);
+          // Still show users
+          allUsers = usersData;
+          renderUsersView();
+        });
+      } else {
+        // If instructors listener is already active, it will merge, but we need to ensure we have the latest
+        // We'll rely on the instructors listener to trigger merge, but we need to update users data
+        // So we'll just store users data and let the instructors listener merge
+        // Actually we need to store the latest users data for merging.
+        // We'll use a variable to hold users data and merge when instructors update.
+        window._latestUsersData = usersData;
+        if (window._latestInstructorsData) {
+          allUsers = mergeUsersAndInstructors(usersData, window._latestInstructorsData);
+          renderUsersView();
+        } else {
+          // If instructors data not ready yet, just show users
+          allUsers = usersData;
+          renderUsersView();
+        }
+      }
+    }, (err) => {
+      showToast('Could not load users: ' + err.message, true);
+    });
+  }
+
+  // Listen to instructors collection
+  function startInstructorsListener() {
+    if (instructorsUnsubscribe) return;
+    const instructorsCol = collection(db, "instructors");
+    instructorsUnsubscribe = onSnapshot(instructorsCol, (snap) => {
+      const instructorsData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      window._latestInstructorsData = instructorsData;
+      // If users data exists, merge and render
+      if (window._latestUsersData) {
+        allUsers = mergeUsersAndInstructors(window._latestUsersData, instructorsData);
+        renderUsersView();
+      } else {
+        // If users data not loaded yet, store instructors data and render later
+        // We'll just store and wait for users
+        // But we could render instructors only? Better to wait.
+        // We'll just set allUsers to instructors for now (but they might not have all fields)
+        // Actually we can just render instructors as users
+        const mappedInstructors = instructorsData.map(i => ({
+          id: i.id,
+          firstName: i.firstname || i.firstName || '',
+          lastName: i.lastname || i.lastName || '',
+          email: i.email || '',
+          role: 'instructor',
+          status: i.status || 'active',
+          schoolId: i.schoolId || null,
+          ...i
+        }));
+        allUsers = mappedInstructors;
+        renderUsersView();
+      }
+    }, (err) => {
+      showToast('Could not load instructors: ' + err.message, true);
+    });
+  }
+
+  // Listen to schools (reuse existing allSchools)
+  // We'll also load schools if not already loaded
+  function ensureSchoolsLoaded() {
+    // allSchools is already populated by the existing listener.
+    // But we need to map school ids to names for display.
+    // We'll use allSchools array directly.
+  }
+
+  // Render the users view based on current mode (grid or table)
+  function renderUsersView() {
+    const gridView = document.getElementById('usersSchoolGridView');
+    const tableView = document.getElementById('usersTableView');
+    const grid = document.getElementById('usersSchoolCardsGrid');
+
+    if (currentUsersFilterSchoolId === undefined) {
+      // Show grid
+      gridView.style.display = 'block';
+      tableView.style.display = 'none';
+      renderSchoolCards();
+    } else {
+      // Show table
+      gridView.style.display = 'none';
+      tableView.style.display = 'block';
+      renderUsersTable(currentUsersFilterSchoolId);
+    }
+  }
+
+    function renderSchoolCards() {
+    const grid = document.getElementById('usersSchoolCardsGrid');
+    if (!allSchools.length) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--slate-dim);padding:40px;">No schools found.</div>';
+      return;
+    }
+    // Count users per school
+    const schoolUserCounts = {};
+    allUsers.forEach(u => {
+      const sid = u.schoolId;
+      if (sid) schoolUserCounts[sid] = (schoolUserCounts[sid] || 0) + 1;
+    });
+    // Count users without school
+    const unassigned = allUsers.filter(u => !u.schoolId).length;
+
+    // Build cards
+    let html = allSchools.map(s => {
+      const count = schoolUserCounts[s.id] || 0;
+      return `
+        <div class="stat-card" style="cursor:pointer;position:relative;transition:transform 0.1s;" onclick="filterUsersBySchool('${s.id}')">
+          <div class="accent"></div>
+          <div class="value" style="font-size:18px;">${escapeHtml(s.name)}</div>
+          <div class="label">${count} user${count !== 1 ? 's' : ''}</div>
+          <div style="font-size:11px;color:var(--slate-dim);margin-top:4px;">${escapeHtml(s.region || '')}</div>
+        </div>
+      `;
+    }).join('');
+
+    // Add an "All users" card
+    html += `
+      <div class="stat-card" style="cursor:pointer;position:relative;transition:transform 0.1s;border-color:var(--amber);" onclick="filterUsersBySchool(null)">
+        <div class="accent" style="background:var(--amber);"></div>
+        <div class="value" style="font-size:18px;">All users</div>
+        <div class="label">${allUsers.length} total</div>
+        <div style="font-size:11px;color:var(--slate-dim);margin-top:4px;">Across all schools</div>
+      </div>
+    `;
+
+    // --- NEW: Unassigned card ---
+    if (unassigned > 0) {
+      html += `
+        <div class="stat-card" style="cursor:pointer;position:relative;transition:transform 0.1s;border-color:var(--slate-dim);" onclick="filterUsersBySchool('unassigned')">
+          <div class="accent" style="background:var(--slate-dim);"></div>
+          <div class="value" style="font-size:18px;">Unassigned</div>
+          <div class="label">${unassigned} user${unassigned !== 1 ? 's' : ''}</div>
+          <div style="font-size:11px;color:var(--slate-dim);margin-top:4px;">No school assigned</div>
+        </div>
+      `;
+    }
+
+    grid.innerHTML = html;
+  }
+  
+    // Filter users by schoolId (null = all, 'unassigned' = no school)
+  window.filterUsersBySchool = function(schoolId) {
+    // --- NEW: handle unassigned ---
+    if (schoolId === 'unassigned') {
+      currentUsersFilterSchoolId = 'unassigned';
+      const title = document.getElementById('usersTableTitle');
+      title.textContent = 'Unassigned Users';
+      renderUsersView();
+      document.getElementById('usersSearchInput').value = '';
+      document.getElementById('usersRoleFilter').value = '';
+      return;
+    }
+
+    // --- existing code ---
+    currentUsersFilterSchoolId = schoolId;
+    const title = document.getElementById('usersTableTitle');
+    if (schoolId) {
+      const school = allSchools.find(s => s.id === schoolId);
+      title.textContent = school ? `${school.name} – Users` : 'Users';
+    } else {
+      title.textContent = 'All Users';
+    }
+    renderUsersView();
+    // Clear search and filter
+    document.getElementById('usersSearchInput').value = '';
+    document.getElementById('usersRoleFilter').value = '';
+  };
+
+  // Go back to school grid
+  window.backToSchoolsGrid = function() {
+    currentUsersFilterSchoolId = undefined;
+    renderUsersView();
+  };
+
+  // Show all users (convenience)
+  window.showAllUsers = function() {
+    filterUsersBySchool(null);
+  };
+
+  // Render users table with filters
+  function renderUsersTable(schoolId) {
+    const tbody = document.getElementById('usersTableBody');
+    const searchTerm = document.getElementById('usersSearchInput').value.trim().toLowerCase();
+    const roleFilter = document.getElementById('usersRoleFilter').value;
+
+    let filtered = allUsers;
+    if (schoolId === 'unassigned') {
+      filtered = filtered.filter(u => !u.schoolId);
+    } else if (schoolId !== null) {
+      filtered = filtered.filter(u => u.schoolId === schoolId);
+    }
+    if (searchTerm) {
+      filtered = filtered.filter(u => {
+        const fullName = (u.firstName || '') + ' ' + (u.lastName || '');
+        const email = u.email || '';
+        return fullName.toLowerCase().includes(searchTerm) || email.toLowerCase().includes(searchTerm);
+      });
+    }
+    if (roleFilter) {
+      filtered = filtered.filter(u => u.role === roleFilter);
+    }
+
+    if (!filtered.length) {
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No users match the current filters.</td></tr>`;
+      return;
+    }
+
+    // Build table rows
+    tbody.innerHTML = filtered.map(u => {
+      const schoolName = u.schoolId ? (allSchools.find(s => s.id === u.schoolId)?.name || 'Unknown') : '—';
+      const status = u.status || 'active';
+      const isActive = status === 'active';
+      const role = u.role || 'student';
+      const fullName = (u.firstName || '') + ' ' + (u.lastName || '');
+      return `
+        <tr>
+          <td><strong>${escapeHtml(fullName || '—')}</strong></td>
+          <td>${u.email ? `<a href="mailto:${escapeHtml(u.email)}" style="color:var(--slate);text-decoration:none;">${escapeHtml(u.email)}</a>` : '—'}</td>
+          <td>${escapeHtml(schoolName)}</td>
+          <td><span class="badge">${escapeHtml(role)}</span></td>
+          <td><span style="color:${isActive ? 'var(--good)' : 'var(--brake)'};font-weight:600;">${isActive ? 'Active' : 'Disabled'}</span></td>
+          <td>
+            <div class="row-actions">
+              <button class="icon-btn" onclick="toggleUserStatus('${u.id}')" title="${isActive ? 'Disable' : 'Enable'}">
+                ${isActive ? '🔒' : '🔓'}
+              </button>
+              <button class="icon-btn" onclick="resetUserProgress('${u.id}')" title="Send password reset email">↺</button>
+              <button class="icon-btn danger" onclick="deleteUser('${u.id}')" title="Delete">🗑</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // Attach event listeners for search and filter
+  document.getElementById('usersSearchInput').addEventListener('input', () => {
+    if (currentUsersFilterSchoolId !== undefined) renderUsersTable(currentUsersFilterSchoolId);
+  });
+  document.getElementById('usersRoleFilter').addEventListener('change', () => {
+    if (currentUsersFilterSchoolId !== undefined) renderUsersTable(currentUsersFilterSchoolId);
+  });
+
+  // ---- User Actions ----
+
+  // Toggle status (active/disabled)
+  window.toggleUserStatus = async function(userId) {
+    const user = allUsers.find(u => u.id === userId);
+    if (!user) return showToast('User not found.', 'error');
+    const newStatus = user.status === 'active' ? 'disabled' : 'active';
+    try {
+      await updateDoc(doc(db, 'users', userId), { status: newStatus });
+      showToast(`User ${newStatus === 'active' ? 'enabled' : 'disabled'}.`);
+    } catch (e) {
+      showToast('Failed to update status: ' + e.message, 'error');
+    }
+  };
+
+    // Reset password – send password reset email
+  window.resetUserProgress = async function(userId) {
+    const user = allUsers.find(u => u.id === userId);
+    if (!user) return showToast('User not found.', 'error');
+    const email = user.email;
+    if (!email) {
+      showToast('This user has no email address on file.', 'error');
+      return;
+    }
+
+    const confirmed = await marviniShowConfirm(
+      'Send password reset email',
+      `Send a password reset link to ${email}? The user will receive an email with instructions to reset their password.`
+    );
+    if (!confirmed) return;
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      showToast(`✅ Password reset email sent to ${email}.`);
+    } catch (e) {
+      console.error('Full error:', e);
+      let errorMessage = e.message;
+      if (e.code === 'auth/user-not-found') {
+        errorMessage = `⚠️ User "${email}" is not registered in Firebase Authentication. Please create their Auth account first.`;
+      } else if (e.code === 'auth/invalid-email') {
+        errorMessage = `⚠️ The email "${email}" is invalid.`;
+      } else if (e.code === 'auth/too-many-requests') {
+        errorMessage = `⚠️ Too many password reset requests. Please wait a few minutes.`;
+      }
+      showToast('❌ ' + errorMessage, 'error');
+    }
+  };
+
+  // Delete user (Firestore doc)
+  window.deleteUser = async function(userId) {
+    const user = allUsers.find(u => u.id === userId);
+    if (!user) return showToast('User not found.', 'error');
+    const fullName = (user.firstName || '') + ' ' + (user.lastName || '');
+    const confirmed = await marviniShowConfirm(
+      'Delete user',
+      `Are you sure you want to delete "${fullName || 'this user'}"? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+    try {
+      await deleteDoc(doc(db, 'users', userId));
+      showToast('User deleted.');
+    } catch (e) {
+      showToast('Failed to delete user: ' + e.message, 'error');
+    }
+  };
+
+  // Override showPage to load users when needed
+  const originalShowPage = window.showPage;
+  window.showPage = async function(pageName, navLinkElement) {
+    await originalShowPage(pageName, navLinkElement);
+    if (pageName === 'users') {
+      // Start listening to users if not already
+      if (!usersUnsubscribe) startUsersListener();
+      // Start listening to instructors if not already
+      if (!instructorsUnsubscribe) startInstructorsListener();
+      // Ensure schools are loaded (they already are via existing listener)
+      // Render the view
+      if (currentUsersFilterSchoolId === undefined) {
+        renderSchoolCards();
+      } else {
+        renderUsersTable(currentUsersFilterSchoolId);
+      }
+    }
+  };
+
 </script>
+
+<script type="module" src="js/app.js"></script>
 </body>
 </html>

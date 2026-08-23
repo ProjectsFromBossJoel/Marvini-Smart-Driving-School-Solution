@@ -1,0 +1,484 @@
+<!-- Marvini Smart Driving Solution — Central Admin Dashboard (v2) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin · M-Smart Driving School Solution</title>
+<link rel="icon" type="image/x-icon" href="img/favicon_io/favicon.ico">
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+<style>
+  :root{
+    --asphalt: #1B2430; --asphalt-deep: #11161E; --panel: #19222E;
+    --amber: #F2A93B; --amber-deep: #D88E1F; --chalk: #F7F5F0;
+    --slate: #8A93A3; --slate-dim: #5C6773; --brake: #C1432D; --good: #3FA66A;
+    --info: #64B5F6; --border: #2A3442; --radius: 12px; --radius-lg: 18px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{font-family:'Inter', sans-serif; background:var(--asphalt-deep); color:var(--chalk); min-height:100vh;}
+  a{color:inherit;} button{font-family:inherit;}
+  :focus-visible{ outline:2px solid var(--amber); outline-offset:2px; }
+
+  /* ===== LOGIN ===== */
+  #loginScreen{ min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+  .login-card{ width:380px; max-width:100%; background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; box-shadow:0 30px 60px -20px rgba(0,0,0,0.55); }
+  .hazard-strip{ height:7px; background:repeating-linear-gradient(-45deg, var(--amber) 0 14px, var(--asphalt-deep) 14px 28px); }
+  .login-card .body{ padding:32px 28px 28px; }
+  .login-brand{ display:flex; align-items:center; gap:12px; margin-bottom:22px; }
+  .login-brand .mark{ width:42px; height:42px; border-radius:9px; background:var(--asphalt); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .login-brand h1{ font-family:'Space Grotesk', sans-serif; font-size:17px; margin:0; }
+  .login-brand span{ font-family:'JetBrains Mono', monospace; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--slate); }
+  .field{ margin-bottom:16px; }
+  .field label{ display:block; font-size:12px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; color:var(--slate); margin-bottom:7px; }
+  .field input, .field select, .field textarea{ width:100%; padding:11px 13px; border-radius:8px; border:1.5px solid var(--border); background:var(--asphalt-deep); color:var(--chalk); font-size:14px; outline:none; font-family:inherit; }
+  .field input:focus, .field select:focus{ border-color:var(--amber-deep); }
+  .btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; border:none; border-radius:8px; cursor:pointer; font-family:'Space Grotesk', sans-serif; font-weight:600; letter-spacing:.02em; transition:transform .12s ease, opacity .15s ease, background .15s ease; padding:10px 16px; font-size:13px; }
+  .btn-primary{ background:var(--amber); color:var(--asphalt-deep); }
+  .btn-primary:hover{ background:var(--amber-deep); }
+  .btn-primary:disabled{ opacity:.5; cursor:not-allowed; }
+  .btn-secondary{ background:transparent; border:1.5px solid var(--border); color:var(--slate); }
+  .btn-secondary:hover{ border-color:var(--slate); color:var(--chalk); }
+  .btn-outline{ background:transparent; border:1.5px solid var(--border); color:var(--slate); }
+  .btn-outline:hover{ border-color:var(--amber); color:var(--amber); }
+  .btn-danger{ background:transparent; border:1.5px solid rgba(193,67,45,0.4); color:var(--brake); }
+  .btn-danger:hover{ background:rgba(193,67,45,0.1); }
+  .btn-icon{ width:32px; height:32px; padding:0; border-radius:7px; justify-content:center; }
+  .login-error{ color:var(--brake); font-size:12.5px; margin:-6px 0 14px; min-height:14px; }
+  .login-hint{ margin-top:18px; font-size:12px; color:var(--slate-dim); text-align:center; line-height:1.6; }
+
+  /* ===== APP SHELL ===== */
+  #app{ display:none; min-height:100vh; }
+  #app.show{ display:flex; }
+  .sidebar{ width:230px; flex-shrink:0; background:var(--panel); border-right:1px solid var(--border); display:flex; flex-direction:column; position:sticky; top:0; height:100vh; }
+  .sidebar-brand{ display:flex; align-items:center; gap:10px; padding:20px 18px; border-bottom:1px solid var(--border); }
+  .sidebar-brand .mark{ width:34px; height:34px; border-radius:8px; background:var(--asphalt); display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden; }
+  .sidebar-brand strong{ font-family:'Space Grotesk', sans-serif; font-size:14px; display:block; line-height:1.2; }
+  .sidebar-brand small{ font-family:'JetBrains Mono', monospace; font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--slate); }
+  .nav{ flex:1; padding:14px 10px; display:flex; flex-direction:column; gap:3px; overflow-y:auto; }
+  .nav-section-label{ font-size:10px; font-weight:700; color:var(--slate-dim); letter-spacing:.12em; text-transform:uppercase; padding:14px 12px 6px; }
+  .nav-link{ display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:8px; color:var(--slate); text-decoration:none; font-size:13.5px; font-weight:600; cursor:pointer; border-left:3px solid transparent; border:none; background:transparent; width:100%; text-align:left; }
+  .nav-link svg, .nav-link i{ width:17px; flex-shrink:0; font-size:14px; text-align:center; }
+  .nav-link:hover{ background:rgba(255,255,255,0.04); color:var(--chalk); }
+  .nav-link.active{ background:rgba(242,169,59,0.1); color:var(--amber); border-left-color:var(--amber); }
+  .sidebar-foot{ padding:14px 14px 18px; border-top:1px solid var(--border); }
+  .admin-email{ font-size:11.5px; color:var(--slate-dim); margin:0 0 10px; word-break:break-all; }
+  .btn-logout{ width:100%; background:transparent; border:1.5px solid var(--border); color:var(--slate); padding:9px 12px; border-radius:8px; font-size:12.5px; text-transform:uppercase; letter-spacing:.03em; }
+  .btn-logout:hover{ border-color:var(--brake); color:var(--brake); }
+
+  .main{ flex:1; min-width:0; }
+  .topbar{ display:flex; align-items:center; justify-content:space-between; padding:20px 32px; border-bottom:1px solid var(--border); flex-wrap:wrap; gap:10px; }
+  .topbar h2{ font-family:'Space Grotesk', sans-serif; font-size:21px; margin:0; }
+  .topbar p{ margin:3px 0 0; font-size:12.5px; color:var(--slate); }
+  .content{ padding:28px 32px 60px; }
+  .page{ display:none; } .page.active{ display:block; }
+
+  .breadcrumb{ font-size:12.5px; color:var(--slate); margin-bottom:4px; }
+  .breadcrumb span.crumb-link{ cursor:pointer; text-decoration:underline; }
+  .breadcrumb span.crumb-link:hover{ color:var(--amber); }
+  .breadcrumb span.crumb-current{ color:var(--amber); font-weight:600; }
+
+  /* ===== Stat/Card grid ===== */
+  .stat-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:16px; margin-bottom:30px; }
+  .stat-card{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px; position:relative; overflow:hidden; }
+  .stat-card .accent{ position:absolute; top:0; left:0; width:4px; height:100%; background:var(--amber); }
+  .stat-card .label{ font-size:11.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--slate); margin:0 0 8px; }
+  .stat-card .value{ font-family:'Space Grotesk', sans-serif; font-size:30px; margin:0; }
+  .stat-card .sub{ font-size:11.5px; color:var(--slate-dim); margin:6px 0 0; }
+
+  .panel{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); }
+  .panel-head{ display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--border); flex-wrap:wrap; gap:10px; }
+  .panel-head h3{ font-family:'Space Grotesk', sans-serif; font-size:15px; margin:0; }
+
+  table{ width:100%; border-collapse:collapse; }
+  th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--slate); padding:12px 20px; border-bottom:1px solid var(--border); white-space:nowrap; }
+  td{ padding:13px 20px; font-size:13.5px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  tr:last-child td{ border-bottom:none; }
+  td a.site-link{ color:var(--amber); text-decoration:none; font-weight:600; }
+  td a.site-link:hover{ text-decoration:underline; }
+  .badge{ display:inline-block; font-size:11px; font-weight:600; padding:3px 9px; border-radius:999px; background:rgba(242,169,59,0.12); color:var(--amber); }
+  .badge.good{ background:rgba(63,166,106,0.14); color:var(--good); }
+  .badge.warn{ background:rgba(242,169,59,0.14); color:var(--amber); }
+  .badge.bad{ background:rgba(193,67,45,0.14); color:var(--brake); }
+  .row-actions{ display:flex; gap:8px; }
+  .icon-btn{ background:transparent; border:1px solid var(--border); border-radius:7px; padding:6px 8px; color:var(--slate); cursor:pointer; }
+  .icon-btn:hover{ color:var(--chalk); border-color:var(--slate); }
+  .icon-btn.danger:hover{ color:var(--brake); border-color:var(--brake); }
+  .empty-row td, .empty-state{ text-align:center; color:var(--slate-dim); padding:34px 20px; }
+
+  /* ===== Schools card grid ===== */
+  .schools-toolbar{ display:flex; gap:12px; align-items:center; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; }
+  .search-input{ flex:1; min-width:200px; max-width:320px; padding:10px 14px; border-radius:8px; border:1.5px solid var(--border); background:var(--panel); color:var(--chalk); font-size:13.5px; }
+  .search-input:focus{ outline:none; border-color:var(--amber-deep); }
+  .school-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(260px, 1fr)); gap:18px; }
+  .school-card{ background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; cursor:pointer; transition:transform .15s ease, border-color .15s ease; position:relative; }
+  .school-card:hover{ transform:translateY(-3px); border-color:var(--amber); }
+  .school-card .cover{ width:100%; aspect-ratio:16/9; background:linear-gradient(135deg, var(--asphalt), var(--asphalt-deep)); background-size:cover; background-position:center; display:flex; align-items:center; justify-content:center; position:relative; }
+  .school-card .cover i{ font-size:34px; color:var(--border); }
+  .school-card .cover .status-dot{ position:absolute; top:10px; right:10px; width:10px; height:10px; border-radius:50%; background:var(--good); box-shadow:0 0 0 3px rgba(63,166,106,0.2); }
+  .school-card .cover .status-dot.inactive{ background:var(--slate-dim); box-shadow:0 0 0 3px rgba(92,103,115,0.2); }
+  .school-card .body{ padding:16px 18px; }
+  .school-card .name{ font-family:'Space Grotesk', sans-serif; font-size:16px; font-weight:700; margin:0 0 4px; }
+  .school-card .region{ font-size:12px; color:var(--slate); margin:0 0 12px; }
+  .school-card .mini-stats{ display:flex; gap:14px; padding-top:12px; border-top:1px solid var(--border); }
+  .school-card .mini-stat{ display:flex; flex-direction:column; gap:1px; }
+  .school-card .mini-stat b{ font-family:'Space Grotesk', sans-serif; font-size:15px; }
+  .school-card .mini-stat span{ font-size:10px; color:var(--slate-dim); text-transform:uppercase; letter-spacing:.05em; }
+  .school-card .edit-fab{ position:absolute; top:10px; left:10px; width:30px; height:30px; border-radius:8px; background:rgba(17,22,30,0.75); border:1px solid var(--border); color:var(--chalk); display:flex; align-items:center; justify-content:center; cursor:pointer; opacity:0; transition:opacity .15s ease; z-index:2; }
+  .school-card:hover .edit-fab{ opacity:1; }
+  .add-school-card{ border:1.5px dashed var(--border); border-radius:var(--radius-lg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; min-height:220px; cursor:pointer; color:var(--slate); }
+  .add-school-card:hover{ border-color:var(--amber); color:var(--amber); }
+  .add-school-card i{ font-size:26px; }
+
+  .img-upload-area{ padding:14px 16px; background:var(--asphalt-deep); border:1.5px dashed var(--border); border-radius:var(--radius); cursor:pointer; text-align:center; }
+  .img-upload-area:hover{ border-color:var(--amber-deep); }
+
+  /* ===== Modal ===== */
+  .overlay{ position:fixed; inset:0; background:rgba(10,13,18,0.65); display:none; align-items:center; justify-content:center; padding:20px; z-index:60; }
+  .overlay.show{ display:flex; }
+  .modal{ width:460px; max-width:100%; background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; max-height:90vh; display:flex; flex-direction:column; }
+  .modal-head{ display:flex; align-items:center; justify-content:space-between; padding:18px 22px; border-bottom:1px solid var(--border); flex-shrink:0; }
+  .modal-head h3{ font-family:'Space Grotesk', sans-serif; font-size:16px; margin:0; }
+  .modal-close{ background:transparent; border:none; color:var(--slate); font-size:18px; cursor:pointer; line-height:1; }
+  .modal-body{ padding:20px 22px; overflow-y:auto; }
+  .modal-foot{ display:flex; gap:10px; padding:16px 22px; border-top:1px solid var(--border); flex-shrink:0; }
+  .modal-foot .btn{ flex:1; padding:11px; }
+  select.field-select{ width:100%; padding:11px 13px; border-radius:8px; border:1.5px solid var(--border); background:var(--asphalt-deep); color:var(--chalk); font-size:14px; outline:none; }
+  .form-error{ color:var(--brake); font-size:12px; margin:0 0 12px; min-height:14px; }
+  .form-row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+  #toast{ position:fixed; bottom:24px; right:24px; background:var(--panel); border:1px solid var(--border); border-left:4px solid var(--good); border-radius:9px; padding:13px 18px; font-size:13px; box-shadow:0 16px 30px -10px rgba(0,0,0,0.5); display:none; z-index:80; max-width:320px; }
+  #toast.show{ display:block; } #toast.error{ border-left-color:var(--brake); }
+
+  .phase2-placeholder{ text-align:center; padding:60px 20px; color:var(--slate-dim); }
+  .phase2-placeholder i{ font-size:32px; margin-bottom:12px; display:block; color:var(--border); }
+
+  @media (max-width: 760px){
+    .sidebar{ width:64px; }
+    .sidebar-brand strong, .sidebar-brand small, .nav-link span.label, .admin-email, .nav-section-label{ display:none; }
+    .sidebar-brand{ justify-content:center; }
+    .nav-link{ justify-content:center; }
+    .btn-logout{ font-size:0; padding:9px; }
+    .content{ padding:22px 16px 50px; }
+    .topbar{ padding:18px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="hazard-strip"></div>
+    <div class="body">
+      <div class="login-brand">
+        <div class="mark"><img src="img/m-smart_driving_solution -logo.png" alt="Logo" width="50" height="50" style="border-radius:10px;"/></div>
+        <div><h1>Admin sign in</h1><span>M-Smart Driving School Solution</span></div>
+      </div>
+      <form id="loginForm">
+        <div class="field"><label for="loginEmail">Email</label><input id="loginEmail" type="email" autocomplete="username" required></div>
+        <div class="field"><label for="loginPassword">Password</label><input id="loginPassword" type="password" autocomplete="current-password" required></div>
+        <p class="login-error" id="loginError"></p>
+        <button class="btn btn-primary" type="submit" id="loginSubmit" style="width:100%;">Sign in</button>
+      </form>
+      <p class="login-hint">Access is limited to admin accounts created in Firebase Authentication for this project.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ================= APP SHELL ================= -->
+<div id="app">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="mark"><img src="img/m-smart_driving_solution -logo.png" alt="Logo" width="46" height="46" style="border-radius:8px;"/></div>
+      <div><strong>M-Smart Driving School Solution</strong><small>Admin Panel</small></div>
+    </div>
+
+    <!-- TOP-LEVEL NAV (visible at central dashboard scope) -->
+    <nav class="nav" id="navTopLevel">
+      <a class="nav-link active" data-page="dashboard"><i class="fas fa-th-large"></i><span class="label">Dashboard</span></a>
+      <a class="nav-link" data-page="schools"><i class="fas fa-school"></i><span class="label">Schools</span></a>
+      <a class="nav-link" data-page="reports"><i class="fas fa-chart-bar"></i><span class="label">Reports</span></a>
+      <div class="nav-section-label">Content</div>
+      <a class="nav-link" data-page="lessons"><i class="fas fa-play-circle"></i><span class="label">Lessons</span></a>
+      <a class="nav-link" data-page="quizzes"><i class="fas fa-tasks"></i><span class="label">Quizzes</span></a>
+      <div class="nav-section-label">Account</div>
+      <a class="nav-link" data-page="profile"><i class="fas fa-user-circle"></i><span class="label">Portal Profile</span></a>
+    </nav>
+
+    <!-- SCHOOL-SCOPED NAV (shown only while inside a school's detail view) -->
+    <nav class="nav" id="navSchoolScope" style="display:none;">
+      <a class="nav-link" onclick="window.backToSchools()"><i class="fas fa-arrow-left"></i><span class="label">Back to Schools</span></a>
+      <div class="nav-section-label" id="schoolScopeLabel">School</div>
+      <a class="nav-link active" data-school-page="overview"><i class="fas fa-th-large"></i><span class="label">Overview</span></a>
+      <a class="nav-link" data-school-page="students"><i class="fas fa-user-graduate"></i><span class="label">Students</span></a>
+      <a class="nav-link" data-school-page="instructors"><i class="fas fa-chalkboard-teacher"></i><span class="label">Instructors</span></a>
+      <a class="nav-link" data-school-page="attendance"><i class="fas fa-calendar-check"></i><span class="label">Attendance</span></a>
+      <a class="nav-link" data-school-page="classes"><i class="fas fa-chalkboard"></i><span class="label">Classes</span></a>
+      <a class="nav-link" data-school-page="vehicles"><i class="fas fa-car-side"></i><span class="label">Vehicles</span></a>
+      <a class="nav-link" data-school-page="certificates"><i class="fas fa-certificate"></i><span class="label">Certificates</span></a>
+      <a class="nav-link" data-school-page="enquiries"><i class="fas fa-headset"></i><span class="label">Enquiries</span></a>
+      <a class="nav-link" data-school-page="permissions"><i class="fas fa-shield-alt"></i><span class="label">Permissions</span></a>
+      <a class="nav-link" data-school-page="settings"><i class="fas fa-cog"></i><span class="label">School Settings</span></a>
+    </nav>
+
+    <div class="sidebar-foot">
+      <p class="admin-email" id="adminEmail">—</p>
+      <button class="btn btn-logout" id="logoutBtn">Sign out</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="breadcrumb" id="breadcrumb" style="display:none;"></div>
+        <h2 id="pageTitle">Dashboard</h2>
+        <p id="pageSubtitle">Overview of every driving school on the portal</p>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ---------- DASHBOARD ---------- -->
+      <section class="page active" id="page-dashboard">
+        <div class="stat-grid">
+          <div class="stat-card"><div class="accent"></div><p class="label">Total schools</p><p class="value" id="statTotal">0</p><p class="sub">Listed on the public portal</p></div>
+          <div class="stat-card"><div class="accent"></div><p class="label">Regions covered</p><p class="value" id="statRegions">0</p><p class="sub">Out of 16 regions in Ghana</p></div>
+          <div class="stat-card"><div class="accent"></div><p class="label">Most recent</p><p class="value" id="statRecent" style="font-size:18px;">—</p><p class="sub" id="statRecentSub">No schools yet</p></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><h3>Recently added</h3></div>
+          <table>
+            <thead><tr><th>School</th><th>Region</th><th>Contact</th><th>Website</th></tr></thead>
+            <tbody id="recentTableBody"><tr class="empty-row"><td colspan="4">Loading…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- ---------- SCHOOLS (CARD GRID) ---------- -->
+      <section class="page" id="page-schools">
+        <div class="schools-toolbar">
+          <input class="search-input" id="schoolSearch" type="text" placeholder="Search by name or region…">
+          <button class="btn btn-primary" id="openAddModal"><i class="fas fa-plus"></i> Add school</button>
+        </div>
+        <div class="school-grid" id="schoolGrid">
+          <div class="empty-state" style="grid-column:1/-1;">Loading schools…</div>
+        </div>
+      </section>
+
+      <!-- ---------- SCHOOL DETAIL SHELL ---------- -->
+      <section class="page" id="page-school-detail">
+
+        <!-- Overview -->
+        <div class="school-subpage active" id="schoolsub-overview">
+          <div class="stat-grid">
+            <div class="stat-card"><div class="accent"></div><p class="label">Total students</p><p class="value" id="schStatStudents">0</p><p class="sub" id="schStatStudentsSub">—</p></div>
+            <div class="stat-card"><div class="accent"></div><p class="label">Instructors</p><p class="value" id="schStatInstructors">0</p><p class="sub">Active + pending</p></div>
+            <div class="stat-card"><div class="accent"></div><p class="label">Pending approvals</p><p class="value" id="schStatPending">0</p><p class="sub">Students awaiting review</p></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>School details</h3><button class="btn btn-outline" onclick="window.openSchoolEditFromDetail()"><i class="fas fa-pen"></i> Edit</button></div>
+            <div id="schoolDetailInfo" style="padding:20px;font-size:13.5px;color:var(--slate);">Loading…</div>
+          </div>
+        </div>
+
+        <!-- Students (fully built) -->
+        <div class="school-subpage" id="schoolsub-students" style="display:none;">
+          <div class="schools-toolbar">
+            <input class="search-input" id="schStudentSearch" type="text" placeholder="Search by name or email…">
+            <button class="btn btn-primary" id="schOpenAddStudentBtn"><i class="fas fa-user-plus"></i> Add student</button>
+          </div>
+
+          <div class="panel" id="schPendingPanel" style="margin-bottom:18px;display:none;">
+            <div class="panel-head"><h3><i class="fas fa-clock"></i> Pending approvals</h3><span class="badge warn" id="schPendingCount">0</span></div>
+            <table>
+              <thead><tr><th>Student</th><th>Course</th><th>Enrolled</th><th>Actions</th></tr></thead>
+              <tbody id="schPendingTableBody"></tbody>
+            </table>
+          </div>
+
+          <div class="panel">
+            <table>
+              <thead><tr><th>Student</th><th>Course</th><th>Stage</th><th>Status</th><th>Enrolled</th><th></th></tr></thead>
+              <tbody id="schStudentsTableBody"><tr class="empty-row"><td colspan="6">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Instructors / Attendance / Classes / Vehicles / Certificates / Enquiries / Permissions / Settings — Phase 2 -->
+        <div class="school-subpage" id="schoolsub-instructors" style="display:none;"><div class="phase2-placeholder"><i class="fas fa-chalkboard-teacher"></i>Instructor management — next module to port from Dekay's admin (same scoping pattern as Students).</div></div>
+        <div class="school-subpage" id="schoolsub-attendance" style="display:none;"><div class="phase2-placeholder"><i class="fas fa-calendar-check"></i>Attendance records — scoped clone of Dekay's attendance tab.</div></div>
+        <div class="school-subpage" id="schoolsub-classes" style="display:none;"><div class="phase2-placeholder"><i class="fas fa-chalkboard"></i>Class scheduling — scoped clone of Dekay's classes tab.</div></div>
+        <div class="school-subpage" id="schoolsub-vehicles" style="display:none;"><div class="phase2-placeholder"><i class="fas fa-car-side"></i>Vehicle fleet management — scoped clone of Dekay's vehicles tab.</div></div>
+        <div class="school-subpage" id="schoolsub-certificates" style="display:none;"><div class="phase2-placeholder"><i class="fas fa-certificate"></i>Certificate generation — scoped clone of Dekay's certificates tab.</div></div>
+        <div class="school-subpage" id="schoolsub-enquiries" style="display:none;"><div class="phase2-placeholder"><i class="fas fa-headset"></i>Enquiries inbox — scoped clone of Dekay's enquiries tab.</div></div>
+        <div class="school-subpage" id="schoolsub-permissions" style="display:none;"><div class="phase2-placeholder"><i class="fas fa-shield-alt"></i>Student/instructor dashboard permissions — scoped clone of Dekay's permissions tab.</div></div>
+        <div class="school-subpage" id="schoolsub-settings" style="display:none;"><div class="phase2-placeholder"><i class="fas fa-cog"></i>Per-school settings (branding, contact info, branches).</div></div>
+
+      </section>
+
+      <!-- ---------- REPORTS ---------- -->
+      <section class="page" id="page-reports">
+        <div class="panel"><div class="panel-head"><h3>Schools by region</h3></div><div id="reportBars"><div style="padding:20px;color:var(--slate-dim);">Loading…</div></div></div>
+      </section>
+
+      <!-- ---------- LESSONS (platform-wide, unchanged) ---------- -->
+      <section class="page" id="page-lessons">
+        <div class="panel-head" style="border:none;padding:0 0 16px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div><h3 id="lessonsPageTitle" style="font-size:20px;">Video Lessons</h3><p style="color:var(--slate);font-size:13px;margin:2px 0 0;" id="lessonsPageSub">Select a course folder to manage its video lessons.</p></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn btn-outline" id="lessonBackBtn" onclick="lessonFolderGoUp()" style="display:none;"><i class="fas fa-arrow-left"></i> Back</button>
+            <button class="btn btn-outline" onclick="openAddFolderModal()"><i class="fas fa-folder-plus"></i> New folder</button>
+            <button class="btn btn-primary" id="lessonAddLessonBtn" onclick="openLessonQuizPrompt()" style="display:none;"><i class="fas fa-plus"></i> Add lesson</button>
+          </div>
+        </div>
+        <div id="lessonBreadcrumb" style="font-size:12px;color:var(--slate-dim);margin-bottom:16px;display:none;"></div>
+        <div class="stat-grid" id="lessonFoldersGrid"><div class="empty-state" style="grid-column:1/-1;">Loading folders…</div></div>
+        <div class="panel" id="lessonTableCard" style="display:none;">
+          <table><thead><tr><th>Title</th><th>Category</th><th>Duration</th><th>Completion</th><th>Published</th><th></th></tr></thead><tbody id="lessonsTable"></tbody></table>
+        </div>
+      </section>
+
+      <!-- ---------- QUIZZES (platform-wide, unchanged) ---------- -->
+      <section class="page" id="page-quizzes">
+        <div class="panel-head" style="border:none;padding:0 0 16px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div><h3 id="quizPageTitle" style="font-size:20px;">Quizzes</h3><p style="color:var(--slate);font-size:13px;margin:2px 0 0;" id="quizPageSub">Select a course folder to manage its quiz categories.</p></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn btn-outline" id="quizBackBtn" onclick="quizFolderGoUp()" style="display:none;"><i class="fas fa-arrow-left"></i> Back</button>
+            <button class="btn btn-outline" onclick="openAddQuizCategoryModal()"><i class="fas fa-folder-plus"></i> New category</button>
+            <button class="btn btn-primary" id="quizAddQuizBtn" onclick="openAddQuizModal()" style="display:none;"><i class="fas fa-plus"></i> Add quiz</button>
+          </div>
+        </div>
+        <div id="quizBreadcrumb" style="font-size:12px;color:var(--slate-dim);margin-bottom:16px;display:none;"></div>
+        <div class="stat-grid" id="quizFoldersGrid"><div class="empty-state" style="grid-column:1/-1;">Loading categories…</div></div>
+        <div class="panel" id="quizTableCard" style="display:none;">
+          <table><thead><tr><th>Quiz</th><th>Questions</th><th>Pass mark</th><th>Avg score</th><th>Completion</th><th></th></tr></thead><tbody id="adminQuizTable"></tbody></table>
+        </div>
+      </section>
+
+      <!-- ---------- PROFILE (unchanged) ---------- -->
+      <section class="page" id="page-profile">
+        <div class="panel"><div class="panel-head"><h3>Portal profile</h3></div>
+          <div style="padding:20px;color:var(--slate);font-size:13px;">Same profile editor as before — carried over unchanged. (Wire back in from the previous build if you want it visible here; omitted in this pass to keep focus on the Schools rebuild.)</div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- ================= ADD / EDIT SCHOOL MODAL ================= -->
+<div class="overlay" id="schoolOverlay">
+  <div class="modal">
+    <div class="modal-head"><h3 id="modalTitle">Add driving school</h3><button class="modal-close" id="modalClose">✕</button></div>
+    <form id="schoolForm">
+      <div class="modal-body">
+        <input type="hidden" id="schoolId">
+
+        <div class="field">
+          <label>School image</label>
+          <div class="img-upload-area" id="schoolImgUploadArea" onclick="document.getElementById('schoolImgFile').click()">
+            <i class="fas fa-image" style="color:var(--amber);margin-right:6px;"></i>
+            <span id="schoolImgText" style="font-size:12px;color:var(--slate-dim);">Tap to upload a school logo / cover photo</span>
+          </div>
+          <input type="file" id="schoolImgFile" accept="image/*" style="display:none">
+          <img id="schoolImgPreview" src="" style="display:none;max-width:100%;max-height:140px;border-radius:8px;margin-top:8px;border:1px solid var(--border);">
+        </div>
+
+        <div class="field"><label for="schoolName">School name</label><input id="schoolName" type="text" placeholder="e.g. Accra Driving Academy" required></div>
+        <div class="field">
+          <label for="schoolRegion">Region</label>
+          <select id="schoolRegion" class="field-select" required>
+            <option value="" disabled selected>Select a region</option>
+            <option>Greater Accra</option><option>Ashanti</option><option>Western</option><option>Western North</option>
+            <option>Central</option><option>Eastern</option><option>Volta</option><option>Oti</option>
+            <option>Northern</option><option>North East</option><option>Savannah</option><option>Upper East</option>
+            <option>Upper West</option><option>Bono</option><option>Bono East</option><option>Ahafo</option>
+          </select>
+        </div>
+        <div class="field"><label for="schoolEmail">Email address</label><input id="schoolEmail" type="email" placeholder="school@example.com"></div>
+        <div class="form-row">
+          <div class="field"><label for="schoolPhone1">Phone 1</label><input id="schoolPhone1" type="tel" placeholder="+233 XX XXX XXXX"></div>
+          <div class="field"><label for="schoolPhone2">Phone 2 <span style="color:var(--slate-dim);font-weight:400;">(optional)</span></label><input id="schoolPhone2" type="tel" placeholder="+233 XX XXX XXXX"></div>
+        </div>
+        <div class="field"><label for="schoolUrl">Website / login link</label><input id="schoolUrl" type="url" placeholder="https://example.com/login" required></div>
+        <div class="field">
+          <label for="schoolStatus">Status</label>
+          <select id="schoolStatus" class="field-select">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+        <p class="form-error" id="formError"></p>
+      </div>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-secondary" id="modalCancel">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="modalSubmit">Save school</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ================= ADD STUDENT MODAL (school-scoped) ================= -->
+<div class="overlay" id="schAddStudentModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Add new student</h3><button class="modal-close" onclick="window.closeModal('schAddStudentModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="field"><label>First name</label><input id="schNewFirst" type="text" placeholder="Kwame"></div>
+        <div class="field"><label>Last name</label><input id="schNewLast" type="text" placeholder="Asante"></div>
+      </div>
+      <div class="field"><label>Email</label><input id="schNewEmail" type="email" placeholder="kwame@example.com"></div>
+      <div class="field"><label>Phone</label><input id="schNewPhone" type="tel" placeholder="024 000 0000"></div>
+      <div class="field">
+        <label>Course type</label>
+        <select id="schNewCourse" class="field-select">
+          <option value="Manual">Manual Transmission</option>
+          <option value="Automatic">Automatic Transmission</option>
+          <option value="Motorcycle">Motorcycle</option>
+          <option value="Commercial Bus">Commercial Bus</option>
+          <option value="Truck / HGV">Truck / HGV</option>
+        </select>
+      </div>
+      <div class="field"><label>Temporary password</label><input id="schNewPassword" type="text" placeholder="Set a temporary password"></div>
+      <p class="form-error" id="schAddStudentError"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('schAddStudentModal')">Cancel</button>
+      <button class="btn btn-primary" id="schCreateStudentBtn"><i class="fas fa-user-plus"></i> Create account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= STUDENT DETAIL / EDIT MODAL (school-scoped) ================= -->
+<div class="overlay" id="schStudentDetailModal">
+  <div class="modal" style="width:560px;">
+    <div class="modal-head"><h3 id="schStudentDetailTitle">Student</h3><button class="modal-close" onclick="window.closeModal('schStudentDetailModal')">✕</button></div>
+    <div class="modal-body" id="schStudentDetailBody"></div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="schStudentDeleteBtn"><i class="fas fa-trash"></i> Delete</button>
+      <button class="btn btn-primary" id="schStudentSaveBtn"><i class="fas fa-save"></i> Save changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= CONFIRM MODAL ================= -->
+<div class="overlay" id="confirmModal">
+  <div class="modal" style="width:400px;">
+    <div class="modal-head"><h3 id="confirmTitle">Confirm</h3><button class="modal-close" onclick="window.closeModal('confirmModal')">✕</button></div>
+    <div class="modal-body"><p id="confirmMsg" style="font-size:14px;line-height:1.6;"></p></div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('confirmModal')">Cancel</button>
+      <button class="btn btn-primary" id="confirmOkBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module" src="js/central-app.js"></script>
+</body>
+</html>

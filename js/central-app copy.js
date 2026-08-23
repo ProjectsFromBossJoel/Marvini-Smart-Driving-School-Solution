@@ -54,6 +54,48 @@ function fmtDate(ts){
   return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
 }
 
+// ============================================================
+// GENERIC PAGINATION HELPER — used by every table that can grow large
+// (Students, Instructors, Attendance, Classes, Certificates, Enquiries).
+// 10 rows per page. Each table keeps its own page number under a key.
+// ============================================================
+const PAGE_SIZE = 10;
+const pageState = {};
+function getPage(key){ return pageState[key] || 1; }
+function setPage(key, p){ pageState[key] = p; }
+function paginateArray(arr, key){
+  const total = arr.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  let page = getPage(key);
+  if (page > totalPages) { page = totalPages; setPage(key, page); }
+  const start = (page - 1) * PAGE_SIZE;
+  return { items: arr.slice(start, start + PAGE_SIZE), total, page, totalPages };
+}
+window.__pagerCallbacks = {};
+window.__pagerGo = function(key, page){
+  setPage(key, page);
+  if (window.__pagerCallbacks[key]) window.__pagerCallbacks[key]();
+};
+function renderPager(elId, key, total, rerenderFn){
+  const el = document.getElementById(elId);
+  if (!el) return;
+  window.__pagerCallbacks[key] = rerenderFn;
+  if (!total) { el.innerHTML = ''; return; }
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const page = getPage(key);
+  const start = (page - 1) * PAGE_SIZE + 1;
+  const end = Math.min(page * PAGE_SIZE, total);
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid var(--border);font-size:12px;color:var(--slate-dim);flex-wrap:wrap;gap:8px;">
+      <span>Showing ${start}–${end} of ${total}</span>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="icon-btn" ${page<=1?'disabled':''} onclick="window.__pagerGo('${key}',${page-1})"><i class="fas fa-chevron-left"></i></button>
+        <span>Page ${page} of ${totalPages}</span>
+        <button class="icon-btn" ${page>=totalPages?'disabled':''} onclick="window.__pagerGo('${key}',${page+1})"><i class="fas fa-chevron-right"></i></button>
+      </div>
+    </div>`;
+}
+
 let toastTimer = null;
 function showToast(message, isError){
   const toast = document.getElementById('toast');
@@ -543,9 +585,11 @@ function renderSchoolStudents(){
   const tbody = document.getElementById('schStudentsTableBody');
   if (!active.length) {
     tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No students match.</td></tr>`;
+    renderPager('schStudentsPagination', 'schStudents', 0, renderSchoolStudents);
     return;
   }
-  tbody.innerHTML = active.map(s => {
+  const { items: pageStudents, total: studentTotal } = paginateArray(active, 'schStudents');
+  tbody.innerHTML = pageStudents.map(s => {
     const name = `${s.firstName||''} ${s.lastName||''}`.trim() || '—';
     const statusClass = s.status === 'active' ? 'good' : 'bad';
     return `<tr>
@@ -559,8 +603,9 @@ function renderSchoolStudents(){
       </td>
     </tr>`;
   }).join('');
+  renderPager('schStudentsPagination', 'schStudents', studentTotal, renderSchoolStudents);
 }
-document.getElementById('schStudentSearch').addEventListener('input', renderSchoolStudents);
+document.getElementById('schStudentSearch').addEventListener('input', () => { setPage('schStudents', 1); renderSchoolStudents(); });
 
 window.approveStudent = async function(uid){
   if (!(await showConfirm('Approve student', 'Approve this student? They will be able to sign in.'))) return;
@@ -757,23 +802,30 @@ function renderSchoolInstructors(){
   const tbody = document.getElementById('schInstructorsTableBody');
   if (!approved.length) {
     tbody.innerHTML = `<tr class="empty-row"><td colspan="5">No instructors match.</td></tr>`;
+    renderPager('schInstructorsPagination', 'schInstructors', 0, renderSchoolInstructors);
     return;
   }
-  tbody.innerHTML = approved.map(i => {
+  const { items: pageInstructors, total: instructorTotal } = paginateArray(approved, 'schInstructors');
+  tbody.innerHTML = pageInstructors.map(i => {
     const name = `${i.firstName||''} ${i.lastName||''}`.trim() || '—';
     const statusClass = i.status === 'active' ? 'good' : 'bad';
+    // Fallback covers instructors saved under an older field name; if this
+    // still shows "—" the branch was genuinely never set on that record —
+    // open Edit and set it there.
+    const branch = i.branch || i.branchName || i.location || '—';
     return `<tr>
       <td><strong>${escapeHtml(name)}</strong></td>
       <td style="font-size:12px;color:var(--slate-dim);">${escapeHtml(i.email||'')}</td>
-      <td><span class="badge">${escapeHtml(i.branch||'—')}</span></td>
+      <td><span class="badge">${escapeHtml(branch)}</span></td>
       <td><span class="badge ${statusClass}">${escapeHtml(i.status||'active')}</span></td>
       <td class="row-actions">
         <button class="icon-btn" title="View / edit" onclick="window.openInstructorDetail('${i.id}')"><i class="fas fa-eye"></i></button>
       </td>
     </tr>`;
   }).join('');
+  renderPager('schInstructorsPagination', 'schInstructors', instructorTotal, renderSchoolInstructors);
 }
-document.getElementById('schInstructorSearch').addEventListener('input', renderSchoolInstructors);
+document.getElementById('schInstructorSearch').addEventListener('input', () => { setPage('schInstructors', 1); renderSchoolInstructors(); });
 
 window.approveInstructor = async function(uid){
   if (!(await showConfirm('Approve instructor', 'Approve this instructor? They will be able to sign in.'))) return;
@@ -958,18 +1010,30 @@ let schoolAttendance = [];
 let schoolAttendanceStudentMap = {};
 let schoolAttendanceUnsub = null;
 
-async function loadSchoolAttendance(){
+function loadSchoolAttendance(){
   if (schoolAttendanceUnsub) { schoolAttendanceUnsub(); schoolAttendanceUnsub = null; }
-  try {
-    const studSnap = await getDocs(query(collection(db, "students"), where("schoolId", "==", currentSchoolId)));
-    schoolAttendanceStudentMap = {};
-    studSnap.docs.forEach(d => { schoolAttendanceStudentMap[d.id] = d.data(); });
-  } catch(e) { console.error(e); }
-
   const q = query(collection(db, "attendance"), where("schoolId", "==", currentSchoolId));
-  schoolAttendanceUnsub = onSnapshot(q, (snap) => {
+  schoolAttendanceUnsub = onSnapshot(q, async (snap) => {
     schoolAttendance = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .sort((a,b) => (b.date?.toDate?.() || new Date(b.date||0)) - (a.date?.toDate?.() || new Date(a.date||0)));
+
+    // Resolve student names by fetching each referenced student doc directly
+    // by ID, rather than pre-filtering students by schoolId first. Some
+    // legacy attendance records point at students whose own schoolId field
+    // is missing/inconsistent — a bulk schoolId-filtered query would silently
+    // drop those and print the raw ID instead of a name. Fetching by ID
+    // sidesteps that mismatch entirely.
+    const missingIds = [...new Set(
+      schoolAttendance.map(r => r.studentId).filter(id => id && !schoolAttendanceStudentMap[id])
+    )];
+    if (missingIds.length) {
+      await Promise.all(missingIds.map(async (id) => {
+        try {
+          const studentDoc = await getDoc(doc(db, "students", id));
+          if (studentDoc.exists()) schoolAttendanceStudentMap[id] = studentDoc.data();
+        } catch(e) { /* leave unresolved — falls back to raw ID below */ }
+      }));
+    }
     renderSchoolAttendance();
   }, (err) => showToast('Could not load attendance: ' + err.message, true));
 }
@@ -985,9 +1049,14 @@ function renderSchoolAttendance(){
     return (!term || name.includes(term)) && (!statusFilter || r.status === statusFilter);
   });
 
-  if (!filtered.length) { tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No attendance records found.</td></tr>`; return; }
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No attendance records found.</td></tr>`;
+    renderPager('schAttPagination', 'schAtt', 0, renderSchoolAttendance);
+    return;
+  }
 
-  tbody.innerHTML = filtered.map(r => {
+  const { items: pageAtt, total: attTotal } = paginateArray(filtered, 'schAtt');
+  tbody.innerHTML = pageAtt.map(r => {
     const student = schoolAttendanceStudentMap[r.studentId];
     const name = student ? `${student.firstName||''} ${student.lastName||''}`.trim() : (r.studentId || '—');
     const dateStr = r.date?.toDate ? fmtDate(r.date) : (r.date || '—');
@@ -1005,9 +1074,10 @@ function renderSchoolAttendance(){
       </td>
     </tr>`;
   }).join('');
+  renderPager('schAttPagination', 'schAtt', attTotal, renderSchoolAttendance);
 }
-document.getElementById('schAttSearch').addEventListener('input', renderSchoolAttendance);
-document.getElementById('schAttStatusFilter').addEventListener('change', renderSchoolAttendance);
+document.getElementById('schAttSearch').addEventListener('input', () => { setPage('schAtt', 1); renderSchoolAttendance(); });
+document.getElementById('schAttStatusFilter').addEventListener('change', () => { setPage('schAtt', 1); renderSchoolAttendance(); });
 
 window.toggleSchAttendance = async function(id, status){
   try { await updateDoc(doc(db, 'attendance', id), { status }); showToast(`Marked ${status} ✓`); }
@@ -1045,9 +1115,14 @@ function renderSchoolClasses(){
     return !term || text.includes(term);
   });
   const tbody = document.getElementById('schClassesTableBody');
-  if (!filtered.length) { tbody.innerHTML = `<tr class="empty-row"><td colspan="7">No classes scheduled yet.</td></tr>`; return; }
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="7">No classes scheduled yet.</td></tr>`;
+    renderPager('schClassesPagination', 'schClasses', 0, renderSchoolClasses);
+    return;
+  }
 
-  tbody.innerHTML = filtered.map(c => {
+  const { items: pageClasses, total: classTotal } = paginateArray(filtered, 'schClasses');
+  tbody.innerHTML = pageClasses.map(c => {
     const status = classStatus(c);
     const statusClass = status === 'ongoing' ? 'good' : status === 'upcoming' ? 'warn' : 'bad';
     return `<tr>
@@ -1060,8 +1135,9 @@ function renderSchoolClasses(){
       <td class="row-actions"><button class="icon-btn" title="Edit" onclick="window.openSchClassModal('${c.id}')"><i class="fas fa-eye"></i></button></td>
     </tr>`;
   }).join('');
+  renderPager('schClassesPagination', 'schClasses', classTotal, renderSchoolClasses);
 }
-document.getElementById('schClassSearch').addEventListener('input', renderSchoolClasses);
+document.getElementById('schClassSearch').addEventListener('input', () => { setPage('schClasses', 1); renderSchoolClasses(); });
 
 async function populateSchClassInstructorSelect(selectedId){
   const sel = document.getElementById('schClassInstructor');
@@ -1302,8 +1378,13 @@ function renderSchoolCertificates(){
     return !term || text.includes(term);
   });
   const tbody = document.getElementById('schCertTableBody');
-  if (!filtered.length) { tbody.innerHTML = `<tr class="empty-row"><td colspan="5">No certificates issued yet.</td></tr>`; return; }
-  tbody.innerHTML = filtered.map(c => `<tr>
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="5">No certificates issued yet.</td></tr>`;
+    renderPager('schCertPagination', 'schCert', 0, renderSchoolCertificates);
+    return;
+  }
+  const { items: pageCerts, total: certTotal } = paginateArray(filtered, 'schCert');
+  tbody.innerHTML = pageCerts.map(c => `<tr>
     <td style="font-family:'JetBrains Mono',monospace;font-size:12px;">${escapeHtml(c.serialNumber||'—')}</td>
     <td><strong>${escapeHtml(c.studentName||'—')}</strong></td>
     <td><span class="badge">${escapeHtml(c.course||'—')}</span></td>
@@ -1313,8 +1394,9 @@ function renderSchoolCertificates(){
       <button class="icon-btn danger" title="Delete" onclick="window.deleteSchCertificate('${c.id}')"><i class="fas fa-trash"></i></button>
     </td>
   </tr>`).join('');
+  renderPager('schCertPagination', 'schCert', certTotal, renderSchoolCertificates);
 }
-document.getElementById('schCertSearch').addEventListener('input', renderSchoolCertificates);
+document.getElementById('schCertSearch').addEventListener('input', () => { setPage('schCert', 1); renderSchoolCertificates(); });
 
 window.deleteSchCertificate = async function(id){
   if (!(await showConfirm('Delete certificate', 'Delete this certificate record?'))) return;
@@ -1340,8 +1422,13 @@ function loadSchoolEnquiries(){
 
 function renderSchoolEnquiries(){
   const tbody = document.getElementById('schEnquiriesTableBody');
-  if (!schoolEnquiries.length) { tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No enquiries yet.</td></tr>`; return; }
-  tbody.innerHTML = schoolEnquiries.map(e => `<tr>
+  if (!schoolEnquiries.length) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No enquiries yet.</td></tr>`;
+    renderPager('schEnquiriesPagination', 'schEnquiries', 0, renderSchoolEnquiries);
+    return;
+  }
+  const { items: pageEnq, total: enqTotal } = paginateArray(schoolEnquiries, 'schEnquiries');
+  tbody.innerHTML = pageEnq.map(e => `<tr>
     <td style="font-size:12px;color:var(--slate-dim);">${fmtDate(e.createdAt)}</td>
     <td><strong>${escapeHtml(e.firstName||'')} ${escapeHtml(e.lastName||'')}</strong><div style="font-size:11px;color:var(--slate-dim);">${escapeHtml(e.email||'')}</div></td>
     <td style="font-size:12px;">${escapeHtml(e.phone||'—')}</td>
@@ -1356,6 +1443,7 @@ function renderSchoolEnquiries(){
       </select>
     </td>
   </tr>`).join('');
+  renderPager('schEnquiriesPagination', 'schEnquiries', enqTotal, renderSchoolEnquiries);
 }
 
 window.updateSchEnquiryStatus = async function(id, status){

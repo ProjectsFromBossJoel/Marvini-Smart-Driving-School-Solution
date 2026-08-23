@@ -309,14 +309,104 @@
         </div>
 
         <!-- Instructors / Attendance / Classes / Vehicles / Certificates / Enquiries / Permissions / Settings — Phase 2 -->
-        <div class="school-subpage" id="schoolsub-instructors" style="display:none;"><div class="phase2-placeholder"><i class="fas fa-chalkboard-teacher"></i>Instructor management — next module to port from Dekay's admin (same scoping pattern as Students).</div></div>
-        <div class="school-subpage" id="schoolsub-attendance" style="display:none;"><div class="phase2-placeholder"><i class="fas fa-calendar-check"></i>Attendance records — scoped clone of Dekay's attendance tab.</div></div>
-        <div class="school-subpage" id="schoolsub-classes" style="display:none;"><div class="phase2-placeholder"><i class="fas fa-chalkboard"></i>Class scheduling — scoped clone of Dekay's classes tab.</div></div>
-        <div class="school-subpage" id="schoolsub-vehicles" style="display:none;"><div class="phase2-placeholder"><i class="fas fa-car-side"></i>Vehicle fleet management — scoped clone of Dekay's vehicles tab.</div></div>
-        <div class="school-subpage" id="schoolsub-certificates" style="display:none;"><div class="phase2-placeholder"><i class="fas fa-certificate"></i>Certificate generation — scoped clone of Dekay's certificates tab.</div></div>
-        <div class="school-subpage" id="schoolsub-enquiries" style="display:none;"><div class="phase2-placeholder"><i class="fas fa-headset"></i>Enquiries inbox — scoped clone of Dekay's enquiries tab.</div></div>
-        <div class="school-subpage" id="schoolsub-permissions" style="display:none;"><div class="phase2-placeholder"><i class="fas fa-shield-alt"></i>Student/instructor dashboard permissions — scoped clone of Dekay's permissions tab.</div></div>
-        <div class="school-subpage" id="schoolsub-settings" style="display:none;"><div class="phase2-placeholder"><i class="fas fa-cog"></i>Per-school settings (branding, contact info, branches).</div></div>
+        <div class="school-subpage" id="schoolsub-instructors" style="display:none;">
+          <div class="schools-toolbar">
+            <input class="search-input" id="schInstructorSearch" type="text" placeholder="Search by name or email…">
+            <button class="btn btn-primary" id="schOpenAddInstructorBtn"><i class="fas fa-user-plus"></i> Add instructor</button>
+          </div>
+
+          <div class="panel" id="schPendingInstructorPanel" style="margin-bottom:18px;display:none;">
+            <div class="panel-head"><h3><i class="fas fa-clock"></i> Pending approvals</h3><span class="badge warn" id="schPendingInstructorCount">0</span></div>
+            <table>
+              <thead><tr><th>Instructor</th><th>Branch</th><th>Experience</th><th>Actions</th></tr></thead>
+              <tbody id="schPendingInstructorTableBody"></tbody>
+            </table>
+          </div>
+
+          <div class="panel">
+            <table>
+              <thead><tr><th>Instructor</th><th>Email</th><th>Branch</th><th>Status</th><th></th></tr></thead>
+              <tbody id="schInstructorsTableBody"><tr class="empty-row"><td colspan="5">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="school-subpage" id="schoolsub-attendance" style="display:none;">
+          <div class="schools-toolbar">
+            <input class="search-input" id="schAttSearch" type="text" placeholder="Search by student name…">
+            <select class="search-input" id="schAttStatusFilter" style="max-width:160px;">
+              <option value="">All statuses</option>
+              <option value="present">Present</option>
+              <option value="absent">Absent</option>
+              <option value="excused">Excused</option>
+            </select>
+          </div>
+          <div class="panel">
+            <table>
+              <thead><tr><th>Student</th><th>Date</th><th>Course</th><th>Class</th><th>Status</th><th></th></tr></thead>
+              <tbody id="schAttTableBody"><tr class="empty-row"><td colspan="6">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="school-subpage" id="schoolsub-classes" style="display:none;">
+          <div class="schools-toolbar">
+            <input class="search-input" id="schClassSearch" type="text" placeholder="Search by title or course…">
+            <button class="btn btn-primary" id="schOpenAddClassBtn"><i class="fas fa-plus"></i> Schedule class</button>
+          </div>
+          <div class="panel">
+            <table>
+              <thead><tr><th>Title</th><th>Course</th><th>Instructor</th><th>Date &amp; time</th><th>Mode</th><th>Status</th><th></th></tr></thead>
+              <tbody id="schClassesTableBody"><tr class="empty-row"><td colspan="7">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="school-subpage" id="schoolsub-vehicles" style="display:none;">
+          <div class="schools-toolbar">
+            <div></div>
+            <button class="btn btn-primary" id="schOpenAddVehicleBtn"><i class="fas fa-plus"></i> Add vehicle</button>
+          </div>
+          <div class="school-grid" id="schVehicleGrid">
+            <div class="empty-state" style="grid-column:1/-1;">Loading vehicles…</div>
+          </div>
+        </div>
+        <div class="school-subpage" id="schoolsub-certificates" style="display:none;">
+          <div class="schools-toolbar">
+            <input class="search-input" id="schCertSearch" type="text" placeholder="Search by student name or serial…">
+          </div>
+          <div class="panel">
+            <table>
+              <thead><tr><th>Serial</th><th>Student</th><th>Course</th><th>Issued</th><th></th></tr></thead>
+              <tbody id="schCertTableBody"><tr class="empty-row"><td colspan="5">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="school-subpage" id="schoolsub-enquiries" style="display:none;">
+          <div class="panel">
+            <table>
+              <thead><tr><th>Date</th><th>Name</th><th>Phone</th><th>Course</th><th>Message</th><th>Status</th></tr></thead>
+              <tbody id="schEnquiriesTableBody"><tr class="empty-row"><td colspan="6">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="school-subpage" id="schoolsub-permissions" style="display:none;">
+          <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
+            <button class="btn btn-primary" id="schPermTabStudentBtn" onclick="window.switchSchPermTab('student')">Student permissions</button>
+            <button class="btn btn-outline" id="schPermTabInstructorBtn" onclick="window.switchSchPermTab('instructor')">Instructor permissions</button>
+          </div>
+          <div class="panel" id="schPermStudentPanel">
+            <div class="panel-head"><h3>Student dashboard permissions</h3><button class="btn btn-primary" onclick="window.saveSchPermissions('student')"><i class="fas fa-save"></i> Save</button></div>
+            <div style="padding:20px;display:flex;flex-direction:column;gap:10px;" id="schPermStudentList">Loading…</div>
+          </div>
+          <div class="panel" id="schPermInstructorPanel" style="display:none;">
+            <div class="panel-head"><h3>Instructor dashboard permissions</h3><button class="btn btn-primary" onclick="window.saveSchPermissions('instructor')"><i class="fas fa-save"></i> Save</button></div>
+            <div style="padding:20px;display:flex;flex-direction:column;gap:10px;" id="schPermInstructorList">Loading…</div>
+          </div>
+        </div>
+        <div class="school-subpage" id="schoolsub-settings" style="display:none;">
+          <div class="panel">
+            <div class="panel-head"><h3>School information</h3><button class="btn btn-outline" onclick="window.openSchoolEditFromDetail()"><i class="fas fa-pen"></i> Edit</button></div>
+            <div id="schSettingsInfo" style="padding:20px;font-size:13.5px;color:var(--slate);">Loading…</div>
+          </div>
+        </div>
 
       </section>
 
@@ -465,6 +555,49 @@
   </div>
 </div>
 
+<!-- ================= ADD INSTRUCTOR MODAL (school-scoped) ================= -->
+<div class="overlay" id="schAddInstructorModal">
+  <div class="modal">
+    <div class="modal-head"><h3>Add new instructor</h3><button class="modal-close" onclick="window.closeModal('schAddInstructorModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="field"><label>First name</label><input id="schInstrNewFirst" type="text" placeholder="Kwame"></div>
+        <div class="field"><label>Last name</label><input id="schInstrNewLast" type="text" placeholder="Asante"></div>
+      </div>
+      <div class="field"><label>Email</label><input id="schInstrNewEmail" type="email" placeholder="instructor@example.com"></div>
+      <div class="field"><label>Phone</label><input id="schInstrNewPhone" type="tel" placeholder="024 000 0000"></div>
+      <div class="field">
+        <label>Branch</label>
+        <select id="schInstrNewBranch" class="field-select">
+          <option value="">Select branch…</option>
+          <option value="Ablekuma">Ablekuma</option>
+          <option value="Adenta">Adenta</option>
+          <option value="Amasaman">Amasaman</option>
+          <option value="Dansoman">Dansoman</option>
+        </select>
+      </div>
+      <div class="field"><label>Temporary password</label><input id="schInstrNewPassword" type="text" placeholder="Set a temporary password"></div>
+      <p class="form-error" id="schAddInstructorError"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('schAddInstructorModal')">Cancel</button>
+      <button class="btn btn-primary" id="schCreateInstructorBtn"><i class="fas fa-user-plus"></i> Create instructor</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= INSTRUCTOR DETAIL / EDIT MODAL (school-scoped) ================= -->
+<div class="overlay" id="schInstructorDetailModal">
+  <div class="modal" style="width:560px;">
+    <div class="modal-head"><h3 id="schInstructorDetailTitle">Instructor</h3><button class="modal-close" onclick="window.closeModal('schInstructorDetailModal')">✕</button></div>
+    <div class="modal-body" id="schInstructorDetailBody"></div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="schInstructorDeleteBtn"><i class="fas fa-trash"></i> Delete</button>
+      <button class="btn btn-primary" id="schInstructorSaveBtn"><i class="fas fa-save"></i> Save changes</button>
+    </div>
+  </div>
+</div>
+
 <!-- ================= CONFIRM MODAL ================= -->
 <div class="overlay" id="confirmModal">
   <div class="modal" style="width:400px;">
@@ -473,6 +606,89 @@
     <div class="modal-foot">
       <button class="btn btn-secondary" onclick="window.closeModal('confirmModal')">Cancel</button>
       <button class="btn btn-primary" id="confirmOkBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ADD/EDIT CLASS MODAL ================= -->
+<div class="overlay" id="schClassModal">
+  <div class="modal" style="width:520px;">
+    <div class="modal-head"><h3 id="schClassModalTitle">Schedule class</h3><button class="modal-close" onclick="window.closeModal('schClassModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="schClassId">
+      <div class="field"><label>Class title</label><input id="schClassTitle" type="text" placeholder="e.g. Road Signs — Warning Signs"></div>
+      <div class="field"><label>Description</label><textarea id="schClassDesc" rows="2" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-family:inherit;"></textarea></div>
+      <div class="form-row">
+        <div class="field"><label>Course name</label><input id="schClassCourse" type="text" placeholder="e.g. Manual"></div>
+        <div class="field"><label>Instructor</label>
+          <select id="schClassInstructor" class="field-select"><option value="">Select instructor…</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Date</label><input id="schClassDate" type="date"></div>
+        <div class="field"><label>Time</label><input id="schClassTime" type="time"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>End date</label><input id="schClassEndDate" type="date"></div>
+        <div class="field"><label>End time</label><input id="schClassEndTime" type="time"></div>
+      </div>
+      <div class="field"><label>Mode</label>
+        <select id="schClassMode" class="field-select">
+          <option value="in-person">In-person</option>
+          <option value="online">Online</option>
+        </select>
+      </div>
+      <p class="form-error" id="schClassError"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="schClassDeleteBtn" style="display:none;"><i class="fas fa-trash"></i> Delete</button>
+      <button class="btn btn-secondary" onclick="window.closeModal('schClassModal')">Cancel</button>
+      <button class="btn btn-primary" id="schClassSaveBtn"><i class="fas fa-save"></i> Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ADD/EDIT VEHICLE MODAL ================= -->
+<div class="overlay" id="schVehicleModal">
+  <div class="modal">
+    <div class="modal-head"><h3 id="schVehicleModalTitle">Add vehicle</h3><button class="modal-close" onclick="window.closeModal('schVehicleModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="schVehicleId">
+      <div class="field">
+        <label>Vehicle photo</label>
+        <div class="img-upload-area" onclick="document.getElementById('schVehicleImgFile').click()">
+          <i class="fas fa-camera" style="color:var(--amber);margin-right:6px;"></i>
+          <span id="schVehicleImgText" style="font-size:12px;color:var(--slate-dim);">Tap to upload a photo</span>
+        </div>
+        <input type="file" id="schVehicleImgFile" accept="image/*" style="display:none">
+        <img id="schVehicleImgPreview" src="" style="display:none;max-width:100%;max-height:140px;border-radius:8px;margin-top:8px;border:1px solid var(--border);">
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Year</label><input id="schVehicleYear" type="number" placeholder="2022"></div>
+        <div class="field"><label>Make</label><input id="schVehicleMake" type="text" placeholder="Toyota"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Model</label><input id="schVehicleModel" type="text" placeholder="Corolla"></div>
+        <div class="field"><label>Trim</label><input id="schVehicleTrim" type="text" placeholder="LE"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Engine type</label>
+          <select id="schVehicleEngine" class="field-select">
+            <option>Petrol</option><option>Diesel</option><option>Hybrid</option><option>Electric</option>
+          </select>
+        </div>
+        <div class="field"><label>Transmission</label>
+          <select id="schVehicleTransmission" class="field-select">
+            <option>Manual</option><option>Automatic</option>
+          </select>
+        </div>
+      </div>
+      <p class="form-error" id="schVehicleError"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="schVehicleDeleteBtn" style="display:none;"><i class="fas fa-trash"></i> Delete</button>
+      <button class="btn btn-secondary" onclick="window.closeModal('schVehicleModal')">Cancel</button>
+      <button class="btn btn-primary" id="schVehicleSaveBtn"><i class="fas fa-save"></i> Save</button>
     </div>
   </div>
 </div>

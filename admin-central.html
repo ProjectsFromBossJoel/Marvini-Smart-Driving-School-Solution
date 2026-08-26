@@ -1022,7 +1022,7 @@
       <input type="hidden" id="schEditRoleKey">
       <div style="margin-bottom:16px;padding:12px 16px;background:var(--asphalt-deep);border:1px solid var(--border);border-radius:8px;">
         <div style="font-size:13px;color:var(--text-muted);">Permission matrix — check the boxes for each page and action.</div>
-        <div style="font-size:11px;color:var(--slate-dim);margin-top:4px;">Legend: <span style="color:var(--amber);">■</span> Create &nbsp; <span style="color:var(--info);">■</span> Read &nbsp; <span style="color:var(--good);">■</span> Update &nbsp; <span style="color:var(--brake);">■</span> Delete</div>
+        <div style="font-size:11px;color:var(--slate-dim);margin-top:4px;">Legend: <span style="color:var(--chalk);">■</span> Page Access &nbsp; <span style="color:var(--amber);">■</span> Create &nbsp; <span style="color:var(--info);">■</span> Read &nbsp; <span style="color:var(--good);">■</span> Update &nbsp; <span style="color:var(--brake);">■</span> Delete</div>
       </div>
       <div id="schEditRoleMatrix" style="display:flex;flex-direction:column;gap:8px;"></div>
       <p class="form-error" id="schEditRoleError"></p>
@@ -1030,6 +1030,308 @@
     <div class="modal-foot">
       <button class="btn btn-secondary" onclick="window.closeModal('schEditRoleModal')">Cancel</button>
       <button class="btn btn-primary" id="schSaveRoleBtn"><i class="fas fa-save"></i> Save permissions</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= LESSON FOLDER MODALS ================= -->
+<div class="overlay" id="addFolderModal">
+  <div class="modal" style="width:420px;">
+    <div class="modal-head"><h3 id="addFolderModalTitle">New course folder</h3><button class="modal-close" onclick="window.closeModal('addFolderModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field" id="newFolderCourseGroup">
+        <label>Course</label>
+        <select id="newFolderCourseSelect" class="field-select"><option value="">Select course…</option></select>
+        <div id="newFolderParentHint" style="font-size:11px;color:var(--slate-dim);margin-top:6px;">This folder will be created at the top level.</div>
+      </div>
+      <div class="field" id="newFolderTitleGroup" style="display:none;">
+        <label>Subfolder title</label>
+        <input type="text" id="newFolderTitle" placeholder="e.g. Advanced">
+      </div>
+      <div class="field" id="newFolderDescGroup" style="display:none;">
+        <label>Description</label>
+        <textarea id="newFolderDescription" rows="2" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-family:inherit;" placeholder="Brief description of this subfolder…"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('addFolderModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="window.createLessonFolder()"><i class="fas fa-folder-plus"></i> Create folder</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="editFolderModal">
+  <div class="modal" style="width:420px;">
+    <div class="modal-head"><h3>Edit folder</h3><button class="modal-close" onclick="window.closeModal('editFolderModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editFolderId">
+      <div class="field"><label>Folder name</label><input type="text" id="editFolderTitle" placeholder="Folder name"></div>
+      <div class="field"><label>Description</label><textarea id="editFolderDescription" rows="2" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-family:inherit;" placeholder="Brief description…"></textarea></div>
+      <div style="font-size:11px;color:var(--slate-dim);"><i class="fas fa-info-circle"></i> Renaming will automatically update any subfolders and lessons stored inside this folder.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('editFolderModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="window.updateLessonFolder()"><i class="fas fa-save"></i> Save changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ADD LESSON MODAL ================= -->
+<div class="overlay" id="addLessonModal">
+  <div class="modal" style="width:520px;">
+    <div class="modal-head"><h3>Add video lesson</h3><button class="modal-close" onclick="window.closeModal('addLessonModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Course folder</label>
+        <select id="lessonFolder" class="field-select" onchange="window.refreshLessonQuizOptions('lessonFolder','lessonAssignedQuiz')"></select>
+      </div>
+      <div class="field"><label>Lesson title</label><input type="text" id="lessonTitle" placeholder="e.g. Road signs — warning signs"></div>
+      <div class="form-row">
+        <div class="field">
+          <label>Category</label>
+          <select id="lessonCategory" class="field-select">
+            <option value="Theory">Theory</option>
+            <option value="Road safety">Road safety</option>
+            <option value="Practical tips">Practical tips</option>
+            <option value="DVLA prep">DVLA prep</option>
+          </select>
+        </div>
+        <div class="field"><label>Duration</label><input type="text" id="lessonDuration" placeholder="e.g. 8:30"></div>
+      </div>
+      <div class="field">
+        <label>Video file</label>
+        <div class="img-upload-area" id="lessonVideoUploadArea" onclick="document.getElementById('lessonVideoFile').click()">
+          <i class="fas fa-video" style="color:var(--amber);margin-right:6px;"></i>
+          <span id="lessonVideoText" style="font-size:12px;color:var(--slate-dim);">Tap to upload lesson video (MP4)</span>
+        </div>
+        <input type="file" id="lessonVideoFile" accept="video/*" style="display:none" onchange="window.previewLessonVideo(this)">
+        <video id="lessonVideoPreview" controls style="display:none;width:100%;margin-top:8px;border-radius:8px;border:1px solid var(--border);"></video>
+        <div id="lessonUploadProgressWrap" style="display:none;margin-top:10px;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--slate-dim);margin-bottom:4px;">
+            <span id="lessonUploadProgressLabel">Uploading video…</span><span id="lessonUploadProgressPct">0%</span>
+          </div>
+          <div style="height:8px;background:var(--asphalt-deep);border-radius:50px;overflow:hidden;">
+            <div id="lessonUploadProgressBar" style="height:100%;width:0%;background:var(--amber);border-radius:50px;transition:width 0.15s ease;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Thumbnail image</label>
+        <div class="img-upload-area" id="lessonThumbUploadArea" onclick="document.getElementById('lessonThumbFile').click()">
+          <i class="fas fa-image" style="color:var(--amber);margin-right:6px;"></i>
+          <span id="lessonThumbText" style="font-size:12px;color:var(--slate-dim);">Tap to upload thumbnail (leave blank for auto)</span>
+        </div>
+        <input type="file" id="lessonThumbFile" accept="image/*" style="display:none" onchange="window.previewLessonThumb(this)">
+        <img id="lessonThumbPreview" src="" style="display:none;max-width:160px;margin-top:8px;border-radius:8px;border:1px solid var(--border);">
+      </div>
+      <div class="field">
+        <label>Assign to quiz <span style="font-weight:normal;color:var(--slate-dim);">(optional)</span></label>
+        <select id="lessonAssignedQuiz" class="field-select"><option value="">No quiz — don't auto-launch</option></select>
+        <div style="font-size:11px;color:var(--slate-dim);margin-top:4px;">When set, this quiz will automatically pop up for the student right after they finish watching the video.</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('addLessonModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="window.addLesson()"><i class="fas fa-plus"></i> Publish lesson</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= LESSON QUIZ PROMPT MODAL ================= -->
+<div class="overlay" id="lessonQuizPromptModal">
+  <div class="modal" style="width:440px;">
+    <div class="modal-head"><h3>Assign a quiz?</h3><button class="modal-close" onclick="window.closeModal('lessonQuizPromptModal')">✕</button></div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:var(--chalk);line-height:1.6;">Will you assign this video lesson to a quiz? If yes, make sure to upload or create a quiz first so you can find it in the dropdown to assign to the video lesson.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.handleLessonQuizPromptNo()">No, just add lesson</button>
+      <button class="btn btn-primary" onclick="window.handleLessonQuizPromptYes()"><i class="fas fa-tasks"></i> Yes, create/upload quiz</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= EDIT LESSON MODAL ================= -->
+<div class="overlay" id="editLessonModal">
+  <div class="modal" style="width:520px;">
+    <div class="modal-head"><h3>Edit lesson</h3><button class="modal-close" onclick="window.closeEditLessonModal()">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editLessonId">
+      <div class="field">
+        <label>Course folder</label>
+        <select id="editLessonFolder" class="field-select" onchange="window.refreshLessonQuizOptions('editLessonFolder','editLessonAssignedQuiz')"></select>
+      </div>
+      <div class="field"><label>Lesson title</label><input type="text" id="editLessonTitle"></div>
+      <div class="form-row">
+        <div class="field">
+          <label>Category</label>
+          <select id="editLessonCategory" class="field-select">
+            <option value="Theory">Theory</option>
+            <option value="Road safety">Road safety</option>
+            <option value="Practical tips">Practical tips</option>
+            <option value="DVLA prep">DVLA prep</option>
+          </select>
+        </div>
+        <div class="field"><label>Duration</label><input type="text" id="editLessonDuration" placeholder="e.g. 8:30"></div>
+      </div>
+      <div class="field">
+        <label>Video file</label>
+        <div style="font-size:11px;color:var(--slate-dim);margin-bottom:6px;">Leave untouched to keep the current video, or upload a new file to replace it.</div>
+        <div class="img-upload-area" id="editLessonVideoUploadArea" onclick="document.getElementById('editLessonVideoFile').click()">
+          <i class="fas fa-video" style="color:var(--amber);margin-right:6px;"></i>
+          <span id="editLessonVideoText" style="font-size:12px;color:var(--slate-dim);">Tap to replace video</span>
+        </div>
+        <input type="file" id="editLessonVideoFile" accept="video/*" style="display:none" onchange="window.previewEditLessonVideo(this)">
+        <video id="editLessonVideoPreview" controls style="display:none;width:100%;margin-top:8px;border-radius:8px;border:1px solid var(--border);"></video>
+        <div id="editLessonUploadProgressWrap" style="display:none;margin-top:10px;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--slate-dim);margin-bottom:4px;">
+            <span id="editLessonUploadProgressLabel">Uploading video…</span><span id="editLessonUploadProgressPct">0%</span>
+          </div>
+          <div style="height:8px;background:var(--asphalt-deep);border-radius:50px;overflow:hidden;">
+            <div id="editLessonUploadProgressBar" style="height:100%;width:0%;background:var(--amber);border-radius:50px;transition:width 0.15s ease;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Thumbnail image</label>
+        <div class="img-upload-area" id="editLessonThumbUploadArea" onclick="document.getElementById('editLessonThumbFile').click()">
+          <i class="fas fa-image" style="color:var(--amber);margin-right:6px;"></i>
+          <span id="editLessonThumbText" style="font-size:12px;color:var(--slate-dim);">Tap to replace thumbnail</span>
+        </div>
+        <input type="file" id="editLessonThumbFile" accept="image/*" style="display:none" onchange="window.previewEditLessonThumb(this)">
+        <img id="editLessonThumbPreview" src="" style="display:none;max-width:160px;margin-top:8px;border-radius:8px;border:1px solid var(--border);">
+      </div>
+      <div class="field">
+        <label>Assign to quiz <span style="font-weight:normal;color:var(--slate-dim);">(optional)</span></label>
+        <select id="editLessonAssignedQuiz" class="field-select"><option value="">No quiz — don't auto-launch</option></select>
+      </div>
+      <div class="field">
+        <label>Watch progress <span id="editLessonAvgCompletion" style="font-weight:normal;color:var(--slate-dim);"></span></label>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeEditLessonModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="window.updateLesson()"><i class="fas fa-save"></i> Save changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= QUIZ CATEGORY MODAL ================= -->
+<div class="overlay" id="addQuizCategoryModal">
+  <div class="modal" style="width:420px;">
+    <div class="modal-head"><h3 id="addQuizCategoryModalTitle">New course folder</h3><button class="modal-close" onclick="window.closeModal('addQuizCategoryModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editQuizCategoryId">
+      <div class="field" id="newQuizCategoryCourseGroup">
+        <label>Course</label>
+        <select id="newQuizCategoryCourseSelect" class="field-select"><option value="">Select course…</option></select>
+        <div id="newQuizCategoryParentHint" style="font-size:11px;color:var(--slate-dim);margin-top:6px;">This folder will be created at the top level.</div>
+      </div>
+      <div class="field" id="newQuizCategoryTitleGroup" style="display:none;">
+        <label>Category name</label>
+        <input type="text" id="newQuizCategoryTitle" placeholder="e.g. Defensive Driving">
+      </div>
+      <div class="field" id="newQuizCategoryDescGroup" style="display:none;">
+        <label>Description</label>
+        <textarea id="newQuizCategoryDescription" rows="2" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-family:inherit;" placeholder="Brief description of this category…"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('addQuizCategoryModal')">Cancel</button>
+      <button class="btn btn-primary" id="quizCategorySaveBtn" onclick="window.saveQuizCategory()"><i class="fas fa-folder-plus"></i> Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ADD/EDIT QUIZ MODAL ================= -->
+<div class="overlay" id="editQuizModal">
+  <div class="modal" style="width:560px;">
+    <div class="modal-head"><h3 id="editQuizModalTitle">New quiz</h3><button class="modal-close" onclick="window.closeModal('editQuizModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editQuizId">
+      <div class="form-row">
+        <div class="field"><label>Quiz title</label><input type="text" id="editQuizTitle" placeholder="e.g. Highway Code — General"></div>
+        <div class="field"><label>Pass mark (%)</label><input type="number" id="editQuizPassMark" value="60" min="1" max="100"></div>
+      </div>
+      <div id="quizQuestionsSection" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:14px 0 8px;">
+          <div style="font-weight:700;font-size:13px;color:var(--amber);">Questions <span id="quizQuestionCount" style="color:var(--slate-dim);font-weight:normal;"></span></div>
+          <div style="display:flex;gap:8px;">
+            <button class="icon-btn" title="Import CSV" onclick="window.openQuizCsvModal()"><i class="fas fa-file-csv"></i></button>
+            <button class="icon-btn" title="Add question" onclick="window.openAddQuestionModal()"><i class="fas fa-plus"></i></button>
+          </div>
+        </div>
+        <div id="quizQuestionsList" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;">
+          <div style="color:var(--slate-dim);font-size:13px;">No questions yet.</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="quizDeleteBtn" style="display:none;" onclick="window.deleteQuizFromModal()"><i class="fas fa-trash"></i> Delete quiz</button>
+      <button class="btn btn-secondary" onclick="window.closeModal('editQuizModal')">Close</button>
+      <button class="btn btn-primary" onclick="window.saveQuizMeta()"><i class="fas fa-save"></i> Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ADD/EDIT QUESTION MODAL ================= -->
+<div class="overlay" id="addQuestionModal">
+  <div class="modal" style="width:480px;">
+    <div class="modal-head"><h3 id="addQuestionModalTitle">Add question</h3><button class="modal-close" onclick="window.closeModal('addQuestionModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editQuestionId">
+      <div class="field"><label>Question text</label><textarea id="qBuilderText" rows="2" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-family:inherit;" placeholder="e.g. What does this road sign mean?"></textarea></div>
+      <div class="field">
+        <label>Image <span style="font-weight:normal;color:var(--slate-dim);">(optional)</span></label>
+        <div class="img-upload-area" id="qBuilderImgUploadArea" onclick="document.getElementById('qBuilderImgFile').click()">
+          <i class="fas fa-image" style="color:var(--amber);margin-right:6px;"></i>
+          <span id="qBuilderImgText" style="font-size:12px;color:var(--slate-dim);">Tap to upload an image</span>
+        </div>
+        <input type="file" id="qBuilderImgFile" accept="image/*" style="display:none" onchange="window.previewQuestionImage(this)">
+        <img id="qBuilderImgPreview" src="" style="display:none;max-width:100%;max-height:140px;border-radius:8px;margin-top:8px;border:1px solid var(--border);">
+      </div>
+      <div class="field"><label>Option A</label><input type="text" id="qBuilderOptA"></div>
+      <div class="field"><label>Option B</label><input type="text" id="qBuilderOptB"></div>
+      <div class="field"><label>Option C</label><input type="text" id="qBuilderOptC"></div>
+      <div class="field"><label>Option D</label><input type="text" id="qBuilderOptD"></div>
+      <div class="field">
+        <label>Correct answer</label>
+        <select id="qBuilderCorrect" class="field-select">
+          <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('addQuestionModal')">Cancel</button>
+      <button class="btn btn-primary" id="qBuilderSaveBtn" onclick="window.saveQuestion()"><i class="fas fa-save"></i> Save question</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= CSV IMPORT MODAL ================= -->
+<div class="overlay" id="quizCsvModal">
+  <div class="modal" style="width:480px;">
+    <div class="modal-head"><h3>Import questions from CSV</h3><button class="modal-close" onclick="window.closeModal('quizCsvModal')">✕</button></div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--slate-dim);margin-bottom:14px;line-height:1.6;">
+        CSV columns, in order: <strong style="color:var(--amber);">question, imageUrl, optionA, optionB, optionC, optionD, correct</strong><br>
+        <code style="color:var(--chalk);">imageUrl</code> is optional — leave blank if no image. <code style="color:var(--chalk);">correct</code> must be A, B, C, or D.<br>
+        First row is treated as a header and skipped.
+      </div>
+      <div class="field"><input type="file" id="quizCsvFile" accept=".csv"></div>
+      <div id="quizCsvPreview" style="font-size:12px;color:var(--slate-dim);"></div>
+      <div id="quizCsvProgressWrap" style="display:none;margin-top:14px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--slate-dim);margin-bottom:4px;">
+          <span id="quizCsvProgressLabel">Importing questions…</span><span id="quizCsvProgressPct">0%</span>
+        </div>
+        <div style="height:8px;background:var(--asphalt-deep);border-radius:50px;overflow:hidden;">
+          <div id="quizCsvProgressBar" style="height:100%;width:0%;background:var(--amber);border-radius:50px;transition:width 0.15s ease;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('quizCsvModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="window.importQuizCsv()"><i class="fas fa-file-import"></i> Import</button>
     </div>
   </div>
 </div>

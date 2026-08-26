@@ -43,6 +43,10 @@ const CLOUDINARY_CLOUD = "drs2xpwho";
 // school image uploads will work: Settings > Upload > Add upload preset,
 // name it exactly "school_images_upload", signing mode = Unsigned.
 const SCHOOL_IMAGE_PRESET = "school_images_upload";
+// Lessons/quizzes are global (not per-school) — reuse the same presets Dekay's
+// own admin already uses on this Cloudinary cloud, no new preset needed.
+const LESSON_UPLOAD_PRESET = "lesson_videos_upload";
+const QUIZ_IMAGE_PRESET = "quiz_images_upload";
 
 function escapeHtml(str){ return String(str ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 window.escapeHtml = escapeHtml;
@@ -1191,18 +1195,1074 @@ window.resetInstructorPassword = async function(email){
 // ============================================================
 // LESSONS & QUIZZES (platform-wide — unchanged, still placeholders)
 // ============================================================
+// ============================================================
+// LESSONS MODULE (platform-wide — global collection, no schoolId)
+// ============================================================
+let allLessonFolders = [];
+let allLessonsFlat = [];
+let currentLessonFolderPath = null;
+
 async function loadLessons(){
-  document.getElementById('lessonFoldersGrid').innerHTML = `<div class="empty-state" style="grid-column:1/-1;">Lessons module unchanged — reattach your existing marviniLoadLessons() logic here.</div>`;
+  try {
+    const [lessonSnaps, folderSnaps, progressSnaps] = await Promise.all([
+      getDocs(collection(db, "lessons")),
+      getDocs(collection(db, "lessonFolders")),
+      getDocs(collection(db, "lessonProgress"))
+    ]);
+    allLessonsFlat = lessonSnaps.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // lessonProgress isn't schoolId-scoped from the central view — aggregate
+    // across every school so avg-completion reflects the whole platform.
+    const allProgress = {};
+    progressSnaps.docs.forEach(d => { allProgress[d.id] = d.data(); });
+    allLessonsFlat.forEach(l => {
+      const pcts = [];
+      Object.values(allProgress).forEach(progressMap => {
+        if (progressMap && progressMap[l.id] !== undefined) pcts.push(progressMap[l.id]);
+      });
+      l.avgCompletion = pcts.length ? Math.round(pcts.reduce((s,p) => s+p, 0) / pcts.length) : 0;
+      l.watcherCount = pcts.length;
+    });
+    window._allLessons = allLessonsFlat;
+
+    allLessonFolders = folderSnaps.docs.map(d => {
+      const data = d.data();
+      const parentPath = data.parentPath || null;
+      const path = data.path || (parentPath ? `${parentPath}/${data.name}` : data.name);
+      return { id: d.id, name: data.name, description: data.description || '', parentPath, path };
+    }).sort((a,b) => a.name.localeCompare(b.name));
+
+    renderLessonFolderView();
+  } catch(e) { console.error(e); showToast('Could not load lessons: ' + e.message, true); }
 }
+
+function renderLessonBreadcrumb(path){
+  const segments = path.split('/');
+  let acc = '';
+  const parts = segments.map((seg, idx) => {
+    acc = acc ? `${acc}/${seg}` : seg;
+    const isLast = idx === segments.length - 1;
+    return isLast
+      ? `<span class="crumb-current">${escapeHtml(seg)}</span>`
+      : `<span class="crumb-link" onclick="window.openLessonFolder('${acc.replace(/'/g, "\\'")}')">${escapeHtml(seg)}</span>`;
+  });
+  const rootLink = `<span class="crumb-link" onclick="window.backToLessonFolders()">All folders</span>`;
+  return [rootLink, ...parts].join(' <i class="fas fa-chevron-right" style="font-size:9px;margin:0 4px;"></i> ');
+}
+
+function renderLessonFolderView(){
+  const path = currentLessonFolderPath;
+  const titleEl = document.getElementById("lessonsPageTitle");
+  const subEl = document.getElementById("lessonsPageSub");
+  const backBtn = document.getElementById("lessonBackBtn");
+  const addLessonBtn = document.getElementById("lessonAddLessonBtn");
+  const breadcrumbEl = document.getElementById("lessonBreadcrumb");
+  const tableCard = document.getElementById("lessonTableCard");
+
+  if (!path) {
+    titleEl.textContent = "Video Lessons";
+    subEl.textContent = "Select a course folder to manage its video lessons.";
+    backBtn.style.display = "none";
+    breadcrumbEl.style.display = "none";
+    addLessonBtn.style.display = "none";
+    tableCard.style.display = "none";
+  } else {
+    const segments = path.split('/');
+    titleEl.textContent = segments[segments.length - 1];
+    subEl.textContent = `Videos and subfolders inside "${path}".`;
+    backBtn.style.display = "inline-flex";
+    addLessonBtn.style.display = "inline-flex";
+    breadcrumbEl.style.display = "block";
+    breadcrumbEl.innerHTML = renderLessonBreadcrumb(path);
+    tableCard.style.display = "block";
+    renderLessonsTableForFolder(path);
+  }
+
+  const subfolders = allLessonFolders.filter(f => (f.parentPath || null) === path);
+  const grid = document.getElementById("lessonFoldersGrid");
+  if (!subfolders.length) {
+    grid.innerHTML = path
+      ? `<div class="empty-state" style="grid-column:1/-1;">No subfolders here.</div>`
+      : `<div class="empty-state" style="grid-column:1/-1;">No folders yet. Create one to get started.</div>`;
+    return;
+  }
+  grid.innerHTML = subfolders.map(f => {
+    const videoCount = allLessonsFlat.filter(l => (l.folder || '') === f.path).length;
+    const subfolderCount = allLessonFolders.filter(sf => (sf.parentPath || null) === f.path).length;
+    const count = videoCount + subfolderCount;
+    return `
+      <div class="stat-card" style="cursor:pointer;position:relative;padding-top:34px;" onclick="window.openLessonFolder('${f.path.replace(/'/g, "\\'")}')">
+        <button class="icon-btn" title="Edit folder" style="position:absolute;top:10px;right:44px;" onclick="event.stopPropagation();window.openEditFolderModal('${f.id}')"><i class="fas fa-pen" style="font-size:11px;"></i></button>
+        <button class="icon-btn danger" title="Delete folder" style="position:absolute;top:10px;right:10px;" onclick="event.stopPropagation();window.deleteLessonFolder('${f.id}','${f.path.replace(/'/g, "\\'")}')"><i class="fas fa-trash" style="font-size:11px;"></i></button>
+        <p class="label"><i class="fas fa-folder" style="color:var(--amber);margin-right:6px;"></i>${escapeHtml(f.name)}</p>
+        <p class="value" style="font-size:18px;">${count} file${count===1?'':'s'}</p>
+        ${f.description ? `<p class="sub">${escapeHtml(f.description)}</p>` : ''}
+      </div>`;
+  }).join('');
+}
+
+window.openLessonFolder = function(path){ currentLessonFolderPath = path; renderLessonFolderView(); };
+window.backToLessonFolders = function(){ currentLessonFolderPath = null; renderLessonFolderView(); };
+window.lessonFolderGoUp = function(){
+  if (!currentLessonFolderPath) return;
+  const idx = currentLessonFolderPath.lastIndexOf('/');
+  currentLessonFolderPath = idx === -1 ? null : currentLessonFolderPath.substring(0, idx);
+  renderLessonFolderView();
+};
+
+window.deleteLessonFolder = async function(folderId, folderPath){
+  const hasVideos = allLessonsFlat.some(l => (l.folder || '') === folderPath);
+  const hasSubfolders = allLessonFolders.some(f => (f.parentPath || null) === folderPath);
+  const warning = (hasVideos || hasSubfolders)
+    ? "This folder contains videos or subfolders. Deleting it will not delete those items, but they will become orphaned. Delete anyway?"
+    : "Delete this folder?";
+  if (!(await showConfirm("Delete folder", warning))) return;
+  try {
+    await deleteDoc(doc(db, "lessonFolders", folderId));
+    showToast("Folder deleted.");
+    await loadLessons();
+  } catch(e) { showToast("Could not delete folder: " + e.message, true); }
+};
+
+function renderLessonsTableForFolder(path){
+  const tbody = document.getElementById("lessonsTable");
+  if (!tbody) return;
+  const lessons = allLessonsFlat.filter(l => (l.folder || '') === path);
+  if (!lessons.length) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No lessons in this folder yet.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = lessons.map(l => `<tr>
+    <td><strong>${escapeHtml(l.title)}</strong></td>
+    <td><span class="badge">${escapeHtml(l.category || 'Theory')}</span></td>
+    <td style="color:var(--slate-dim);">${escapeHtml(l.duration || '—')}</td>
+    <td style="color:var(--amber);">${(l.avgCompletion !== undefined) ? l.avgCompletion + '% (' + l.watcherCount + ')' : '—'}</td>
+    <td style="font-size:12px;color:var(--slate-dim);">${fmtDate(l.createdAt)}</td>
+    <td class="row-actions">
+      <button class="icon-btn" title="View / edit" onclick="window.openEditLessonModal('${l.id}')"><i class="fas fa-eye"></i></button>
+      <button class="icon-btn danger" title="Delete" onclick="window.deleteLesson('${l.id}')"><i class="fas fa-trash"></i></button>
+    </td>
+  </tr>`).join('');
+}
+
+window.openAddFolderModal = async function(){
+  const isTopLevel = !currentLessonFolderPath;
+  document.getElementById("newFolderCourseGroup").style.display = isTopLevel ? "block" : "none";
+  document.getElementById("newFolderTitleGroup").style.display = isTopLevel ? "none" : "block";
+  document.getElementById("newFolderDescGroup").style.display = isTopLevel ? "none" : "block";
+  document.getElementById("addFolderModalTitle").textContent = isTopLevel ? "New course folder" : "New subfolder";
+  document.getElementById("newFolderTitle").value = '';
+  document.getElementById("newFolderDescription").value = '';
+  const hint = document.getElementById("newFolderParentHint");
+  if (hint) hint.textContent = isTopLevel ? "This folder will be created at the top level." : `This subfolder will be created inside "${currentLessonFolderPath}".`;
+  if (isTopLevel) {
+    const sel = document.getElementById("newFolderCourseSelect");
+    sel.innerHTML = '<option value="">Select course…</option>';
+    try {
+      const coursesSnap = await getDocs(collection(db, "courses"));
+      coursesSnap.docs.forEach(d => {
+        const name = d.data().name || d.data().title;
+        if (name) sel.innerHTML += `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`;
+      });
+    } catch(e) { console.error(e); }
+  }
+  openModal("addFolderModal");
+};
+
+window.createLessonFolder = async function(){
+  const isTopLevel = !currentLessonFolderPath;
+  const parentPath = currentLessonFolderPath || null;
+  let name, description = '';
+  if (isTopLevel) {
+    name = document.getElementById("newFolderCourseSelect").value.trim();
+    if (!name) { showToast("Select a course.", true); return; }
+  } else {
+    name = document.getElementById("newFolderTitle").value.trim();
+    description = document.getElementById("newFolderDescription").value.trim();
+    if (!name) { showToast("Enter a subfolder title.", true); return; }
+  }
+  const path = parentPath ? `${parentPath}/${name}` : name;
+  if (allLessonFolders.some(f => f.path.toLowerCase() === path.toLowerCase())) {
+    showToast("A folder with that name already exists here.", true);
+    return;
+  }
+  try {
+    await addDoc(collection(db, "lessonFolders"), { name, description, parentPath, path, createdAt: serverTimestamp() });
+    closeModal("addFolderModal");
+    showToast("Folder created ✓");
+    await loadLessons();
+  } catch(e) { showToast("Could not create folder: " + e.message, true); }
+};
+
+window.openEditFolderModal = function(folderId){
+  const folder = allLessonFolders.find(f => f.id === folderId);
+  if (!folder) return showToast("Folder not found.", true);
+  document.getElementById("editFolderId").value = folder.id;
+  document.getElementById("editFolderTitle").value = folder.name || '';
+  document.getElementById("editFolderDescription").value = folder.description || '';
+  openModal("editFolderModal");
+};
+
+window.updateLessonFolder = async function(){
+  const folderId = document.getElementById("editFolderId").value;
+  const newName = document.getElementById("editFolderTitle").value.trim();
+  const newDescription = document.getElementById("editFolderDescription").value.trim();
+  if (!newName) { showToast("Folder name is required.", true); return; }
+  const folder = allLessonFolders.find(f => f.id === folderId);
+  if (!folder) { showToast("Folder not found.", true); return; }
+  const oldPath = folder.path;
+  const newPath = folder.parentPath ? `${folder.parentPath}/${newName}` : newName;
+  if (newPath !== oldPath && allLessonFolders.some(f => f.id !== folderId && f.path.toLowerCase() === newPath.toLowerCase())) {
+    showToast("A folder with that name already exists here.", true);
+    return;
+  }
+  const btn = document.querySelector("#editFolderModal .btn-primary");
+  const originalHTML = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+  try {
+    await updateDoc(doc(db, "lessonFolders", folderId), { name: newName, description: newDescription, path: newPath });
+    if (newPath !== oldPath) {
+      const affectedSubfolders = allLessonFolders.filter(f => f.id !== folderId && f.path.startsWith(oldPath + '/'));
+      for (const sf of affectedSubfolders) {
+        const updatedPath = newPath + sf.path.slice(oldPath.length);
+        const updatedParentPath = sf.parentPath === oldPath ? newPath : (newPath + sf.parentPath.slice(oldPath.length));
+        await updateDoc(doc(db, "lessonFolders", sf.id), { path: updatedPath, parentPath: updatedParentPath });
+      }
+      const affectedLessons = allLessonsFlat.filter(l => l.folder === oldPath || (l.folder || '').startsWith(oldPath + '/'));
+      for (const lesson of affectedLessons) {
+        const updatedFolder = newPath + lesson.folder.slice(oldPath.length);
+        await updateDoc(doc(db, "lessons", lesson.id), { folder: updatedFolder });
+      }
+      if (currentLessonFolderPath === oldPath) currentLessonFolderPath = newPath;
+      else if (currentLessonFolderPath && currentLessonFolderPath.startsWith(oldPath + '/')) {
+        currentLessonFolderPath = newPath + currentLessonFolderPath.slice(oldPath.length);
+      }
+    }
+    closeModal("editFolderModal");
+    showToast("Folder updated ✓");
+    await loadLessons();
+  } catch(e) { showToast("Could not update folder: " + e.message, true); }
+  finally { btn.disabled = false; btn.innerHTML = originalHTML; }
+};
+
+function populateLessonFolderSelect(selectId, selectedValue){
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const sorted = [...allLessonFolders].sort((a,b) => a.path.localeCompare(b.path));
+  sel.innerHTML = sorted.map(f => {
+    const depth = f.path.split('/').length - 1;
+    const indent = depth > 0 ? '— '.repeat(depth) : '';
+    return `<option value="${escapeHtml(f.path)}">${indent}${escapeHtml(f.name)}</option>`;
+  }).join('');
+  if (selectedValue) sel.value = selectedValue;
+}
+
+function courseFromFolderPath(path){ return (path || '').split('/')[0] || ''; }
+
+function populateQuizAssignSelect(selectId, selectedValue, courseName){
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const quizzes = window._allQuizzes || allQuizzesFlat || [];
+  const scoped = courseName
+    ? quizzes.filter(q => (q.courseName || (q.categoryPath || '').split('/')[0] || '').trim().toLowerCase() === courseName.trim().toLowerCase())
+    : quizzes;
+  sel.innerHTML = '<option value="">No quiz — don\'t auto-launch</option>' +
+    (scoped.length
+      ? scoped.map(q => `<option value="${q.id}">${escapeHtml(q.title || 'Untitled quiz')} (${escapeHtml(q.categoryPath || '')})</option>`).join('')
+      : `<option value="" disabled>No quizzes found for this course</option>`);
+  sel.value = selectedValue || '';
+}
+
+window.refreshLessonQuizOptions = function(folderSelectId, quizSelectId){
+  const folderVal = document.getElementById(folderSelectId)?.value || '';
+  populateQuizAssignSelect(quizSelectId, '', courseFromFolderPath(folderVal));
+};
+
+window.openAddLessonModal = function(){
+  document.getElementById("lessonTitle").value = '';
+  document.getElementById("lessonDuration").value = '';
+  document.getElementById("lessonVideoFile").value = '';
+  document.getElementById("lessonThumbFile").value = '';
+  document.getElementById("lessonVideoPreview").style.display = 'none';
+  document.getElementById("lessonThumbPreview").style.display = 'none';
+  document.getElementById("lessonVideoText").textContent = 'Tap to upload lesson video (MP4)';
+  document.getElementById("lessonThumbText").textContent = 'Tap to upload thumbnail (leave blank for auto)';
+  populateLessonFolderSelect("lessonFolder", currentLessonFolderPath || (allLessonFolders[0] && allLessonFolders[0].path));
+  populateQuizAssignSelect("lessonAssignedQuiz", "", courseFromFolderPath(document.getElementById("lessonFolder").value));
+  openModal("addLessonModal");
+};
+
+window.openLessonQuizPrompt = function(){ openModal("lessonQuizPromptModal"); };
+window.handleLessonQuizPromptNo = function(){ closeModal("lessonQuizPromptModal"); window.openAddLessonModal(); };
+window.handleLessonQuizPromptYes = function(){
+  closeModal("lessonQuizPromptModal");
+  window.showPage('quizzes', document.querySelector('#navTopLevel .nav-link[data-page="quizzes"]'));
+};
+
+window.previewLessonVideo = function(input){
+  const file = input.files[0]; if (!file) return;
+  const video = document.getElementById("lessonVideoPreview");
+  video.src = URL.createObjectURL(file); video.style.display = "block";
+  document.getElementById("lessonVideoText").textContent = file.name;
+};
+window.previewLessonThumb = function(input){
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = document.getElementById("lessonThumbPreview");
+    img.src = e.target.result; img.style.display = "block";
+    document.getElementById("lessonThumbText").textContent = file.name;
+  };
+  reader.readAsDataURL(file);
+};
+window.previewEditLessonVideo = function(input){
+  const file = input.files[0]; if (!file) return;
+  const video = document.getElementById("editLessonVideoPreview");
+  video.src = URL.createObjectURL(file); video.style.display = "block";
+  document.getElementById("editLessonVideoText").textContent = file.name;
+};
+window.previewEditLessonThumb = function(input){
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = document.getElementById("editLessonThumbPreview");
+    img.src = e.target.result; img.style.display = "block";
+    document.getElementById("editLessonThumbText").textContent = file.name;
+  };
+  reader.readAsDataURL(file);
+};
+window.closeEditLessonModal = function(){
+  const video = document.getElementById("editLessonVideoPreview");
+  if (video) { video.pause(); video.removeAttribute("src"); video.load(); }
+  closeModal("editLessonModal");
+};
+
+function uploadToCloudinaryWithProgress(url, formData, onProgress){
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", url);
+    xhr.upload.onprogress = (e) => { if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded/e.total)*100)); };
+    xhr.onload = () => {
+      try {
+        const data = JSON.parse(xhr.responseText);
+        if (xhr.status >= 200 && xhr.status < 300) resolve(data);
+        else reject(new Error(data.error?.message || "Upload failed"));
+      } catch(e) { reject(e); }
+    };
+    xhr.onerror = () => reject(new Error("Network error during upload"));
+    xhr.send(formData);
+  });
+}
+
+window.addLesson = async function(){
+  const title    = document.getElementById("lessonTitle").value.trim();
+  const folder   = document.getElementById("lessonFolder").value;
+  const category = document.getElementById("lessonCategory").value;
+  const duration = document.getElementById("lessonDuration").value.trim();
+  const videoFile = document.getElementById("lessonVideoFile").files[0];
+  const thumbFile = document.getElementById("lessonThumbFile").files[0];
+  const assignedQuizId = document.getElementById("lessonAssignedQuiz").value || null;
+
+  if (!title || !videoFile) { showToast("Title and video file are required.", true); return; }
+  if (!folder) { showToast("Select a course folder.", true); return; }
+
+  const btn = document.querySelector("#addLessonModal .btn-primary");
+  const originalHTML = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading video…';
+
+  const progWrap = document.getElementById("lessonUploadProgressWrap");
+  const progBar = document.getElementById("lessonUploadProgressBar");
+  const progPct = document.getElementById("lessonUploadProgressPct");
+  const progLabel = document.getElementById("lessonUploadProgressLabel");
+  progWrap.style.display = "block"; progBar.style.width = "0%"; progPct.textContent = "0%"; progLabel.textContent = "Uploading video…";
+
+  try {
+    const cloudinaryFolder = `lessons/${folder}`;
+    const videoFd = new FormData();
+    videoFd.append("file", videoFile);
+    videoFd.append("upload_preset", LESSON_UPLOAD_PRESET);
+    videoFd.append("resource_type", "video");
+    videoFd.append("folder", cloudinaryFolder);
+    const videoData = await uploadToCloudinaryWithProgress(
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/video/upload`, videoFd,
+      (pct) => { progBar.style.width = pct + "%"; progPct.textContent = pct + "%"; }
+    );
+    const videoUrl = videoData.secure_url;
+    const videoDurationSec = videoData.duration || null;
+
+    let thumbUrl = "";
+    if (thumbFile) {
+      progLabel.textContent = "Uploading thumbnail…"; progBar.style.width = "0%"; progPct.textContent = "0%";
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading thumbnail…';
+      const thumbFd = new FormData();
+      thumbFd.append("file", thumbFile);
+      thumbFd.append("upload_preset", LESSON_UPLOAD_PRESET);
+      thumbFd.append("folder", cloudinaryFolder);
+      const thumbData = await uploadToCloudinaryWithProgress(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, thumbFd,
+        (pct) => { progBar.style.width = pct + "%"; progPct.textContent = pct + "%"; }
+      );
+      thumbUrl = thumbData.secure_url;
+    } else {
+      thumbUrl = videoUrl.replace('/video/upload/', '/video/upload/so_1,f_jpg/').replace(/\.[^/.]+$/, '.jpg');
+    }
+
+    progLabel.textContent = "Saving…"; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+    await addDoc(collection(db, "lessons"), {
+      title, videoUrl, category, duration, folder, videoDurationSec,
+      thumbnailUrl: thumbUrl, assignedQuizId, createdAt: serverTimestamp()
+    });
+
+    closeModal("addLessonModal");
+    showToast("Lesson published ✓");
+    await loadLessons();
+    window.openLessonFolder(folder);
+  } catch(e) { showToast("Could not publish lesson: " + e.message, true); }
+  finally { btn.disabled = false; btn.innerHTML = originalHTML; progWrap.style.display = "none"; }
+};
+
+window.openEditLessonModal = function(lessonId){
+  const lesson = (window._allLessons || []).find(l => l.id === lessonId);
+  if (!lesson) return showToast("Lesson not found.", true);
+
+  document.getElementById("editLessonId").value = lesson.id;
+  document.getElementById("editLessonTitle").value = lesson.title || '';
+  document.getElementById("editLessonCategory").value = lesson.category || 'Theory';
+  document.getElementById("editLessonDuration").value = lesson.duration || '';
+  document.getElementById("editLessonVideoFile").value = '';
+  document.getElementById("editLessonThumbFile").value = '';
+  document.getElementById("editLessonVideoText").textContent = 'Tap to replace video';
+  document.getElementById("editLessonThumbText").textContent = 'Tap to replace thumbnail';
+  populateLessonFolderSelect("editLessonFolder", lesson.folder || currentLessonFolderPath || (allLessonFolders[0] && allLessonFolders[0].path));
+  populateQuizAssignSelect("editLessonAssignedQuiz", lesson.assignedQuizId || "", courseFromFolderPath(document.getElementById("editLessonFolder").value));
+
+  const videoPreview = document.getElementById("editLessonVideoPreview");
+  videoPreview.src = lesson.videoUrl || ''; videoPreview.style.display = lesson.videoUrl ? 'block' : 'none';
+  const thumbPreview = document.getElementById("editLessonThumbPreview");
+  thumbPreview.src = lesson.thumbnailUrl || ''; thumbPreview.style.display = lesson.thumbnailUrl ? 'block' : 'none';
+
+  const avgEl = document.getElementById("editLessonAvgCompletion");
+  if (avgEl) avgEl.textContent = lesson.watcherCount ? `— Avg. ${lesson.avgCompletion || 0}% across ${lesson.watcherCount} student${lesson.watcherCount > 1 ? 's' : ''} (all schools)` : '— No watch data yet';
+
+  openModal("editLessonModal");
+};
+
+window.updateLesson = async function(){
+  const id       = document.getElementById("editLessonId").value;
+  const title    = document.getElementById("editLessonTitle").value.trim();
+  const folder   = document.getElementById("editLessonFolder").value;
+  const category = document.getElementById("editLessonCategory").value;
+  const duration = document.getElementById("editLessonDuration").value.trim();
+  const videoFile = document.getElementById("editLessonVideoFile").files[0];
+  const thumbFile = document.getElementById("editLessonThumbFile").files[0];
+  const assignedQuizId = document.getElementById("editLessonAssignedQuiz").value || null;
+
+  if (!title) { showToast("Title is required.", true); return; }
+  if (!folder) { showToast("Select a course folder.", true); return; }
+
+  const btn = document.querySelector("#editLessonModal .btn-primary");
+  const originalHTML = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+
+  const progWrap = document.getElementById("editLessonUploadProgressWrap");
+  const progBar = document.getElementById("editLessonUploadProgressBar");
+  const progPct = document.getElementById("editLessonUploadProgressPct");
+  const progLabel = document.getElementById("editLessonUploadProgressLabel");
+
+  try {
+    const updates = { title, category, duration, folder, assignedQuizId };
+    const cloudinaryFolder = `lessons/${folder}`;
+
+    if (videoFile) {
+      progWrap.style.display = "block"; progBar.style.width = "0%"; progPct.textContent = "0%"; progLabel.textContent = "Uploading video…";
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading video…';
+      const videoFd = new FormData();
+      videoFd.append("file", videoFile);
+      videoFd.append("upload_preset", LESSON_UPLOAD_PRESET);
+      videoFd.append("resource_type", "video");
+      videoFd.append("folder", cloudinaryFolder);
+      const videoData = await uploadToCloudinaryWithProgress(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/video/upload`, videoFd,
+        (pct) => { progBar.style.width = pct + "%"; progPct.textContent = pct + "%"; }
+      );
+      updates.videoUrl = videoData.secure_url;
+      updates.videoDurationSec = videoData.duration || null;
+      if (!thumbFile) updates.thumbnailUrl = videoData.secure_url.replace('/video/upload/', '/video/upload/so_1,f_jpg/').replace(/\.[^/.]+$/, '.jpg');
+    }
+    if (thumbFile) {
+      progWrap.style.display = "block"; progBar.style.width = "0%"; progPct.textContent = "0%"; progLabel.textContent = "Uploading thumbnail…";
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading thumbnail…';
+      const thumbFd = new FormData();
+      thumbFd.append("file", thumbFile);
+      thumbFd.append("upload_preset", LESSON_UPLOAD_PRESET);
+      thumbFd.append("folder", cloudinaryFolder);
+      const thumbData = await uploadToCloudinaryWithProgress(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, thumbFd,
+        (pct) => { progBar.style.width = pct + "%"; progPct.textContent = pct + "%"; }
+      );
+      updates.thumbnailUrl = thumbData.secure_url;
+    }
+
+    progLabel.textContent = "Saving…"; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+    await updateDoc(doc(db, "lessons", id), updates);
+
+    closeModal("editLessonModal");
+    showToast("Lesson updated ✓");
+    await loadLessons();
+    window.openLessonFolder(folder);
+  } catch(e) { showToast("Could not update lesson: " + e.message, true); }
+  finally { btn.disabled = false; btn.innerHTML = originalHTML; progWrap.style.display = "none"; }
+};
+
+window.deleteLesson = async function(id){
+  if (!(await showConfirm("Delete lesson", "Delete this lesson?"))) return;
+  try { await deleteDoc(doc(db, "lessons", id)); await loadLessons(); showToast("Lesson removed."); }
+  catch(e) { showToast("Delete failed: " + e.message, true); }
+};
+
+// ============================================================
+// QUIZZES MODULE (platform-wide — global collection, no schoolId)
+// ============================================================
+let allQuizCategories = [];
+let allQuizzesFlat = [];
+let currentQuizCategoryPath = null;
+let currentQuizQuestions = [];
+
 async function loadQuizzes(){
-  document.getElementById('quizFoldersGrid').innerHTML = `<div class="empty-state" style="grid-column:1/-1;">Quizzes module unchanged — reattach your existing marviniLoadQuizzes() logic here.</div>`;
+  try {
+    const [catSnaps, quizSnaps] = await Promise.all([
+      getDocs(collection(db, "quizCategories")),
+      getDocs(collection(db, "quizzes"))
+    ]);
+    allQuizCategories = catSnaps.docs.map(d => {
+      const data = d.data();
+      const parentPath = data.parentPath || null;
+      const path = data.path || (parentPath ? `${parentPath}/${data.name}` : data.name);
+      return { id: d.id, name: data.name, description: data.description || '', parentPath, path };
+    }).sort((a,b) => a.name.localeCompare(b.name));
+    allQuizzesFlat = quizSnaps.docs.map(d => ({ id: d.id, ...d.data() }));
+    window._allQuizzes = allQuizzesFlat;
+    renderQuizFolderView();
+  } catch(e) { console.error(e); showToast('Could not load quizzes: ' + e.message, true); }
 }
-window.lessonFolderGoUp = () => {};
-window.quizFolderGoUp = () => {};
-window.openAddFolderModal = () => showToast('Reattach existing lesson-folder modal logic.', true);
-window.openAddQuizCategoryModal = () => showToast('Reattach existing quiz-category modal logic.', true);
-window.openLessonQuizPrompt = () => {};
-window.openAddQuizModal = () => {};
+
+function renderQuizBreadcrumb(path){
+  const segments = path.split('/');
+  let acc = '';
+  const parts = segments.map((seg, idx) => {
+    acc = acc ? `${acc}/${seg}` : seg;
+    const isLast = idx === segments.length - 1;
+    return isLast
+      ? `<span class="crumb-current">${escapeHtml(seg)}</span>`
+      : `<span class="crumb-link" onclick="window.openQuizFolder('${acc.replace(/'/g, "\\'")}')">${escapeHtml(seg)}</span>`;
+  });
+  const rootLink = `<span class="crumb-link" onclick="window.backToQuizFolders()">All categories</span>`;
+  return [rootLink, ...parts].join(' <i class="fas fa-chevron-right" style="font-size:9px;margin:0 4px;"></i> ');
+}
+
+function renderQuizFolderView(){
+  const path = currentQuizCategoryPath;
+  const titleEl = document.getElementById("quizPageTitle");
+  const subEl = document.getElementById("quizPageSub");
+  const backBtn = document.getElementById("quizBackBtn");
+  const addQuizBtn = document.getElementById("quizAddQuizBtn");
+  const breadcrumbEl = document.getElementById("quizBreadcrumb");
+  const tableCard = document.getElementById("quizTableCard");
+  const isLeaf = path && path.split('/').length >= 2;
+
+  if (!path) {
+    titleEl.textContent = "Quizzes";
+    subEl.textContent = "Select a course folder to manage its quiz categories.";
+    backBtn.style.display = "none"; breadcrumbEl.style.display = "none";
+    addQuizBtn.style.display = "none"; tableCard.style.display = "none";
+  } else {
+    const segments = path.split('/');
+    titleEl.textContent = segments[segments.length - 1];
+    subEl.textContent = isLeaf ? `Quizzes inside "${path}".` : `Categories inside "${path}".`;
+    backBtn.style.display = "inline-flex";
+    breadcrumbEl.style.display = "block"; breadcrumbEl.innerHTML = renderQuizBreadcrumb(path);
+    addQuizBtn.style.display = isLeaf ? "inline-flex" : "none";
+    tableCard.style.display = isLeaf ? "block" : "none";
+    if (isLeaf) renderQuizzesTableForCategory(path);
+  }
+
+  const subfolders = allQuizCategories.filter(f => (f.parentPath || null) === path);
+  const grid = document.getElementById("quizFoldersGrid");
+  if (!subfolders.length) {
+    grid.innerHTML = path
+      ? `<div class="empty-state" style="grid-column:1/-1;">No subfolders here.</div>`
+      : `<div class="empty-state" style="grid-column:1/-1;">No course folders yet. Create one to get started.</div>`;
+    grid.style.display = isLeaf ? "none" : "grid";
+    return;
+  }
+  grid.style.display = "grid";
+  grid.innerHTML = subfolders.map(f => {
+    const quizCount = allQuizzesFlat.filter(q => (q.categoryPath || '') === f.path).length;
+    const subfolderCount = allQuizCategories.filter(sf => (sf.parentPath || null) === f.path).length;
+    const count = quizCount + subfolderCount;
+    return `
+      <div class="stat-card" style="cursor:pointer;position:relative;padding-top:34px;" onclick="window.openQuizFolder('${f.path.replace(/'/g, "\\'")}')">
+        <button class="icon-btn" title="Edit" style="position:absolute;top:10px;right:44px;" onclick="event.stopPropagation();window.openEditQuizCategoryModal('${f.id}')"><i class="fas fa-pen" style="font-size:11px;"></i></button>
+        <button class="icon-btn danger" title="Delete" style="position:absolute;top:10px;right:10px;" onclick="event.stopPropagation();window.deleteQuizCategory('${f.id}','${f.path.replace(/'/g, "\\'")}')"><i class="fas fa-trash" style="font-size:11px;"></i></button>
+        <p class="label"><i class="fas fa-folder" style="color:var(--amber);margin-right:6px;"></i>${escapeHtml(f.name)}</p>
+        <p class="value" style="font-size:18px;">${count} item${count===1?'':'s'}</p>
+        ${f.description ? `<p class="sub">${escapeHtml(f.description)}</p>` : ''}
+      </div>`;
+  }).join('');
+}
+
+window.openQuizFolder = function(path){ currentQuizCategoryPath = path; renderQuizFolderView(); };
+window.backToQuizFolders = function(){ currentQuizCategoryPath = null; renderQuizFolderView(); };
+window.quizFolderGoUp = function(){
+  if (!currentQuizCategoryPath) return;
+  const idx = currentQuizCategoryPath.lastIndexOf('/');
+  currentQuizCategoryPath = idx === -1 ? null : currentQuizCategoryPath.substring(0, idx);
+  renderQuizFolderView();
+};
+
+window.deleteQuizCategory = async function(id, path){
+  const hasQuizzes = allQuizzesFlat.some(q => (q.categoryPath || '') === path);
+  const hasSubfolders = allQuizCategories.some(f => (f.parentPath || null) === path);
+  const warning = (hasQuizzes || hasSubfolders)
+    ? "This folder contains quizzes or subfolders. Deleting it won't delete those, but they'll be orphaned. Delete anyway?"
+    : "Delete this folder?";
+  if (!(await showConfirm("Delete folder", warning))) return;
+  try { await deleteDoc(doc(db, "quizCategories", id)); showToast("Folder deleted."); await loadQuizzes(); }
+  catch(e) { showToast("Could not delete folder: " + e.message, true); }
+};
+
+window.openAddQuizCategoryModal = async function(){
+  document.getElementById("editQuizCategoryId").value = '';
+  const isTopLevel = !currentQuizCategoryPath;
+  document.getElementById("newQuizCategoryCourseGroup").style.display = isTopLevel ? "block" : "none";
+  document.getElementById("newQuizCategoryTitleGroup").style.display = isTopLevel ? "none" : "block";
+  document.getElementById("newQuizCategoryDescGroup").style.display = isTopLevel ? "none" : "block";
+  document.getElementById("addQuizCategoryModalTitle").textContent = isTopLevel ? "New course folder" : "New category";
+  document.getElementById("newQuizCategoryTitle").value = '';
+  document.getElementById("newQuizCategoryDescription").value = '';
+  document.getElementById("quizCategorySaveBtn").innerHTML = '<i class="fas fa-folder-plus"></i> Create';
+  const hint = document.getElementById("newQuizCategoryParentHint");
+  if (hint) hint.textContent = isTopLevel ? "This folder will be created at the top level." : `This category will be created inside "${currentQuizCategoryPath}".`;
+  if (isTopLevel) {
+    const sel = document.getElementById("newQuizCategoryCourseSelect");
+    sel.innerHTML = '<option value="">Select course…</option>';
+    try {
+      const coursesSnap = await getDocs(collection(db, "courses"));
+      coursesSnap.docs.forEach(d => {
+        const name = d.data().name || d.data().title;
+        if (name) sel.innerHTML += `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`;
+      });
+    } catch(e) { console.error(e); }
+  }
+  openModal("addQuizCategoryModal");
+};
+
+window.openEditQuizCategoryModal = async function(id){
+  const cat = allQuizCategories.find(f => f.id === id);
+  if (!cat) return showToast("Category not found.", true);
+  document.getElementById("editQuizCategoryId").value = id;
+  const isTopLevel = !cat.parentPath;
+  document.getElementById("newQuizCategoryCourseGroup").style.display = isTopLevel ? "block" : "none";
+  document.getElementById("newQuizCategoryTitleGroup").style.display = isTopLevel ? "none" : "block";
+  document.getElementById("newQuizCategoryDescGroup").style.display = isTopLevel ? "none" : "block";
+  document.getElementById("addQuizCategoryModalTitle").textContent = isTopLevel ? "Edit course folder" : "Edit category";
+  document.getElementById("newQuizCategoryTitle").value = cat.name || '';
+  document.getElementById("newQuizCategoryDescription").value = cat.description || '';
+  document.getElementById("quizCategorySaveBtn").innerHTML = '<i class="fas fa-save"></i> Save';
+  if (isTopLevel) {
+    const sel = document.getElementById("newQuizCategoryCourseSelect");
+    sel.innerHTML = '<option value="">Select course…</option>';
+    try {
+      const coursesSnap = await getDocs(collection(db, "courses"));
+      coursesSnap.docs.forEach(d => {
+        const name = d.data().name || d.data().title;
+        if (name) sel.innerHTML += `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`;
+      });
+    } catch(e) { console.error(e); }
+    sel.value = cat.name || '';
+    const hint = document.getElementById("newQuizCategoryParentHint");
+    if (hint) hint.textContent = "Changing the course will move this folder and everything inside it to the new course.";
+  }
+  openModal("addQuizCategoryModal");
+};
+
+window.saveQuizCategory = async function(){
+  const editId = document.getElementById("editQuizCategoryId").value;
+  if (editId) {
+    const cat = allQuizCategories.find(f => f.id === editId);
+    const isTopLevel = !cat.parentPath;
+    if (isTopLevel) {
+      const newCourseName = document.getElementById("newQuizCategoryCourseSelect").value.trim();
+      if (!newCourseName) { showToast("Select a course.", true); return; }
+      const oldPath = cat.path;
+      const newPath = newCourseName;
+      if (newPath !== oldPath && allQuizCategories.some(f => f.id !== editId && f.path.toLowerCase() === newPath.toLowerCase())) {
+        showToast("A folder for that course already exists.", true);
+        return;
+      }
+      const btn = document.getElementById("quizCategorySaveBtn");
+      const originalHTML = btn.innerHTML;
+      btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+      try {
+        await updateDoc(doc(db, "quizCategories", editId), { name: newCourseName, path: newPath });
+        if (newPath !== oldPath) {
+          const affectedSubcats = allQuizCategories.filter(f => f.id !== editId && f.path.startsWith(oldPath + '/'));
+          for (const sf of affectedSubcats) {
+            const updatedPath = newPath + sf.path.slice(oldPath.length);
+            const updatedParentPath = sf.parentPath === oldPath ? newPath : (newPath + sf.parentPath.slice(oldPath.length));
+            await updateDoc(doc(db, "quizCategories", sf.id), { path: updatedPath, parentPath: updatedParentPath });
+          }
+          const affectedQuizzes = allQuizzesFlat.filter(q => q.categoryPath === oldPath || (q.categoryPath || '').startsWith(oldPath + '/'));
+          for (const quiz of affectedQuizzes) {
+            const updatedCategoryPath = newPath + quiz.categoryPath.slice(oldPath.length);
+            await updateDoc(doc(db, "quizzes", quiz.id), { categoryPath: updatedCategoryPath, courseName: newCourseName });
+          }
+          if (currentQuizCategoryPath === oldPath) currentQuizCategoryPath = newPath;
+          else if (currentQuizCategoryPath && currentQuizCategoryPath.startsWith(oldPath + '/')) {
+            currentQuizCategoryPath = newPath + currentQuizCategoryPath.slice(oldPath.length);
+          }
+        }
+        closeModal("addQuizCategoryModal");
+        showToast("Course folder updated ✓");
+        await loadQuizzes();
+      } catch(e) { showToast("Update failed: " + e.message, true); }
+      finally { btn.disabled = false; btn.innerHTML = originalHTML; }
+      return;
+    }
+    const newName = document.getElementById("newQuizCategoryTitle").value.trim();
+    const newDesc = document.getElementById("newQuizCategoryDescription").value.trim();
+    if (!newName) { showToast("Name is required.", true); return; }
+    const newPath = cat.parentPath ? `${cat.parentPath}/${newName}` : newName;
+    try {
+      await updateDoc(doc(db, "quizCategories", editId), { name: newName, description: newDesc, path: newPath });
+      closeModal("addQuizCategoryModal");
+      showToast("Category updated ✓");
+      await loadQuizzes();
+    } catch(e) { showToast("Update failed: " + e.message, true); }
+    return;
+  }
+  const isTopLevel = !currentQuizCategoryPath;
+  const parentPath = currentQuizCategoryPath || null;
+  let name, description = '';
+  if (isTopLevel) {
+    name = document.getElementById("newQuizCategoryCourseSelect").value.trim();
+    if (!name) { showToast("Select a course.", true); return; }
+  } else {
+    name = document.getElementById("newQuizCategoryTitle").value.trim();
+    description = document.getElementById("newQuizCategoryDescription").value.trim();
+    if (!name) { showToast("Enter a category name.", true); return; }
+  }
+  const path = parentPath ? `${parentPath}/${name}` : name;
+  if (allQuizCategories.some(f => f.path.toLowerCase() === path.toLowerCase())) {
+    showToast("A folder with that name already exists here.", true);
+    return;
+  }
+  try {
+    await addDoc(collection(db, "quizCategories"), { name, description, parentPath, path, createdAt: serverTimestamp() });
+    closeModal("addQuizCategoryModal");
+    showToast("Folder created ✓");
+    await loadQuizzes();
+  } catch(e) { showToast("Could not create folder: " + e.message, true); }
+};
+
+function renderQuizzesTableForCategory(path){
+  const tbody = document.getElementById("adminQuizTable");
+  const quizzes = allQuizzesFlat.filter(q => (q.categoryPath || '') === path);
+  if (!quizzes.length) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No quizzes in this category yet.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = quizzes.map(q => `<tr>
+    <td><strong>${escapeHtml(q.title)}</strong></td>
+    <td style="color:var(--slate-dim);">${q.questionCount || 0}</td>
+    <td><span class="badge">${q.passMark || 60}%</span></td>
+    <td style="color:var(--amber);">${q.avgScore != null ? q.avgScore + '%' : '—'}</td>
+    <td style="color:var(--slate-dim);">${q.completionPct != null ? q.completionPct + '%' : '—'}</td>
+    <td class="row-actions">
+      <button class="icon-btn" title="Manage" onclick="window.openEditQuizModal('${q.id}')"><i class="fas fa-eye"></i></button>
+      <button class="icon-btn danger" title="Delete" onclick="window.deleteQuiz('${q.id}')"><i class="fas fa-trash"></i></button>
+    </td>
+  </tr>`).join('');
+}
+
+window.openAddQuizModal = function(){
+  if (!currentQuizCategoryPath || currentQuizCategoryPath.split('/').length < 2) {
+    showToast("Open a category first (inside a course folder).", true);
+    return;
+  }
+  document.getElementById("editQuizId").value = '';
+  document.getElementById("editQuizTitle").value = '';
+  document.getElementById("editQuizPassMark").value = 60;
+  document.getElementById("editQuizModalTitle").textContent = "New quiz";
+  document.getElementById("quizQuestionsSection").style.display = "none";
+  document.getElementById("quizDeleteBtn").style.display = "none";
+  openModal("editQuizModal");
+};
+
+window.openEditQuizModal = async function(quizId){
+  const q = allQuizzesFlat.find(x => x.id === quizId);
+  if (!q) return showToast("Quiz not found.", true);
+  document.getElementById("editQuizId").value = q.id;
+  document.getElementById("editQuizTitle").value = q.title || '';
+  document.getElementById("editQuizPassMark").value = q.passMark || 60;
+  document.getElementById("editQuizModalTitle").textContent = "Edit quiz";
+  document.getElementById("quizQuestionsSection").style.display = "block";
+  document.getElementById("quizDeleteBtn").style.display = "inline-flex";
+  await loadQuizQuestions(quizId);
+  openModal("editQuizModal");
+};
+
+window.saveQuizMeta = async function(){
+  const id = document.getElementById("editQuizId").value;
+  const title = document.getElementById("editQuizTitle").value.trim();
+  const passMark = parseInt(document.getElementById("editQuizPassMark").value) || 60;
+  if (!title) { showToast("Quiz title is required.", true); return; }
+  if (id) {
+    try { await updateDoc(doc(db, "quizzes", id), { title, passMark }); showToast("Quiz updated ✓"); await loadQuizzes(); }
+    catch(e) { showToast("Update failed: " + e.message, true); }
+    return;
+  }
+  const segments = currentQuizCategoryPath.split('/');
+  try {
+    const ref = await addDoc(collection(db, "quizzes"), {
+      title, passMark, courseName: segments[0], categoryName: segments[segments.length - 1],
+      categoryPath: currentQuizCategoryPath, questionCount: 0, avgScore: null, completionPct: null,
+      createdAt: serverTimestamp()
+    });
+    showToast("Quiz created ✓ Now add some questions.");
+    await loadQuizzes();
+    window.openEditQuizModal(ref.id);
+  } catch(e) { showToast("Could not create quiz: " + e.message, true); }
+};
+
+window.deleteQuiz = async function(id){
+  if (!(await showConfirm("Delete quiz", "Delete this quiz and all its questions?"))) return;
+  try {
+    const qSnap = await getDocs(query(collection(db, "quizQuestions"), where("quizId", "==", id)));
+    await Promise.all(qSnap.docs.map(d => deleteDoc(doc(db, "quizQuestions", d.id))));
+    await deleteDoc(doc(db, "quizzes", id));
+    closeModal("editQuizModal");
+    await loadQuizzes();
+    showToast("Quiz removed.");
+  } catch(e) { showToast("Delete failed: " + e.message, true); }
+};
+window.deleteQuizFromModal = function(){ window.deleteQuiz(document.getElementById("editQuizId").value); };
+
+async function loadQuizQuestions(quizId){
+  try {
+    const snaps = await getDocs(query(collection(db, "quizQuestions"), where("quizId", "==", quizId)));
+    currentQuizQuestions = snaps.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (a.order||0)-(b.order||0));
+    renderQuizQuestionsList();
+  } catch(e) { console.error(e); }
+}
+
+function renderQuizQuestionsList(){
+  document.getElementById("quizQuestionCount").textContent = `(${currentQuizQuestions.length})`;
+  const list = document.getElementById("quizQuestionsList");
+  if (!currentQuizQuestions.length) {
+    list.innerHTML = '<div style="color:var(--slate-dim);font-size:13px;">No questions yet. Add one or import a CSV.</div>';
+    return;
+  }
+  list.innerHTML = currentQuizQuestions.map((q, i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--asphalt-deep);border:1px solid var(--border);border-radius:8px;">
+      ${q.imageUrl ? `<img src="${q.imageUrl}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;flex-shrink:0;" />` : `<div style="width:40px;height:40px;border-radius:6px;background:rgba(242,169,59,0.1);display:flex;align-items:center;justify-content:center;color:var(--amber);flex-shrink:0;"><i class="fas fa-question" style="font-size:12px;"></i></div>`}
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${i+1}. ${escapeHtml(q.text || '')}</div>
+        <div style="font-size:11px;color:var(--slate-dim);">Correct: ${escapeHtml(q.correctLabel || '—')}</div>
+      </div>
+      <button class="icon-btn" onclick="window.openEditQuestionModal('${q.id}')"><i class="fas fa-pen"></i></button>
+      <button class="icon-btn danger" onclick="window.deleteQuestion('${q.id}')"><i class="fas fa-trash"></i></button>
+    </div>`).join('');
+}
+
+window.openAddQuestionModal = function(){
+  document.getElementById("editQuestionId").value = '';
+  document.getElementById("addQuestionModalTitle").textContent = "Add question";
+  document.getElementById("qBuilderText").value = '';
+  document.getElementById("qBuilderOptA").value = '';
+  document.getElementById("qBuilderOptB").value = '';
+  document.getElementById("qBuilderOptC").value = '';
+  document.getElementById("qBuilderOptD").value = '';
+  document.getElementById("qBuilderCorrect").value = 'A';
+  document.getElementById("qBuilderImgFile").value = '';
+  document.getElementById("qBuilderImgPreview").style.display = 'none';
+  document.getElementById("qBuilderImgText").textContent = 'Tap to upload an image';
+  document.getElementById("qBuilderSaveBtn")._imageUrl = null;
+  openModal("addQuestionModal");
+};
+
+window.openEditQuestionModal = function(questionId){
+  const q = currentQuizQuestions.find(x => x.id === questionId);
+  if (!q) return;
+  document.getElementById("editQuestionId").value = q.id;
+  document.getElementById("addQuestionModalTitle").textContent = "Edit question";
+  document.getElementById("qBuilderText").value = q.text || '';
+  document.getElementById("qBuilderOptA").value = q.options?.find(o=>o.label==='A')?.text || '';
+  document.getElementById("qBuilderOptB").value = q.options?.find(o=>o.label==='B')?.text || '';
+  document.getElementById("qBuilderOptC").value = q.options?.find(o=>o.label==='C')?.text || '';
+  document.getElementById("qBuilderOptD").value = q.options?.find(o=>o.label==='D')?.text || '';
+  document.getElementById("qBuilderCorrect").value = q.correctLabel || 'A';
+  const preview = document.getElementById("qBuilderImgPreview");
+  if (q.imageUrl) { preview.src = q.imageUrl; preview.style.display = 'block'; document.getElementById("qBuilderImgText").textContent = 'Change image'; }
+  else { preview.style.display = 'none'; document.getElementById("qBuilderImgText").textContent = 'Tap to upload an image'; }
+  document.getElementById("qBuilderSaveBtn")._imageUrl = q.imageUrl || null;
+  openModal("addQuestionModal");
+};
+
+window.previewQuestionImage = function(input){
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById("qBuilderImgPreview").src = e.target.result;
+    document.getElementById("qBuilderImgPreview").style.display = 'block';
+    document.getElementById("qBuilderImgText").textContent = file.name;
+  };
+  reader.readAsDataURL(file);
+};
+
+async function uploadQuizImage(file, quizId){
+  const fd = new FormData();
+  fd.append("file", file);
+  fd.append("upload_preset", QUIZ_IMAGE_PRESET);
+  fd.append("folder", `quiz_questions/${quizId}`);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method: "POST", body: fd });
+  if (!res.ok) throw new Error("Image upload failed");
+  const data = await res.json();
+  return data.secure_url;
+}
+
+window.saveQuestion = async function(){
+  const quizId = document.getElementById("editQuizId").value;
+  const editId = document.getElementById("editQuestionId").value;
+  const text = document.getElementById("qBuilderText").value.trim();
+  const optA = document.getElementById("qBuilderOptA").value.trim();
+  const optB = document.getElementById("qBuilderOptB").value.trim();
+  const optC = document.getElementById("qBuilderOptC").value.trim();
+  const optD = document.getElementById("qBuilderOptD").value.trim();
+  const correctLabel = document.getElementById("qBuilderCorrect").value;
+  const imgFile = document.getElementById("qBuilderImgFile").files[0];
+
+  if (!text || !optA || !optB) { showToast("Question text and at least options A & B are required.", true); return; }
+
+  const btn = document.getElementById("qBuilderSaveBtn");
+  const originalHTML = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+
+  try {
+    let imageUrl = btn._imageUrl || null;
+    if (imgFile) { btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading image…'; imageUrl = await uploadQuizImage(imgFile, quizId); }
+    const options = [
+      { label: 'A', text: optA }, { label: 'B', text: optB },
+      ...(optC ? [{ label: 'C', text: optC }] : []),
+      ...(optD ? [{ label: 'D', text: optD }] : [])
+    ];
+    if (editId) {
+      await updateDoc(doc(db, "quizQuestions", editId), { text, imageUrl, options, correctLabel });
+    } else {
+      await addDoc(collection(db, "quizQuestions"), { quizId, text, imageUrl, options, correctLabel, order: currentQuizQuestions.length, createdAt: serverTimestamp() });
+    }
+    await updateDoc(doc(db, "quizzes", quizId), { questionCount: editId ? currentQuizQuestions.length : currentQuizQuestions.length + 1 });
+    closeModal("addQuestionModal");
+    showToast("Question saved ✓");
+    await loadQuizQuestions(quizId);
+    await loadQuizzes();
+  } catch(e) { showToast("Could not save question: " + e.message, true); }
+  finally { btn.disabled = false; btn.innerHTML = originalHTML; }
+};
+
+window.deleteQuestion = async function(id){
+  if (!(await showConfirm("Delete question", "Delete this question?"))) return;
+  const quizId = document.getElementById("editQuizId").value;
+  try {
+    await deleteDoc(doc(db, "quizQuestions", id));
+    await updateDoc(doc(db, "quizzes", quizId), { questionCount: Math.max(0, currentQuizQuestions.length - 1) });
+    showToast("Question removed.");
+    await loadQuizQuestions(quizId);
+    await loadQuizzes();
+  } catch(e) { showToast("Delete failed: " + e.message, true); }
+};
+
+let _pendingCsvRows = [];
+function parseQuizCsv(text){
+  const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cells = []; let cur = '', inQuotes = false;
+    const line = lines[i];
+    for (let c = 0; c < line.length; c++) {
+      const ch = line[c];
+      if (ch === '"') inQuotes = !inQuotes;
+      else if (ch === ',' && !inQuotes) { cells.push(cur); cur = ''; }
+      else cur += ch;
+    }
+    cells.push(cur);
+    if (cells.length >= 7) {
+      rows.push({
+        text: cells[0].trim(), imageUrl: cells[1].trim() || null,
+        optA: cells[2].trim(), optB: cells[3].trim(), optC: cells[4].trim(), optD: cells[5].trim(),
+        correctLabel: cells[6].trim().toUpperCase()
+      });
+    }
+  }
+  return rows;
+}
+
+window.openQuizCsvModal = function(){
+  document.getElementById("quizCsvFile").value = '';
+  document.getElementById("quizCsvPreview").textContent = '';
+  document.getElementById("quizCsvProgressWrap").style.display = 'none';
+  document.getElementById("quizCsvProgressBar").style.width = '0%';
+  document.getElementById("quizCsvProgressPct").textContent = '0%';
+  _pendingCsvRows = [];
+  openModal("quizCsvModal");
+};
+
+document.addEventListener("change", (e) => {
+  if (e.target.id === "quizCsvFile") {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      _pendingCsvRows = parseQuizCsv(ev.target.result);
+      document.getElementById("quizCsvPreview").textContent = `${_pendingCsvRows.length} question(s) found and ready to import.`;
+    };
+    reader.readAsText(file);
+  }
+});
+
+window.importQuizCsv = async function(){
+  const quizId = document.getElementById("editQuizId").value;
+  if (!_pendingCsvRows.length) { showToast("Choose a CSV file first.", true); return; }
+  const importBtn = document.querySelector("#quizCsvModal .btn-primary");
+  const originalBtnHTML = importBtn.innerHTML;
+  const progWrap = document.getElementById("quizCsvProgressWrap");
+  const progBar = document.getElementById("quizCsvProgressBar");
+  const progPct = document.getElementById("quizCsvProgressPct");
+  const progLabel = document.getElementById("quizCsvProgressLabel");
+  importBtn.disabled = true; importBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importing…';
+  progWrap.style.display = "block"; progBar.style.width = "0%"; progPct.textContent = "0%"; progLabel.textContent = "Importing questions…";
+  try {
+    let order = currentQuizQuestions.length;
+    const total = _pendingCsvRows.length; let done = 0;
+    for (const row of _pendingCsvRows) {
+      if (!row.text || !row.optA || !row.optB || !row.correctLabel) { done++; continue; }
+      const options = [
+        { label: 'A', text: row.optA }, { label: 'B', text: row.optB },
+        ...(row.optC ? [{ label: 'C', text: row.optC }] : []),
+        ...(row.optD ? [{ label: 'D', text: row.optD }] : [])
+      ];
+      await addDoc(collection(db, "quizQuestions"), { quizId, text: row.text, imageUrl: row.imageUrl, options, correctLabel: row.correctLabel, order: order++, createdAt: serverTimestamp() });
+      done++;
+      const pct = Math.round((done / total) * 100);
+      progBar.style.width = pct + "%"; progPct.textContent = pct + "%";
+    }
+    await updateDoc(doc(db, "quizzes", quizId), { questionCount: order });
+    closeModal("quizCsvModal");
+    showToast(`${_pendingCsvRows.length} question(s) imported ✓`);
+    await loadQuizQuestions(quizId);
+    await loadQuizzes();
+  } catch(e) { showToast("Import failed. Check the CSV format.", true); }
+  finally { importBtn.disabled = false; importBtn.innerHTML = originalBtnHTML; progWrap.style.display = "none"; }
+};
 
 function fmtDateTime(cls){
   if (!cls?.date || !cls?.time) return '—';
@@ -2126,54 +3186,54 @@ async function seedDefaultRoles(){
       label: "CEO",
       description: "Full access to all school features",
       pages: {
-        dashboard: { read: true, create: true, update: true, delete: true },
-        students: { read: true, create: true, update: true, delete: true },
-        instructors: { read: true, create: true, update: true, delete: true },
-        attendance: { read: true, create: true, update: true, delete: true },
-        classes: { read: true, create: true, update: true, delete: true },
-        vehicles: { read: true, create: true, update: true, delete: true },
-        certificates: { read: true, create: true, update: true, delete: true },
-        enquiries: { read: true, create: false, update: true, delete: false },
-        notifications: { read: false, create: true, update: false, delete: false },
-        permissions: { read: false, create: false, update: false, delete: false },
-        staff: { read: true, create: true, update: true, delete: true },
-        settings: { read: true, create: true, update: true, delete: false }
+        dashboard: { access: true, read: true, create: true, update: true, delete: true },
+        students: { access: true, read: true, create: true, update: true, delete: true },
+        instructors: { access: true, read: true, create: true, update: true, delete: true },
+        attendance: { access: true, read: true, create: true, update: true, delete: true },
+        classes: { access: true, read: true, create: true, update: true, delete: true },
+        vehicles: { access: true, read: true, create: true, update: true, delete: true },
+        certificates: { access: true, read: true, create: true, update: true, delete: true },
+        enquiries: { access: true, read: true, create: false, update: true, delete: false },
+        notifications: { access: true, read: false, create: true, update: false, delete: false },
+        permissions: { access: true, read: false, create: false, update: false, delete: false },
+        staff: { access: true, read: true, create: true, update: true, delete: true },
+        settings: { access: true, read: true, create: true, update: true, delete: false }
       }
     },
     AdminAssistant: {
       label: "Administrative Assistant",
       description: "Can view and edit students, but cannot delete or manage instructors",
       pages: {
-        dashboard: { read: true, create: false, update: false, delete: false },
-        students: { read: true, create: true, update: true, delete: false },
-        instructors: { read: true, create: false, update: false, delete: false },
-        attendance: { read: true, create: true, update: true, delete: false },
-        classes: { read: true, create: true, update: true, delete: false },
-        vehicles: { read: true, create: false, update: false, delete: false },
-        certificates: { read: true, create: false, update: false, delete: false },
-        enquiries: { read: true, create: false, update: true, delete: false },
-        notifications: { read: false, create: false, update: false, delete: false },
-        permissions: { read: false, create: false, update: false, delete: false },
-        staff: { read: false, create: false, update: false, delete: false },
-        settings: { read: false, create: false, update: false, delete: false }
+        dashboard: { access: true, read: true, create: false, update: false, delete: false },
+        students: { access: true, read: true, create: true, update: true, delete: false },
+        instructors: { access: true, read: true, create: false, update: false, delete: false },
+        attendance: { access: true, read: true, create: true, update: true, delete: false },
+        classes: { access: true, read: true, create: true, update: true, delete: false },
+        vehicles: { access: true, read: true, create: false, update: false, delete: false },
+        certificates: { access: true, read: true, create: false, update: false, delete: false },
+        enquiries: { access: true, read: true, create: false, update: true, delete: false },
+        notifications: { access: false, read: false, create: false, update: false, delete: false },
+        permissions: { access: false, read: false, create: false, update: false, delete: false },
+        staff: { access: false, read: false, create: false, update: false, delete: false },
+        settings: { access: false, read: false, create: false, update: false, delete: false }
       }
     },
     BranchManager: {
       label: "Branch Manager",
       description: "Manage their branch only (students, instructors, classes)",
       pages: {
-        dashboard: { read: true, create: false, update: false, delete: false },
-        students: { read: true, create: true, update: true, delete: false },
-        instructors: { read: true, create: true, update: true, delete: false },
-        attendance: { read: true, create: true, update: true, delete: false },
-        classes: { read: true, create: true, update: true, delete: false },
-        vehicles: { read: true, create: false, update: false, delete: false },
-        certificates: { read: true, create: false, update: false, delete: false },
-        enquiries: { read: true, create: false, update: true, delete: false },
-        notifications: { read: false, create: false, update: false, delete: false },
-        permissions: { read: false, create: false, update: false, delete: false },
-        staff: { read: false, create: false, update: false, delete: false },
-        settings: { read: false, create: false, update: false, delete: false }
+        dashboard: { access: true, read: true, create: false, update: false, delete: false },
+        students: { access: true, read: true, create: true, update: true, delete: false },
+        instructors: { access: true, read: true, create: true, update: true, delete: false },
+        attendance: { access: true, read: true, create: true, update: true, delete: false },
+        classes: { access: true, read: true, create: true, update: true, delete: false },
+        vehicles: { access: true, read: true, create: false, update: false, delete: false },
+        certificates: { access: true, read: true, create: false, update: false, delete: false },
+        enquiries: { access: true, read: true, create: false, update: true, delete: false },
+        notifications: { access: false, read: false, create: false, update: false, delete: false },
+        permissions: { access: false, read: false, create: false, update: false, delete: false },
+        staff: { access: false, read: false, create: false, update: false, delete: false },
+        settings: { access: false, read: false, create: false, update: false, delete: false }
       }
     }
   };
@@ -2409,9 +3469,9 @@ window.openEditRoleModal = function(roleKey){
   const matrix = document.getElementById('schEditRoleMatrix');
   const pages = role.pages || {};
   const pageNames = Object.keys(pages).sort();
-  const actions = ['create', 'read', 'update', 'delete'];
-  const actionLabels = { create: 'Create', read: 'Read', update: 'Update', delete: 'Delete' };
-  const actionColors = { create: 'var(--amber)', read: 'var(--info)', update: 'var(--good)', delete: 'var(--brake)' };
+  const actions = ['access', 'create', 'read', 'update', 'delete'];
+  const actionLabels = { access: 'Page Access', create: 'Create', read: 'Read', update: 'Update', delete: 'Delete' };
+  const actionColors = { access: 'var(--chalk)', create: 'var(--amber)', read: 'var(--info)', update: 'var(--good)', delete: 'var(--brake)' };
 
   if (!pageNames.length) {
     matrix.innerHTML = '<div style="color:var(--slate-dim);font-size:13px;">No pages defined for this role.</div>';
@@ -2432,7 +3492,11 @@ window.openEditRoleModal = function(roleKey){
     html += `<tr>
       <td style="padding:8px 8px;border-bottom:1px solid var(--border-subtle);font-size:13px;font-weight:500;">${page.charAt(0).toUpperCase()+page.slice(1)}</td>`;
     actions.forEach(a => {
-      const checked = perms[a] === true ? 'checked' : '';
+      // Back-compat: roles saved before "Page Access" existed have no explicit
+      // `access` field — fall back to their `read` value so nothing changes
+      // for existing staff until the admin re-saves this role.
+      const rawVal = (a === 'access' && perms.access === undefined) ? perms.read : perms[a];
+      const checked = rawVal === true ? 'checked' : '';
       html += `<td style="padding:8px 8px;text-align:center;border-bottom:1px solid var(--border-subtle);">
         <input type="checkbox" class="sch-role-perm-check" data-page="${page}" data-action="${a}" ${checked} style="accent-color:var(--amber);width:16px;height:16px;">
       </td>`;

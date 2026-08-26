@@ -143,7 +143,7 @@
   .modal-head{ display:flex; align-items:center; justify-content:space-between; padding:18px 22px; border-bottom:1px solid var(--border); flex-shrink:0; }
   .modal-head h3{ font-family:'Space Grotesk', sans-serif; font-size:16px; margin:0; }
   .modal-close{ background:transparent; border:none; color:var(--slate); font-size:18px; cursor:pointer; line-height:1; }
-  .modal-body{ padding:20px 22px; overflow-y:auto; }
+  .modal-body{ padding:20px 22px; flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; }
   .modal-foot{ display:flex; gap:10px; padding:16px 22px; border-top:1px solid var(--border); flex-shrink:0; }
   .modal-foot .btn{ flex:1; padding:11px; }
   select.field-select{ width:100%; padding:11px 13px; border-radius:8px; border:1.5px solid var(--border); background:var(--asphalt-deep); color:var(--chalk); font-size:14px; outline:none; }
@@ -373,6 +373,54 @@
               <tbody id="schCertTableBody"><tr class="empty-row"><td colspan="5">Loading…</td></tr></tbody>
             </table>
             <div id="schCertPagination"></div>
+          </div>
+        </div>
+        <div class="school-subpage" id="schoolsub-notifications" style="display:none;">
+          <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start;">
+            <div class="panel">
+              <div class="panel-head"><h3><i class="fas fa-paper-plane"></i> New notification</h3></div>
+              <div style="padding:20px;">
+                <div class="field">
+                  <label>Recipient type</label>
+                  <div style="display:flex;gap:8px;">
+                    <button type="button" class="btn btn-primary" id="schNotifTabStudent" onclick="window.switchSchNotifType('student')" style="flex:1;justify-content:center;font-size:12px;"><i class="fas fa-users"></i> Students</button>
+                    <button type="button" class="btn btn-outline" id="schNotifTabInstructor" onclick="window.switchSchNotifType('instructor')" style="flex:1;justify-content:center;font-size:12px;"><i class="fas fa-chalkboard-teacher"></i> Instructors</button>
+                    <button type="button" class="btn btn-outline" id="schNotifTabBoth" onclick="window.switchSchNotifType('both')" style="flex:1;justify-content:center;font-size:12px;"><i class="fas fa-users"></i> Both</button>
+                  </div>
+                </div>
+                <div class="field">
+                  <label>Recipient</label>
+                  <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-weight:600;color:var(--amber);border-bottom:1px solid var(--border);margin-bottom:8px;">
+                    <input type="checkbox" id="schNotifyAll" onchange="window.toggleSchAllRecipients(this)" style="accent-color:var(--amber);">
+                    <span id="schNotifyAllLabel">All students</span>
+                  </label>
+                  <div id="schNotifStudentList" style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--asphalt-deep);"></div>
+                  <div id="schNotifInstructorList" style="display:none;max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--asphalt-deep);"></div>
+                </div>
+                <div class="field">
+                  <label>Icon</label>
+                  <select id="schNotifIcon" class="field-select">
+                    <option value="fa-bell">🔔 General</option>
+                    <option value="fa-calendar-check">📅 Session</option>
+                    <option value="fa-trophy">🏆 Achievement</option>
+                    <option value="fa-exclamation-triangle">⚠️ Warning</option>
+                    <option value="fa-info-circle">ℹ️ Info</option>
+                    <option value="fa-check-circle">✅ Completion</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label>Message</label>
+                  <textarea id="schNotifMessage" rows="3" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-family:inherit;" placeholder="Type your message here…"></textarea>
+                </div>
+                <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="window.sendSchNotification()"><i class="fas fa-paper-plane"></i> Send notification</button>
+              </div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h3><i class="fas fa-history"></i> Recent sent</h3></div>
+              <div id="schNotifSentList" style="max-height:420px;overflow-y:auto;padding:8px 0;">
+                <div style="padding:20px;text-align:center;color:var(--slate-dim);font-size:13px;">Loading…</div>
+              </div>
+            </div>
           </div>
         </div>
         <div class="school-subpage" id="schoolsub-enquiries" style="display:none;">
@@ -609,7 +657,7 @@
 
 <!-- ================= ADD/EDIT CLASS MODAL ================= -->
 <div class="overlay" id="schClassModal">
-  <div class="modal" style="width:520px;">
+  <div class="modal" style="width:560px;">
     <div class="modal-head"><h3 id="schClassModalTitle">Schedule class</h3><button class="modal-close" onclick="window.closeModal('schClassModal')">✕</button></div>
     <div class="modal-body">
       <input type="hidden" id="schClassId">
@@ -630,11 +678,50 @@
         <div class="field"><label>End time</label><input id="schClassEndTime" type="time"></div>
       </div>
       <div class="field"><label>Mode</label>
-        <select id="schClassMode" class="field-select">
+        <select id="schClassMode" class="field-select" onchange="window.toggleSchClassOnlineFields()">
           <option value="in-person">In-person</option>
           <option value="online">Online</option>
         </select>
       </div>
+
+      <div id="schClassOnlineFields" style="display:none;">
+        <div class="form-row">
+          <div class="field"><label>Platform</label>
+            <select id="schClassPlatform" class="field-select">
+              <option value="">Select platform…</option>
+              <option value="Zoom">Zoom</option>
+              <option value="Google Meet">Google Meet</option>
+              <option value="Microsoft Teams">Microsoft Teams</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="field"><label>Meeting link</label><input id="schClassLink" type="url" placeholder="https://meet.google.com/..."></div>
+        </div>
+      </div>
+
+      <div class="field"><label>Vehicle</label>
+        <select id="schClassVehicle" class="field-select"><option value="">Select vehicle…</option></select>
+      </div>
+
+      <div class="field"><label>Assign students</label>
+        <div id="schClassStudentList" style="max-height:160px;overflow-y:auto;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--asphalt-deep);"></div>
+      </div>
+
+      <div class="field">
+        <label>Attach documents</label>
+        <div class="img-upload-area" onclick="document.getElementById('schClassDocsFile').click()">
+          <i class="fas fa-paperclip" style="color:var(--amber);margin-right:6px;"></i>
+          <span id="schClassDocsText" style="font-size:12px;color:var(--slate-dim);">Tap to attach documents</span>
+        </div>
+        <input type="file" id="schClassDocsFile" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg" multiple style="display:none">
+        <div id="schClassDocsList" style="margin-top:8px;display:flex;flex-direction:column;gap:4px;"></div>
+      </div>
+
+      <div class="field" id="schClassAttendanceSummaryWrap" style="display:none;">
+        <label>Attendance summary</label>
+        <div id="schClassAttendanceSummary" style="font-size:13px;color:var(--slate);"></div>
+      </div>
+
       <p class="form-error" id="schClassError"></p>
     </div>
     <div class="modal-foot">
@@ -680,6 +767,12 @@
           </select>
         </div>
       </div>
+
+      <div class="field" id="schVehicleScheduleWrap" style="display:none;">
+        <label>Assigned schedule</label>
+        <div id="schVehicleScheduleList" style="display:flex;flex-direction:column;gap:8px;max-height:220px;overflow-y:auto;"></div>
+      </div>
+
       <p class="form-error" id="schVehicleError"></p>
     </div>
     <div class="modal-foot">

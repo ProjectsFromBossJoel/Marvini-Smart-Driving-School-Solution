@@ -18,7 +18,7 @@ import {
   getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 import {
-  getFirestore, collection, addDoc, updateDoc, deleteDoc, doc,
+  getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc,
   onSnapshot, serverTimestamp, query, where, orderBy, getDoc, getDocs
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
@@ -46,6 +46,17 @@ const SCHOOL_IMAGE_PRESET = "school_images_upload";
 
 function escapeHtml(str){ return String(str ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 window.escapeHtml = escapeHtml;
+
+// Renders a 34px round avatar from a photo URL, or initials if none is set.
+function avatarHtml(photoUrl, firstName, lastName, size){
+  size = size || 34;
+  const initials = ((firstName||'')[0] || '') + ((lastName||'')[0] || '') || '?';
+  if (photoUrl) {
+    return `<div style="width:${size}px;height:${size}px;border-radius:50%;background-image:url(${photoUrl});background-size:cover;background-position:center;border:1.5px solid var(--amber);flex-shrink:0;"></div>`;
+  }
+  return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:rgba(242,169,59,0.15);border:1.5px solid var(--amber);display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*0.38)}px;font-weight:700;color:var(--amber);flex-shrink:0;">${escapeHtml(initials)}</div>`;
+}
+window.avatarHtml = avatarHtml;
 
 function fmtDate(ts){
   if (!ts) return '—';
@@ -117,8 +128,24 @@ loginForm.addEventListener('submit', async (e) => {
 document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
 
 let unsubscribeSchools = null;
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   if (user) {
+    // Central dashboard is superAdmin-only — school-scoped "admin" accounts
+    // (like admin@test.com, which carries Dekay's schoolId) must be rejected here.
+    let role = null;
+    try {
+      const userDocSnap = await getDoc(doc(db, 'users', user.uid));
+      role = userDocSnap.exists() ? userDocSnap.data().role : null;
+    } catch (err) {
+      role = null;
+    }
+
+    if (role !== 'superAdmin') {
+      loginError.textContent = 'This portal is restricted to super admin accounts.';
+      await signOut(auth);
+      return;
+    }
+
     loginScreen.style.display = 'none';
     appShell.classList.add('show');
     adminEmailEl.textContent = user.email;
@@ -439,10 +466,11 @@ function showSchoolSubpage(subpage, navEl){
   if (target) target.style.display = 'block';
 
   const labelMap = {
-    overview:'Overview', students:'Students', instructors:'Instructors', attendance:'Attendance',
-    classes:'Classes', vehicles:'Vehicles', certificates:'Certificates', enquiries:'Enquiries',
-    permissions:'Permissions', settings:'School Settings'
-  };
+  overview:'Overview', students:'Students', instructors:'Instructors', attendance:'Attendance',
+  classes:'Classes', vehicles:'Vehicles', certificates:'Certificates', enquiries:'Enquiries',
+  permissions:'Permissions', staff:'Staff Management', settings:'School Settings'
+};
+
   document.getElementById('pageTitle').textContent = `${school.name} — ${labelMap[subpage] || subpage}`;
   document.getElementById('pageSubtitle').textContent = `Managing ${labelMap[subpage]?.toLowerCase() || subpage} for this school only.`;
 
@@ -457,8 +485,10 @@ function showSchoolSubpage(subpage, navEl){
   if (subpage === 'classes') loadSchoolClasses();
   if (subpage === 'vehicles') loadSchoolVehicles();
   if (subpage === 'certificates') loadSchoolCertificates();
+  if (subpage === 'notifications') loadSchoolNotificationsPage();
   if (subpage === 'enquiries') loadSchoolEnquiries();
   if (subpage === 'permissions') loadSchoolPermissions();
+  if (subpage === 'staff') loadSchoolStaff();
   if (subpage === 'settings') renderSchoolSettings();
 }
 
@@ -527,7 +557,7 @@ function renderSchoolStudents(){
     pendingBody.innerHTML = pending.map(s => {
       const name = `${s.firstName||''} ${s.lastName||''}`.trim() || '—';
       return `<tr>
-        <td><strong>${escapeHtml(name)}</strong><div style="font-size:11px;color:var(--slate-dim);">${escapeHtml(s.email||'')}</div></td>
+        <td><div style="display:flex;align-items:center;gap:10px;">${avatarHtml(s.avatarUrl, s.firstName, s.lastName)}<div><strong>${escapeHtml(name)}</strong><div style="font-size:11px;color:var(--slate-dim);">${escapeHtml(s.email||'')}</div></div></div></td>
         <td><span class="badge">${escapeHtml(s.courseType||'—')}</span></td>
         <td style="font-size:12px;color:var(--slate-dim);">${fmtDate(s.createdAt)}</td>
         <td class="row-actions">
@@ -549,7 +579,7 @@ function renderSchoolStudents(){
     const name = `${s.firstName||''} ${s.lastName||''}`.trim() || '—';
     const statusClass = s.status === 'active' ? 'good' : 'bad';
     return `<tr>
-      <td><strong>${escapeHtml(name)}</strong><div style="font-size:11px;color:var(--slate-dim);">${escapeHtml(s.email||'')}</div></td>
+      <td><div style="display:flex;align-items:center;gap:10px;">${avatarHtml(s.avatarUrl, s.firstName, s.lastName)}<div><strong>${escapeHtml(name)}</strong><div style="font-size:11px;color:var(--slate-dim);">${escapeHtml(s.email||'')}</div></div></div></td>
       <td><span class="badge">${escapeHtml(s.courseType||'—')}</span></td>
       <td><span class="badge">Stage ${s.trainingStage || 1}</span></td>
       <td><span class="badge ${statusClass}">${escapeHtml(s.status||'active')}</span></td>
@@ -582,7 +612,21 @@ document.getElementById('schOpenAddStudentBtn').addEventListener('click', () => 
   document.getElementById('schAddStudentError').textContent = '';
   ['schNewFirst','schNewLast','schNewEmail','schNewPhone','schNewPassword'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('schNewCourse').value = 'Manual';
+  document.getElementById('schNewStudentPhotoFile').value = '';
+  document.getElementById('schNewStudentPhotoPreview').style.display = 'none';
+  document.getElementById('schNewStudentPhotoText').textContent = 'Tap to upload a photo';
   openModal('schAddStudentModal');
+});
+document.getElementById('schNewStudentPhotoFile').addEventListener('change', () => {
+  const file = document.getElementById('schNewStudentPhotoFile').files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById('schNewStudentPhotoPreview').src = e.target.result;
+    document.getElementById('schNewStudentPhotoPreview').style.display = 'block';
+    document.getElementById('schNewStudentPhotoText').textContent = file.name;
+  };
+  reader.readAsDataURL(file);
 });
 
 document.getElementById('schCreateStudentBtn').addEventListener('click', async () => {
@@ -617,10 +661,14 @@ document.getElementById('schCreateStudentBtn').addEventListener('click', async (
     }
     const uid = data.localId;
 
+    const photoFile = document.getElementById('schNewStudentPhotoFile').files[0];
+    const avatarUrl = photoFile ? await uploadSchoolImage(photoFile) : null;
+
     const { setDoc } = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js");
     await setDoc(doc(db, 'students', uid), {
       firstName: first, lastName: last, email, phone,
       courseType: course, role: 'student', trainingStage: 1, status: 'active',
+      avatarUrl,
       createdAt: serverTimestamp(), enrolDate: new Date().toLocaleDateString('en-GB'),
       schoolId: currentSchoolId
     });
@@ -642,6 +690,13 @@ window.openStudentDetail = function(uid){
   if (!s) return;
   document.getElementById('schStudentDetailTitle').textContent = `${s.firstName||''} ${s.lastName||''}`.trim() || 'Student';
   document.getElementById('schStudentDetailBody').innerHTML = `
+    <div style="text-align:center;margin-bottom:16px;">
+      <div onclick="document.getElementById('schEditStudentPhotoFile').click()" style="cursor:pointer;display:inline-block;">
+        ${avatarHtml(s.avatarUrl, s.firstName, s.lastName, 84)}
+      </div>
+      <div style="font-size:11px;color:var(--slate-dim);margin-top:6px;">Tap photo to change</div>
+      <input type="file" id="schEditStudentPhotoFile" accept="image/*" style="display:none">
+    </div>
     <div class="form-row">
       <div class="field"><label>First name</label><input id="schEditFirst" type="text" value="${escapeHtml(s.firstName||'')}"></div>
       <div class="field"><label>Last name</label><input id="schEditLast" type="text" value="${escapeHtml(s.lastName||'')}"></div>
@@ -677,14 +732,17 @@ async function saveStudentDetail(uid){
   const btn = document.getElementById('schStudentSaveBtn');
   btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
   try {
-    await updateDoc(doc(db, 'students', uid), {
+    const newPhotoFile = document.getElementById('schEditStudentPhotoFile')?.files[0];
+    const updates = {
       firstName: document.getElementById('schEditFirst').value.trim(),
       lastName: document.getElementById('schEditLast').value.trim(),
       phone: document.getElementById('schEditPhone').value.trim(),
       courseType: document.getElementById('schEditCourse').value,
       trainingStage: parseInt(document.getElementById('schEditStage').value),
       status: document.getElementById('schEditStatus').value
-    });
+    };
+    if (newPhotoFile) updates.avatarUrl = await uploadSchoolImage(newPhotoFile);
+    await updateDoc(doc(db, 'students', uid), updates);
     closeModal('schStudentDetailModal');
     showToast('Student updated ✓');
   } catch(e) { showToast('Update failed: ' + e.message, true); }
@@ -741,7 +799,7 @@ function renderSchoolInstructors(){
     pendingBody.innerHTML = pending.map(i => {
       const name = `${i.firstName||''} ${i.lastName||''}`.trim() || '—';
       return `<tr>
-        <td><strong>${escapeHtml(name)}</strong><div style="font-size:11px;color:var(--slate-dim);">${escapeHtml(i.email||'')}</div></td>
+        <td><div style="display:flex;align-items:center;gap:10px;">${avatarHtml(i.profilePhoto || i.avatarUrl, i.firstName, i.lastName)}<div><strong>${escapeHtml(name)}</strong><div style="font-size:11px;color:var(--slate-dim);">${escapeHtml(i.email||'')}</div></div></div></td>
         <td><span class="badge">${escapeHtml(i.branch||'—')}</span></td>
         <td style="font-size:12px;color:var(--slate-dim);">${i.experience || '—'} yrs</td>
         <td class="row-actions">
@@ -763,7 +821,7 @@ function renderSchoolInstructors(){
     const name = `${i.firstName||''} ${i.lastName||''}`.trim() || '—';
     const statusClass = i.status === 'active' ? 'good' : 'bad';
     return `<tr>
-      <td><strong>${escapeHtml(name)}</strong></td>
+      <td><div style="display:flex;align-items:center;gap:10px;">${avatarHtml(i.profilePhoto || i.avatarUrl, i.firstName, i.lastName)}<strong>${escapeHtml(name)}</strong></div></td>
       <td style="font-size:12px;color:var(--slate-dim);">${escapeHtml(i.email||'')}</td>
       <td><span class="badge">${escapeHtml(i.branch||'—')}</span></td>
       <td><span class="badge ${statusClass}">${escapeHtml(i.status||'active')}</span></td>
@@ -791,12 +849,57 @@ window.disapproveInstructor = async function(uid){
 };
 
 // ── Add instructor ──
+function wireInstrFilePreview(fileId, previewId, textId){
+  const el = document.getElementById(fileId);
+  if (!el) return;
+  el.addEventListener('change', () => {
+    const file = el.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      document.getElementById(previewId).src = e.target.result;
+      document.getElementById(previewId).style.display = 'block';
+      document.getElementById(textId).textContent = file.name;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+wireInstrFilePreview('schInstrNewPhotoFile', 'schInstrNewPhotoPreview', 'schInstrNewPhotoText');
+wireInstrFilePreview('schInstrNewGhFrontFile', 'schInstrNewGhFrontPreview', 'schInstrNewGhFrontText');
+wireInstrFilePreview('schInstrNewGhBackFile', 'schInstrNewGhBackPreview', 'schInstrNewGhBackText');
+document.getElementById('schInstrNewCertFile').addEventListener('change', () => {
+  const f = document.getElementById('schInstrNewCertFile').files[0];
+  if (f) document.getElementById('schInstrNewCertFileText').textContent = f.name;
+});
+
 document.getElementById('schOpenAddInstructorBtn').addEventListener('click', () => {
   document.getElementById('schAddInstructorError').textContent = '';
-  ['schInstrNewFirst','schInstrNewLast','schInstrNewEmail','schInstrNewPhone','schInstrNewPassword'].forEach(id => document.getElementById(id).value = '');
+  ['schInstrNewFirst','schInstrNewLast','schInstrNewEmail','schInstrNewPhone','schInstrNewPassword',
+   'schInstrNewDob','schInstrNewEngagementDate','schInstrNewExp','schInstrNewGhCardNumber','schInstrNewQual','schInstrNewCert',
+   'schInstrNewGuarName','schInstrNewGuarEmail','schInstrNewGuarPhone',
+   'schInstrNewRef1Name','schInstrNewRef1Email','schInstrNewRef1Phone',
+   'schInstrNewRef2Name','schInstrNewRef2Email','schInstrNewRef2Phone'
+  ].forEach(id => document.getElementById(id).value = '');
   document.getElementById('schInstrNewBranch').value = '';
+  ['schInstrNewPhotoFile','schInstrNewGhFrontFile','schInstrNewGhBackFile','schInstrNewCertFile'].forEach(id => document.getElementById(id).value = '');
+  ['schInstrNewPhotoPreview','schInstrNewGhFrontPreview','schInstrNewGhBackPreview'].forEach(id => document.getElementById(id).style.display = 'none');
+  document.getElementById('schInstrNewPhotoText').textContent = 'Tap to upload a profile photo';
+  document.getElementById('schInstrNewGhFrontText').textContent = 'Upload front';
+  document.getElementById('schInstrNewGhBackText').textContent = 'Upload back';
+  document.getElementById('schInstrNewCertFileText').textContent = 'Tap to upload certificate (PDF or image)';
   openModal('schAddInstructorModal');
 });
+
+async function uploadInstructorImage(file, folder){
+  const fd = new FormData();
+  fd.append('file', file);
+  fd.append('upload_preset', SCHOOL_IMAGE_PRESET);
+  fd.append('folder', folder);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method: 'POST', body: fd });
+  if (!res.ok) throw new Error('Image upload failed.');
+  const data = await res.json();
+  return data.secure_url;
+}
 
 document.getElementById('schCreateInstructorBtn').addEventListener('click', async () => {
   const errEl = document.getElementById('schAddInstructorError');
@@ -806,6 +909,21 @@ document.getElementById('schCreateInstructorBtn').addEventListener('click', asyn
   const email = document.getElementById('schInstrNewEmail').value.trim();
   const phone = document.getElementById('schInstrNewPhone').value.trim();
   const branch = document.getElementById('schInstrNewBranch').value;
+  const dob = document.getElementById('schInstrNewDob').value;
+  const dateOfEngagement = document.getElementById('schInstrNewEngagementDate').value;
+  const experience = parseInt(document.getElementById('schInstrNewExp').value) || 0;
+  const ghCardNumber = document.getElementById('schInstrNewGhCardNumber').value.trim();
+  const qualifications = document.getElementById('schInstrNewQual').value.trim();
+  const certificationName = document.getElementById('schInstrNewCert').value.trim();
+  const guarantor = {
+    name: document.getElementById('schInstrNewGuarName').value.trim(),
+    email: document.getElementById('schInstrNewGuarEmail').value.trim(),
+    phone: document.getElementById('schInstrNewGuarPhone').value.trim()
+  };
+  const references = [
+    { name: document.getElementById('schInstrNewRef1Name').value.trim(), email: document.getElementById('schInstrNewRef1Email').value.trim(), phone: document.getElementById('schInstrNewRef1Phone').value.trim() },
+    { name: document.getElementById('schInstrNewRef2Name').value.trim(), email: document.getElementById('schInstrNewRef2Email').value.trim(), phone: document.getElementById('schInstrNewRef2Phone').value.trim() }
+  ];
   const pass = document.getElementById('schInstrNewPassword').value;
 
   if (!first || !last || !email || !pass) { errEl.textContent = 'Fill in all required fields.'; return; }
@@ -824,14 +942,35 @@ document.getElementById('schCreateInstructorBtn').addEventListener('click', asyn
     if (!res.ok) {
       const msg = data.error?.message || 'Could not create account.';
       errEl.textContent = msg.includes('EMAIL_EXISTS') ? 'That email is already registered.' : msg;
+      btn.disabled = false; btn.innerHTML = '<i class="fas fa-user-plus"></i> Create instructor';
       return;
     }
     const uid = data.localId;
 
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading photos…';
+    const photoFile = document.getElementById('schInstrNewPhotoFile').files[0];
+    const ghFrontFile = document.getElementById('schInstrNewGhFrontFile').files[0];
+    const ghBackFile = document.getElementById('schInstrNewGhBackFile').files[0];
+    const certFile = document.getElementById('schInstrNewCertFile').files[0];
+    const [profilePhoto, ghCardFront, ghCardBack, certDocUrl] = await Promise.all([
+      photoFile ? uploadInstructorImage(photoFile, 'instructors') : Promise.resolve(null),
+      ghFrontFile ? uploadInstructorImage(ghFrontFile, 'instructors/ghcards') : Promise.resolve(null),
+      ghBackFile ? uploadInstructorImage(ghBackFile, 'instructors/ghcards') : Promise.resolve(null),
+      certFile ? uploadInstructorImage(certFile, 'instructors/certifications') : Promise.resolve(null)
+    ]);
+    const certifications = (certificationName || certDocUrl)
+      ? [{ name: certificationName || 'Certification', documentUrl: certDocUrl }]
+      : [];
+
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
     const { setDoc } = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js");
     await setDoc(doc(db, 'instructors', uid), {
       firstName: first, lastName: last, email, phone,
-      branch: branch || null, role: 'instructor', status: 'active',
+      branch: branch || null, dob: dob || null, dateOfEngagement: dateOfEngagement || null,
+      profilePhoto, ghCardFront, ghCardBack, ghCardNumber,
+      qualifications, certifications, experience,
+      guarantor, references,
+      role: 'instructor', status: 'active',
       assignedCourses: [], createdAt: serverTimestamp(),
       schoolId: currentSchoolId
     });
@@ -847,12 +986,42 @@ document.getElementById('schCreateInstructorBtn').addEventListener('click', asyn
   }
 });
 
-// ── Instructor detail / edit / delete / reset password ──
+// ── Instructor detail / edit / delete / reset password (full parity with Dekay) ──
+let _schInstrEditPhoto = null, _schInstrEditGhFront = null, _schInstrEditGhBack = null;
+
+function renderInstrCertifications(certs){
+  if (!certs) return '<div style="color:var(--slate-dim);font-size:12px;">No certifications.</div>';
+  if (typeof certs === 'string') return `<div style="font-size:13px;color:var(--chalk);">${escapeHtml(certs)}</div>`;
+  if (Array.isArray(certs) && certs.length) {
+    return certs.map(c => {
+      const name = c.name || 'Certification';
+      const url = c.documentUrl || c.url;
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--asphalt-deep);border:1px solid var(--border);border-radius:6px;margin-bottom:6px;">
+        <span style="font-size:12px;">${escapeHtml(name)}</span>
+        ${url ? `<a href="${url}" target="_blank" class="btn btn-outline" style="padding:3px 10px;font-size:11px;"><i class="fas fa-download"></i></a>` : ''}
+      </div>`;
+    }).join('');
+  }
+  return '<div style="color:var(--slate-dim);font-size:12px;">No certifications.</div>';
+}
+
 window.openInstructorDetail = function(uid){
   const i = schoolInstructors.find(x => x.id === uid);
   if (!i) return;
+  _schInstrEditPhoto = i.profilePhoto || i.avatarUrl || null;
+  _schInstrEditGhFront = i.ghCardFront || null;
+  _schInstrEditGhBack = i.ghCardBack || null;
+
   document.getElementById('schInstructorDetailTitle').textContent = `${i.firstName||''} ${i.lastName||''}`.trim() || 'Instructor';
   document.getElementById('schInstructorDetailBody').innerHTML = `
+    <div style="text-align:center;margin-bottom:16px;">
+      <div onclick="document.getElementById('schInstrEditPhotoFile').click()" style="cursor:pointer;display:inline-block;">
+        ${avatarHtml(_schInstrEditPhoto, i.firstName, i.lastName, 84)}
+      </div>
+      <div style="font-size:11px;color:var(--slate-dim);margin-top:6px;">Tap photo to change</div>
+      <input type="file" id="schInstrEditPhotoFile" accept="image/*" style="display:none">
+    </div>
+
     <div class="form-row">
       <div class="field"><label>First name</label><input id="schInstrEditFirst" type="text" value="${escapeHtml(i.firstName||'')}"></div>
       <div class="field"><label>Last name</label><input id="schInstrEditLast" type="text" value="${escapeHtml(i.lastName||'')}"></div>
@@ -860,15 +1029,65 @@ window.openInstructorDetail = function(uid){
     <div class="field"><label>Email</label><input value="${escapeHtml(i.email||'')}" disabled style="opacity:.6;"></div>
     <div class="field"><label>Phone</label><input id="schInstrEditPhone" type="tel" value="${escapeHtml(i.phone||'')}"></div>
     <div class="form-row">
+      <div class="field"><label>Date of birth</label><input id="schInstrEditDob" type="date" value="${i.dob||''}"></div>
       <div class="field"><label>Branch</label>
         <select id="schInstrEditBranch" class="field-select">
           <option value="">Select branch…</option>
           ${['Ablekuma','Adenta','Amasaman','Dansoman'].map(b => `<option value="${b}" ${i.branch===b?'selected':''}>${b}</option>`).join('')}
         </select>
       </div>
-      <div class="field"><label>Years of experience</label><input id="schInstrEditExperience" type="number" min="0" value="${i.experience || 0}"></div>
     </div>
-    <div class="field"><label>Qualifications</label><input id="schInstrEditQualifications" type="text" value="${escapeHtml(i.qualifications||'')}"></div>
+    <div class="form-row">
+      <div class="field"><label>Date of engagement</label><input id="schInstrEditEngagement" type="date" value="${i.dateOfEngagement||''}"></div>
+      <div class="field"><label>Date of exit</label><input id="schInstrEditExit" type="date" value="${i.dateOfExit||''}"></div>
+    </div>
+    <div class="field"><label>Years of experience</label><input id="schInstrEditExperience" type="number" min="0" value="${i.experience || 0}"></div>
+    <div class="field"><label>Qualifications</label><textarea id="schInstrEditQualifications" rows="2" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-family:inherit;">${escapeHtml(i.qualifications||'')}</textarea></div>
+
+    <div class="field"><label>Certifications on file</label>${renderInstrCertifications(i.certifications)}</div>
+    <div class="field"><label>Add / replace certifications (text)</label><input id="schInstrEditCert" type="text" value="${(Array.isArray(i.certifications) && i.certifications[0]?.name) || (typeof i.certifications === 'string' ? escapeHtml(i.certifications) : '')}" placeholder="e.g. Defensive Driving, First Aid"></div>
+    <div class="field">
+      <label>Replace certificate document <span style="color:var(--slate-dim);font-weight:400;">(optional — leave blank to keep current file)</span></label>
+      <div class="img-upload-area" onclick="document.getElementById('schInstrEditCertFile').click()">
+        <i class="fas fa-file-certificate" style="color:var(--amber);margin-right:6px;"></i>
+        <span id="schInstrEditCertFileText" style="font-size:12px;color:var(--slate-dim);">Tap to upload a new certificate file</span>
+      </div>
+      <input type="file" id="schInstrEditCertFile" accept=".pdf,.png,.jpg,.jpeg" style="display:none">
+    </div>
+
+    <div class="field"><label>Ghana Card number</label><input id="schInstrEditGhCardNumber" type="text" value="${escapeHtml(i.ghCardNumber||'')}"></div>
+    <div class="form-row">
+      <div class="field">
+        <label>Ghana Card — front</label>
+        ${i.ghCardFront ? `<img src="${i.ghCardFront}" style="max-width:100%;max-height:90px;border-radius:6px;border:1px solid var(--border);cursor:pointer;" onclick="document.getElementById('schInstrEditGhFrontFile').click()">` : `<div class="img-upload-area" onclick="document.getElementById('schInstrEditGhFrontFile').click()"><span style="font-size:12px;color:var(--slate-dim);">Upload front</span></div>`}
+        <input type="file" id="schInstrEditGhFrontFile" accept="image/*" style="display:none">
+      </div>
+      <div class="field">
+        <label>Ghana Card — back</label>
+        ${i.ghCardBack ? `<img src="${i.ghCardBack}" style="max-width:100%;max-height:90px;border-radius:6px;border:1px solid var(--border);cursor:pointer;" onclick="document.getElementById('schInstrEditGhBackFile').click()">` : `<div class="img-upload-area" onclick="document.getElementById('schInstrEditGhBackFile').click()"><span style="font-size:12px;color:var(--slate-dim);">Upload back</span></div>`}
+        <input type="file" id="schInstrEditGhBackFile" accept="image/*" style="display:none">
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:6px;"><label style="color:var(--amber);font-weight:700;">Guarantor</label></div>
+    <div class="form-row">
+      <div class="field"><label>Name</label><input id="schInstrEditGuarName" type="text" value="${escapeHtml(i.guarantor?.name||'')}"></div>
+      <div class="field"><label>Email</label><input id="schInstrEditGuarEmail" type="email" value="${escapeHtml(i.guarantor?.email||'')}"></div>
+    </div>
+    <div class="field"><label>Phone</label><input id="schInstrEditGuarPhone" type="tel" value="${escapeHtml(i.guarantor?.phone||'')}"></div>
+
+    <div class="field" style="margin-top:6px;"><label style="color:var(--amber);font-weight:700;">References</label></div>
+    <div class="form-row">
+      <div class="field"><label>Ref 1 name</label><input id="schInstrEditRef1Name" type="text" value="${escapeHtml(i.references?.[0]?.name||'')}"></div>
+      <div class="field"><label>Ref 1 email</label><input id="schInstrEditRef1Email" type="email" value="${escapeHtml(i.references?.[0]?.email||'')}"></div>
+    </div>
+    <div class="field"><label>Ref 1 phone</label><input id="schInstrEditRef1Phone" type="tel" value="${escapeHtml(i.references?.[0]?.phone||'')}"></div>
+    <div class="form-row">
+      <div class="field"><label>Ref 2 name</label><input id="schInstrEditRef2Name" type="text" value="${escapeHtml(i.references?.[1]?.name||'')}"></div>
+      <div class="field"><label>Ref 2 email</label><input id="schInstrEditRef2Email" type="email" value="${escapeHtml(i.references?.[1]?.email||'')}"></div>
+    </div>
+    <div class="field"><label>Ref 2 phone</label><input id="schInstrEditRef2Phone" type="tel" value="${escapeHtml(i.references?.[1]?.phone||'')}"></div>
+
     <div class="field"><label>Status</label>
       <select id="schInstrEditStatus" class="field-select">
         <option value="active" ${i.status==='active'?'selected':''}>Active</option>
@@ -877,24 +1096,74 @@ window.openInstructorDetail = function(uid){
     </div>
     <button class="btn btn-outline" style="width:100%;margin-top:6px;" onclick="window.resetInstructorPassword('${i.email||''}')"><i class="fas fa-key"></i> Send password reset email</button>
   `;
+
+  wireInstrFilePreview2('schInstrEditPhotoFile', (url) => { _schInstrEditPhoto = url; });
+  wireInstrFilePreview2('schInstrEditGhFrontFile', (url) => { _schInstrEditGhFront = url; });
+  wireInstrFilePreview2('schInstrEditGhBackFile', (url) => { _schInstrEditGhBack = url; });
+
   document.getElementById('schInstructorSaveBtn').onclick = () => saveInstructorDetail(uid);
   document.getElementById('schInstructorDeleteBtn').onclick = () => deleteInstructorDetail(uid);
   openModal('schInstructorDetailModal');
 };
 
+// Reads a chosen file as a data URL immediately (used only to know a new file was picked);
+// the actual Cloudinary upload happens on Save so we don't upload photos the admin never confirms.
+function wireInstrFilePreview2(fileId, onPicked){
+  const el = document.getElementById(fileId);
+  if (!el) return;
+  el.addEventListener('change', () => {
+    const file = el.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => onPicked(e.target.result); // temp preview data-URL; replaced with real URL on save
+    reader.readAsDataURL(file);
+  });
+}
+
 async function saveInstructorDetail(uid){
   const btn = document.getElementById('schInstructorSaveBtn');
   btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
   try {
-    await updateDoc(doc(db, 'instructors', uid), {
+    const updates = {
       firstName: document.getElementById('schInstrEditFirst').value.trim(),
       lastName: document.getElementById('schInstrEditLast').value.trim(),
       phone: document.getElementById('schInstrEditPhone').value.trim(),
+      dob: document.getElementById('schInstrEditDob').value || null,
       branch: document.getElementById('schInstrEditBranch').value || null,
+      dateOfEngagement: document.getElementById('schInstrEditEngagement').value || null,
+      dateOfExit: document.getElementById('schInstrEditExit').value || null,
       experience: parseInt(document.getElementById('schInstrEditExperience').value) || 0,
       qualifications: document.getElementById('schInstrEditQualifications').value.trim(),
+      ghCardNumber: document.getElementById('schInstrEditGhCardNumber').value.trim(),
+      guarantor: {
+        name: document.getElementById('schInstrEditGuarName').value.trim(),
+        email: document.getElementById('schInstrEditGuarEmail').value.trim(),
+        phone: document.getElementById('schInstrEditGuarPhone').value.trim()
+      },
+      references: [
+        { name: document.getElementById('schInstrEditRef1Name').value.trim(), email: document.getElementById('schInstrEditRef1Email').value.trim(), phone: document.getElementById('schInstrEditRef1Phone').value.trim() },
+        { name: document.getElementById('schInstrEditRef2Name').value.trim(), email: document.getElementById('schInstrEditRef2Email').value.trim(), phone: document.getElementById('schInstrEditRef2Phone').value.trim() }
+      ],
       status: document.getElementById('schInstrEditStatus').value
-    });
+    };
+    // Upload any newly-picked images (data URLs) to Cloudinary before saving
+    const photoFile = document.getElementById('schInstrEditPhotoFile').files[0];
+    const ghFrontFile = document.getElementById('schInstrEditGhFrontFile').files[0];
+    const ghBackFile = document.getElementById('schInstrEditGhBackFile').files[0];
+    const certFile = document.getElementById('schInstrEditCertFile')?.files[0];
+    if (photoFile) updates.profilePhoto = await uploadInstructorImage(photoFile, 'instructors');
+    if (ghFrontFile) updates.ghCardFront = await uploadInstructorImage(ghFrontFile, 'instructors/ghcards');
+    if (ghBackFile) updates.ghCardBack = await uploadInstructorImage(ghBackFile, 'instructors/ghcards');
+
+    const certText = document.getElementById('schInstrEditCert').value.trim();
+    if (certText || certFile) {
+      const currentInstr = schoolInstructors.find(x => x.id === uid);
+      const existing = (currentInstr && Array.isArray(currentInstr.certifications)) ? (currentInstr.certifications[0] || {}) : {};
+      const newDocUrl = certFile ? await uploadInstructorImage(certFile, 'instructors/certifications') : existing.documentUrl || null;
+      updates.certifications = [{ name: certText || existing.name || 'Certification', documentUrl: newDocUrl }];
+    }
+
+    await updateDoc(doc(db, 'instructors', uid), updates);
     closeModal('schInstructorDetailModal');
     showToast('Instructor updated ✓');
   } catch(e) { showToast('Update failed: ' + e.message, true); }
@@ -1020,13 +1289,14 @@ window.deleteSchAttendance = async function(id){
 };
 
 // ============================================================
-// CLASSES MODULE (school-scoped)
-// TODO (not yet ported from Dekay): vehicle assignment, student
-// assignment + double-booking checks, document attachments, online
-// meeting link fields. Add/Edit here covers the core scheduling fields.
+// ============================================================
+// CLASSES MODULE (school-scoped) — full parity: vehicle, students,
+// online link, document attachments, attendance summary.
 // ============================================================
 let schoolClasses = [];
 let schoolClassesUnsub = null;
+let schClassPendingDocFiles = [];
+let schClassExistingDocs = [];
 
 function loadSchoolClasses(){
   if (schoolClassesUnsub) { schoolClassesUnsub(); schoolClassesUnsub = null; }
@@ -1050,8 +1320,12 @@ function renderSchoolClasses(){
   tbody.innerHTML = filtered.map(c => {
     const status = classStatus(c);
     const statusClass = status === 'ongoing' ? 'good' : status === 'upcoming' ? 'warn' : 'bad';
+    const extras = [
+      c.vehicleName ? '<i class="fas fa-car-side" title="Vehicle assigned"></i>' : '',
+      (c.documents && c.documents.length) ? '<i class="fas fa-paperclip" title="Has documents"></i>' : ''
+    ].filter(Boolean).join(' ');
     return `<tr>
-      <td><strong>${escapeHtml(c.title||'—')}</strong><div style="font-size:11px;color:var(--slate-dim);">${escapeHtml(c.description||'')}</div></td>
+      <td><strong>${escapeHtml(c.title||'—')}</strong><div style="font-size:11px;color:var(--slate-dim);">${escapeHtml(c.description||'')} ${extras}</div></td>
       <td><span class="badge">${escapeHtml(c.courseName||'—')}</span></td>
       <td style="font-size:12px;color:var(--slate-dim);">${escapeHtml(c.instructorName||'—')}</td>
       <td style="font-size:12px;">${fmtDateTime(c)}</td>
@@ -1076,14 +1350,111 @@ async function populateSchClassInstructorSelect(selectedId){
   } catch(e) { console.error(e); }
 }
 
+async function populateSchClassVehicleSelect(selectedId){
+  const sel = document.getElementById('schClassVehicle');
+  sel.innerHTML = '<option value="">Select vehicle…</option>';
+  try {
+    const snap = await getDocs(query(collection(db, "vehicles"), where("schoolId", "==", currentSchoolId)));
+    snap.docs.forEach(d => {
+      const v = d.data();
+      const name = `${v.year||''} ${v.make||''} ${v.model||''}`.trim();
+      sel.innerHTML += `<option value="${d.id}" data-name="${escapeHtml(name)}" ${d.id===selectedId?'selected':''}>${escapeHtml(name)}</option>`;
+    });
+  } catch(e) { console.error(e); }
+}
+
+async function renderSchClassStudentCheckboxes(preSelectedIds){
+  const list = document.getElementById('schClassStudentList');
+  list.innerHTML = 'Loading…';
+  try {
+    const snap = await getDocs(query(collection(db, "students"), where("schoolId", "==", currentSchoolId)));
+    const students = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(s => s.status !== 'pending');
+    if (!students.length) { list.innerHTML = '<div style="font-size:12px;color:var(--slate-dim);">No students yet.</div>'; return; }
+    list.innerHTML = students.map(s => {
+      const name = `${s.firstName||''} ${s.lastName||''}`.trim() || s.email;
+      const checked = (preSelectedIds||[]).includes(s.id) ? 'checked' : '';
+      return `<label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;border-bottom:1px solid var(--border);">
+        <input type="checkbox" value="${s.id}" data-name="${escapeHtml(name)}" class="sch-class-student-check" ${checked} style="accent-color:var(--amber);width:15px;height:15px;">
+        <span style="font-size:13px;">${escapeHtml(name)}</span>
+      </label>`;
+    }).join('');
+  } catch(e) { list.innerHTML = '<div style="font-size:12px;color:var(--brake);">Could not load students.</div>'; }
+}
+
+window.toggleSchClassOnlineFields = function(){
+  const mode = document.getElementById('schClassMode').value;
+  document.getElementById('schClassOnlineFields').style.display = mode === 'online' ? 'block' : 'none';
+};
+
+function renderSchClassDocsList(){
+  const container = document.getElementById('schClassDocsList');
+  const existing = schClassExistingDocs.map((d, i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--asphalt-deep);border:1px solid var(--border);border-radius:6px;">
+      <a href="${d.url}" target="_blank" style="font-size:12px;color:var(--amber);text-decoration:none;"><i class="fas fa-file"></i> ${escapeHtml(d.name||'Document')}</a>
+      <button type="button" class="icon-btn danger" style="width:24px;height:24px;" onclick="window.removeSchClassExistingDoc(${i})"><i class="fas fa-times" style="font-size:10px;"></i></button>
+    </div>`).join('');
+  const pending = schClassPendingDocFiles.map((f, i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--asphalt-deep);border:1px dashed var(--border);border-radius:6px;">
+      <span style="font-size:12px;color:var(--chalk);"><i class="fas fa-clock" style="color:var(--amber);"></i> ${escapeHtml(f.name)} (will upload on save)</span>
+      <button type="button" class="icon-btn danger" style="width:24px;height:24px;" onclick="window.removeSchClassPendingDoc(${i})"><i class="fas fa-times" style="font-size:10px;"></i></button>
+    </div>`).join('');
+  container.innerHTML = existing + pending;
+}
+window.removeSchClassExistingDoc = function(i){ schClassExistingDocs.splice(i,1); renderSchClassDocsList(); };
+window.removeSchClassPendingDoc = function(i){ schClassPendingDocFiles.splice(i,1); renderSchClassDocsList(); };
+
+document.getElementById('schClassDocsFile').addEventListener('change', (e) => {
+  schClassPendingDocFiles.push(...Array.from(e.target.files));
+  e.target.value = '';
+  renderSchClassDocsList();
+});
+
+async function uploadSchClassDocuments(files, folderLabel){
+  if (!files || !files.length) return [];
+  const out = [];
+  for (const file of files) {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('upload_preset', 'class_doc_upload');
+    fd.append('folder', `class_documents/${folderLabel}`);
+    try {
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/raw/upload`, { method: 'POST', body: fd });
+      if (res.ok) { const data = await res.json(); out.push({ url: data.secure_url, name: file.name }); }
+    } catch(e) { console.error('Document upload failed:', e); }
+  }
+  return out;
+}
+
+async function loadSchClassAttendanceSummary(classId){
+  const wrap = document.getElementById('schClassAttendanceSummaryWrap');
+  const box = document.getElementById('schClassAttendanceSummary');
+  wrap.style.display = 'block';
+  box.textContent = 'Loading…';
+  try {
+    const snap = await getDocs(query(collection(db, 'attendance'), where('classId', '==', classId)));
+    const records = snap.docs.map(d => d.data());
+    if (!records.length) { box.textContent = 'No attendance records yet.'; return; }
+    const present = records.filter(r => r.status === 'present').length;
+    const absent = records.filter(r => r.status === 'absent').length;
+    box.innerHTML = `<span class="badge good">${present} present</span> &nbsp; <span class="badge bad">${absent} absent</span> &nbsp; <span class="badge">${records.length} total</span>`;
+  } catch(e) { box.textContent = 'Could not load attendance.'; }
+}
+
 document.getElementById('schOpenAddClassBtn').addEventListener('click', async () => {
   document.getElementById('schClassError').textContent = '';
   document.getElementById('schClassId').value = '';
   document.getElementById('schClassModalTitle').textContent = 'Schedule class';
-  ['schClassTitle','schClassDesc','schClassCourse','schClassDate','schClassTime','schClassEndDate','schClassEndTime'].forEach(id => document.getElementById(id).value = '');
+  ['schClassTitle','schClassDesc','schClassCourse','schClassDate','schClassTime','schClassEndDate','schClassEndTime','schClassPlatform','schClassLink'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('schClassMode').value = 'in-person';
+  window.toggleSchClassOnlineFields();
   document.getElementById('schClassDeleteBtn').style.display = 'none';
+  document.getElementById('schClassAttendanceSummaryWrap').style.display = 'none';
+  schClassPendingDocFiles = [];
+  schClassExistingDocs = [];
+  renderSchClassDocsList();
   await populateSchClassInstructorSelect('');
+  await populateSchClassVehicleSelect('');
+  await renderSchClassStudentCheckboxes([]);
   openModal('schClassModal');
 });
 
@@ -1101,8 +1472,17 @@ window.openSchClassModal = async function(id){
   document.getElementById('schClassEndDate').value = c.endDate || '';
   document.getElementById('schClassEndTime').value = c.endTime || '';
   document.getElementById('schClassMode').value = c.mode || 'in-person';
+  document.getElementById('schClassPlatform').value = c.platform || '';
+  document.getElementById('schClassLink').value = c.meetingLink || '';
+  window.toggleSchClassOnlineFields();
   document.getElementById('schClassDeleteBtn').style.display = 'inline-flex';
+  schClassPendingDocFiles = [];
+  schClassExistingDocs = [...(c.documents || [])];
+  renderSchClassDocsList();
   await populateSchClassInstructorSelect(c.instructorId || '');
+  await populateSchClassVehicleSelect(c.vehicleId || '');
+  await renderSchClassStudentCheckboxes(c.studentIds || []);
+  await loadSchClassAttendanceSummary(c.id);
   openModal('schClassModal');
 };
 
@@ -1116,11 +1496,19 @@ document.getElementById('schClassSaveBtn').addEventListener('click', async () =>
   const instrSel = document.getElementById('schClassInstructor');
   const instructorId = instrSel.value;
   const instructorName = instrSel.selectedOptions[0]?.dataset?.name || '';
+  const vehSel = document.getElementById('schClassVehicle');
+  const vehicleId = vehSel.value || null;
+  const vehicleName = vehSel.selectedOptions[0]?.dataset?.name || null;
   const date = document.getElementById('schClassDate').value;
   const time = document.getElementById('schClassTime').value;
   const endDate = document.getElementById('schClassEndDate').value;
   const endTime = document.getElementById('schClassEndTime').value;
   const mode = document.getElementById('schClassMode').value;
+  const platform = mode === 'online' ? document.getElementById('schClassPlatform').value : null;
+  const meetingLink = mode === 'online' ? document.getElementById('schClassLink').value.trim() : null;
+  const studentCbs = document.querySelectorAll('.sch-class-student-check:checked');
+  const studentIds = Array.from(studentCbs).map(cb => cb.value);
+  const studentNames = Array.from(studentCbs).map(cb => cb.dataset.name);
 
   if (!title || !date || !time || !endDate || !endTime) { errEl.textContent = 'Title, start and end date/time are required.'; return; }
   const durationMinutes = Math.max(1, Math.round((new Date(`${endDate}T${endTime}`) - new Date(`${date}T${time}`)) / 60000));
@@ -1128,7 +1516,21 @@ document.getElementById('schClassSaveBtn').addEventListener('click', async () =>
   const btn = document.getElementById('schClassSaveBtn');
   btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
   try {
-    const payload = { title, description, courseName, instructorId, instructorName, date, time, endDate, endTime, durationMinutes, mode, schoolId: currentSchoolId };
+    let documents = [...schClassExistingDocs];
+    if (schClassPendingDocFiles.length) {
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading documents…';
+      const uploaded = await uploadSchClassDocuments(schClassPendingDocFiles, title || 'class');
+      documents = documents.concat(uploaded);
+    }
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+    const payload = {
+      title, description, courseName, instructorId, instructorName,
+      vehicleId, vehicleName,
+      date, time, endDate, endTime, durationMinutes, mode,
+      platform, meetingLink,
+      studentIds, studentNames, documents,
+      schoolId: currentSchoolId
+    };
     if (id) await updateDoc(doc(db, 'classes', id), payload);
     else await addDoc(collection(db, 'classes'), { ...payload, createdAt: serverTimestamp() });
     closeModal('schClassModal');
@@ -1156,6 +1558,7 @@ let schoolVehiclesUnsub = null;
 let pendingVehicleImageUrl = null;
 
 function loadSchoolVehicles(){
+  if (!schoolClassesUnsub) loadSchoolClasses(); // needed so busy badges & schedules can be computed
   if (schoolVehiclesUnsub) { schoolVehiclesUnsub(); schoolVehiclesUnsub = null; }
   const q = query(collection(db, "vehicles"), where("schoolId", "==", currentSchoolId));
   schoolVehiclesUnsub = onSnapshot(q, (snap) => {
@@ -1164,15 +1567,29 @@ function loadSchoolVehicles(){
   }, (err) => showToast('Could not load vehicles: ' + err.message, true));
 }
 
+function isVehicleCurrentlyBusy(vehicleId){
+  const now = new Date();
+  return schoolClasses.some(c => {
+    if (c.vehicleId !== vehicleId) return false;
+    const start = new Date(`${c.date}T${c.time}`);
+    const end = c.endDate && c.endTime ? new Date(`${c.endDate}T${c.endTime}`) : new Date(start.getTime() + (c.durationMinutes||60)*60000);
+    return now >= start && now <= end;
+  });
+}
+
 function renderSchoolVehicles(){
   const grid = document.getElementById('schVehicleGrid');
   if (!schoolVehicles.length) { grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">No vehicles added yet.</div>`; return; }
   grid.innerHTML = schoolVehicles.map(v => {
     const cover = v.imageUrl ? `background-image:url(${v.imageUrl});background-size:cover;background-position:center;` : '';
+    const busy = isVehicleCurrentlyBusy(v.id);
     return `<div class="school-card" onclick="window.openSchVehicleModal('${v.id}')">
-      <div class="cover" style="${cover}">${!v.imageUrl ? '<i class="fas fa-car-side"></i>' : ''}</div>
+      <div class="cover" style="${cover}">
+        ${!v.imageUrl ? '<i class="fas fa-car-side"></i>' : ''}
+        ${busy ? '<div class="status-dot" style="background:var(--brake);" title="In use right now"></div>' : ''}
+      </div>
       <div class="body">
-        <p class="name">${escapeHtml(String(v.year||''))} ${escapeHtml(v.make||'')} ${escapeHtml(v.model||'')}</p>
+        <p class="name">${escapeHtml(String(v.year||''))} ${escapeHtml(v.make||'')} ${escapeHtml(v.model||'')} ${busy ? '<span class="badge bad" style="margin-left:6px;font-size:10px;">Busy</span>' : ''}</p>
         <p class="region">${escapeHtml(v.trim||'—')}</p>
         <div class="mini-stats">
           <div class="mini-stat"><b style="font-size:12px;">${escapeHtml(v.engineType||'—')}</b><span>Engine</span></div>
@@ -1229,6 +1646,22 @@ window.openSchVehicleModal = function(id){
   document.getElementById('schVehicleDeleteBtn').style.display = 'inline-flex';
   pendingVehicleImageUrl = v.imageUrl || null;
   schVehicleImgFile.value = '';
+
+  const scheduleWrap = document.getElementById('schVehicleScheduleWrap');
+  const scheduleList = document.getElementById('schVehicleScheduleList');
+  const assigned = schoolClasses.filter(c => c.vehicleId === id)
+    .sort((a,b) => new Date(`${b.date}T${b.time}`) - new Date(`${a.date}T${a.time}`));
+  if (assigned.length) {
+    scheduleWrap.style.display = 'block';
+    scheduleList.innerHTML = assigned.map(c => `<div style="padding:8px 10px;background:var(--asphalt-deep);border:1px solid var(--border);border-radius:6px;font-size:12px;">
+      <strong>${escapeHtml(c.title||'—')}</strong><br>
+      <span style="color:var(--slate-dim);">${fmtDateTime(c)} · ${escapeHtml(c.instructorName||'—')} · ${escapeHtml(c.courseName||'—')}</span>
+    </div>`).join('');
+  } else {
+    scheduleWrap.style.display = 'none';
+    scheduleList.innerHTML = '';
+  }
+
   openModal('schVehicleModal');
 };
 
@@ -1334,34 +1767,222 @@ function loadSchoolEnquiries(){
   schoolEnquiriesUnsub = onSnapshot(q, (snap) => {
     schoolEnquiries = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .sort((a,b) => (b.createdAt?.toDate?.() || 0) - (a.createdAt?.toDate?.() || 0));
-    renderSchoolEnquiries();
+    if (document.getElementById('schEnquiryStatusFilter')) renderSchoolEnquiries();
   }, (err) => showToast('Could not load enquiries: ' + err.message, true));
 }
+// Load enquiries as soon as a school is opened, so the nav badge is right even before visiting the page
+const _origOpenSchoolDetail = window.openSchoolDetail;
+window.openSchoolDetail = function(schoolId){
+  _origOpenSchoolDetail(schoolId);
+  loadSchoolEnquiries();
+};
 
 function renderSchoolEnquiries(){
   const tbody = document.getElementById('schEnquiriesTableBody');
-  if (!schoolEnquiries.length) { tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No enquiries yet.</td></tr>`; return; }
-  tbody.innerHTML = schoolEnquiries.map(e => `<tr>
+  const filterVal = document.getElementById('schEnquiryStatusFilter').value;
+  const filtered = filterVal ? schoolEnquiries.filter(e => e.status === filterVal) : schoolEnquiries;
+
+  const pendingCount = schoolEnquiries.filter(e => e.status === 'new').length;
+  const navBadge = document.getElementById('schEnquiriesNavBadge');
+  if (navBadge) {
+    navBadge.textContent = pendingCount;
+    navBadge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+  }
+
+  if (!filtered.length) { tbody.innerHTML = `<tr class="empty-row"><td colspan="7">No enquiries found.</td></tr>`; return; }
+  tbody.innerHTML = filtered.map(e => {
+    const waPhone = (e.phone || '').replace(/\D/g, '').replace(/^0+/, '');
+    return `<tr>
     <td style="font-size:12px;color:var(--slate-dim);">${fmtDate(e.createdAt)}</td>
-    <td><strong>${escapeHtml(e.firstName||'')} ${escapeHtml(e.lastName||'')}</strong><div style="font-size:11px;color:var(--slate-dim);">${escapeHtml(e.email||'')}</div></td>
-    <td style="font-size:12px;">${escapeHtml(e.phone||'—')}</td>
+    <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><strong>${escapeHtml(e.firstName||'')} ${escapeHtml(e.lastName||'')}</strong></td>
+    <td style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${e.phone ? `<a class="site-link" href="tel:${escapeHtml(e.phone)}">${escapeHtml(e.phone)}</a>` : '—'}</td>
     <td><span class="badge">${escapeHtml(e.courseType||'—')}</span></td>
-    <td style="font-size:12px;max-width:240px;">${escapeHtml(e.message||'—')}</td>
+    <td style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(e.message||'')}">${escapeHtml(e.message||'—')}</td>
     <td>
-      <select class="field-select" style="padding:6px 10px;font-size:12px;" onchange="window.updateSchEnquiryStatus('${e.id}', this.value)">
+      <select class="field-select" style="padding:6px 8px;font-size:12px;width:100%;" onchange="window.updateSchEnquiryStatus('${e.id}', this.value)">
         <option value="new" ${e.status==='new'?'selected':''}>New</option>
         <option value="contacted" ${e.status==='contacted'?'selected':''}>Contacted</option>
         <option value="booked" ${e.status==='booked'?'selected':''}>Booked</option>
         <option value="closed" ${e.status==='closed'?'selected':''}>Closed</option>
       </select>
     </td>
-  </tr>`).join('');
+    <td class="row-actions" style="white-space:nowrap;">
+      <button class="icon-btn" title="View" onclick="window.viewSchEnquiry('${e.id}')"><i class="fas fa-eye"></i></button>
+      ${waPhone ? `<a class="btn btn-outline" style="padding:5px 8px;font-size:11px;" href="https://wa.me/233${waPhone}" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i></a>` : ''}
+    </td>
+  </tr>`;
+  }).join('');
 }
+document.getElementById('schEnquiryStatusFilter').addEventListener('change', renderSchoolEnquiries);
 
 window.updateSchEnquiryStatus = async function(id, status){
   try { await updateDoc(doc(db, 'enquiries', id), { status }); showToast('Status updated ✓'); }
   catch(e) { showToast('Update failed: ' + e.message, true); }
 };
+
+window.viewSchEnquiry = function(id){
+  const e = schoolEnquiries.find(x => x.id === id);
+  if (!e) return;
+  const waPhone = (e.phone || '').replace(/\D/g, '').replace(/^0+/, '');
+  const waBtn = document.getElementById('schEnquiryDetailWaBtn');
+  if (waPhone) {
+    waBtn.href = `https://wa.me/233${waPhone}`;
+    waBtn.style.display = 'inline-flex';
+  } else {
+    waBtn.style.display = 'none';
+  }
+  document.getElementById('schEnquiryDetailBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:110px 1fr;gap:10px 16px;font-size:13.5px;">
+      <div style="color:var(--slate-dim);">Name</div><div><strong>${escapeHtml(e.firstName||'')} ${escapeHtml(e.lastName||'')}</strong></div>
+      <div style="color:var(--slate-dim);">Date</div><div>${fmtDate(e.createdAt)}</div>
+      <div style="color:var(--slate-dim);">Phone</div><div>${e.phone ? `<a class="site-link" href="tel:${escapeHtml(e.phone)}">${escapeHtml(e.phone)}</a>` : '—'}</div>
+      <div style="color:var(--slate-dim);">Email</div><div>${e.email ? `<a class="site-link" href="mailto:${escapeHtml(e.email)}">${escapeHtml(e.email)}</a>` : '—'}</div>
+      <div style="color:var(--slate-dim);">Course</div><div><span class="badge">${escapeHtml(e.courseType||'—')}</span></div>
+      <div style="color:var(--slate-dim);">Status</div><div><span class="badge">${escapeHtml(e.status||'new')}</span></div>
+    </div>
+    <div style="margin-top:16px;">
+      <div style="color:var(--slate-dim);font-size:13.5px;margin-bottom:6px;">Message</div>
+      <div style="background:var(--asphalt-deep);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:13.5px;line-height:1.6;white-space:pre-wrap;">${escapeHtml(e.message||'—')}</div>
+    </div>
+  `;
+  openModal('schEnquiryDetailModal');
+};
+
+// ============================================================
+// NOTIFICATIONS MODULE (school-scoped, combined student + instructor)
+// ============================================================
+let schNotifStudents = [];
+let schNotifInstructors = [];
+let schNotifType = 'student';
+
+async function loadSchoolNotificationsPage(){
+  window.switchSchNotifType('student');
+  try {
+    const [studSnap, instrSnap] = await Promise.all([
+      getDocs(query(collection(db, "students"), where("schoolId", "==", currentSchoolId))),
+      getDocs(query(collection(db, "instructors"), where("schoolId", "==", currentSchoolId)))
+    ]);
+    schNotifStudents = studSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(s => s.status !== 'pending');
+    schNotifInstructors = instrSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(i => i.status !== 'pending');
+    renderSchNotifCheckboxes();
+    await loadSchNotifSentList();
+  } catch(e) { showToast('Could not load recipients: ' + e.message, true); }
+}
+
+function renderSchNotifCheckboxes(){
+  const studentList = document.getElementById('schNotifStudentList');
+  studentList.innerHTML = schNotifStudents.length
+    ? schNotifStudents.map(s => {
+        const name = `${s.firstName||''} ${s.lastName||''}`.trim() || s.email;
+        return `<label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;border-bottom:1px solid var(--border);">
+          <input type="checkbox" value="${s.id}" class="sch-notif-student-check" style="accent-color:var(--amber);width:15px;height:15px;">
+          <span style="font-size:13px;">${escapeHtml(name)}</span>
+        </label>`;
+      }).join('')
+    : '<div style="font-size:12px;color:var(--slate-dim);">No students yet.</div>';
+
+  const instrList = document.getElementById('schNotifInstructorList');
+  instrList.innerHTML = schNotifInstructors.length
+    ? schNotifInstructors.map(i => {
+        const name = `${i.firstName||''} ${i.lastName||''}`.trim() || i.email;
+        return `<label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;border-bottom:1px solid var(--border);">
+          <input type="checkbox" value="${i.id}" class="sch-notif-instructor-check" style="accent-color:var(--amber);width:15px;height:15px;">
+          <span style="font-size:13px;">${escapeHtml(name)}</span>
+        </label>`;
+      }).join('')
+    : '<div style="font-size:12px;color:var(--slate-dim);">No instructors yet.</div>';
+}
+
+window.switchSchNotifType = function(type){
+  schNotifType = type;
+  document.getElementById('schNotifTabStudent').className = type === 'student' ? 'btn btn-primary' : 'btn btn-outline';
+  document.getElementById('schNotifTabInstructor').className = type === 'instructor' ? 'btn btn-primary' : 'btn btn-outline';
+  document.getElementById('schNotifTabBoth').className = type === 'both' ? 'btn btn-primary' : 'btn btn-outline';
+
+  document.getElementById('schNotifStudentList').style.display = (type === 'student' || type === 'both') ? 'block' : 'none';
+  document.getElementById('schNotifInstructorList').style.display = (type === 'instructor' || type === 'both') ? 'block' : 'none';
+
+  const allLabel = document.getElementById('schNotifyAllLabel');
+  allLabel.textContent = type === 'both' ? 'All recipients (students & instructors)' : (type === 'student' ? 'All students' : 'All instructors');
+  document.getElementById('schNotifyAll').checked = false;
+  document.querySelectorAll('.sch-notif-student-check, .sch-notif-instructor-check').forEach(cb => { cb.checked = false; cb.disabled = false; });
+};
+
+window.toggleSchAllRecipients = function(allCb){
+  const checked = allCb.checked;
+  if (schNotifType === 'student' || schNotifType === 'both') {
+    document.querySelectorAll('.sch-notif-student-check').forEach(cb => { cb.checked = checked; cb.disabled = checked; });
+  }
+  if (schNotifType === 'instructor' || schNotifType === 'both') {
+    document.querySelectorAll('.sch-notif-instructor-check').forEach(cb => { cb.checked = checked; cb.disabled = checked; });
+  }
+};
+
+window.sendSchNotification = async function(){
+  const message = document.getElementById('schNotifMessage').value.trim();
+  const icon = document.getElementById('schNotifIcon').value;
+  if (!message) { showToast('Enter a message.', true); return; }
+
+  let studentIds = [], instructorIds = [];
+  if (schNotifType === 'student' || schNotifType === 'both') {
+    studentIds = Array.from(document.querySelectorAll('.sch-notif-student-check:checked')).map(cb => cb.value);
+  }
+  if (schNotifType === 'instructor' || schNotifType === 'both') {
+    instructorIds = Array.from(document.querySelectorAll('.sch-notif-instructor-check:checked')).map(cb => cb.value);
+  }
+  const total = studentIds.length + instructorIds.length;
+  if (!total) { showToast('Select at least one recipient.', true); return; }
+
+  try {
+    const writes = [];
+    studentIds.forEach(id => writes.push(addDoc(collection(db, "notifications"), {
+      studentId: id, message, icon, read: false, type: 'admin',
+      createdAt: serverTimestamp(), schoolId: currentSchoolId
+    })));
+    instructorIds.forEach(id => writes.push(addDoc(collection(db, "instructorNotifications"), {
+      instructorId: id, message, icon, read: false, type: 'admin',
+      createdAt: serverTimestamp(), schoolId: currentSchoolId
+    })));
+    await Promise.all(writes);
+    showToast(`Sent to ${total} recipient${total>1?'s':''} ✓`);
+    document.getElementById('schNotifMessage').value = '';
+    document.querySelectorAll('.sch-notif-student-check, .sch-notif-instructor-check').forEach(cb => cb.checked = false);
+    document.getElementById('schNotifyAll').checked = false;
+    await loadSchNotifSentList();
+  } catch(e) { showToast('Send failed: ' + e.message, true); }
+};
+
+async function loadSchNotifSentList(){
+  const list = document.getElementById('schNotifSentList');
+  try {
+    const [studentSnaps, instrSnaps] = await Promise.all([
+      getDocs(query(collection(db, "notifications"), where("schoolId", "==", currentSchoolId))),
+      getDocs(query(collection(db, "instructorNotifications"), where("schoolId", "==", currentSchoolId)))
+    ]);
+    const items = [
+      ...studentSnaps.docs.map(d => ({ id: d.id, ...d.data(), _kind: 'student' })),
+      ...instrSnaps.docs.map(d => ({ id: d.id, ...d.data(), _kind: 'instructor' }))
+    ].sort((a,b) => (b.createdAt?.toDate?.() || 0) - (a.createdAt?.toDate?.() || 0)).slice(0, 30);
+
+    if (!items.length) { list.innerHTML = `<div style="padding:20px;text-align:center;color:var(--slate-dim);font-size:13px;">No notifications sent yet.</div>`; return; }
+
+    list.innerHTML = items.map(n => {
+      let recipient = 'Unknown';
+      if (n._kind === 'student') {
+        const s = schNotifStudents.find(x => x.id === n.studentId);
+        recipient = s ? `${s.firstName||''} ${s.lastName||''}`.trim() : 'Unknown student';
+      } else {
+        const i = schNotifInstructors.find(x => x.id === n.instructorId);
+        recipient = i ? `${i.firstName||''} ${i.lastName||''}`.trim() : 'Unknown instructor';
+      }
+      const badge = n._kind === 'instructor' ? ' <span style="color:var(--info);font-size:10px;">(Instructor)</span>' : '';
+      return `<div style="padding:12px 16px;border-bottom:1px solid var(--border);">
+        <div style="font-size:11px;color:var(--slate-dim);margin-bottom:3px;">To: <strong style="color:var(--amber)">${escapeHtml(recipient)}</strong>${badge} · ${fmtDate(n.createdAt)}</div>
+        <div style="font-size:13px;">${escapeHtml(n.message)}</div>
+      </div>`;
+    }).join('');
+  } catch(e) { list.innerHTML = `<div style="padding:20px;text-align:center;color:var(--brake);font-size:13px;">Could not load.</div>`; }
+}
 
 // ============================================================
 // PERMISSIONS MODULE (school-scoped: schools/{schoolId}/permissions/{type})
@@ -1460,6 +2081,414 @@ function renderSchoolSettings(){
       <div style="color:var(--slate-dim);">Status</div><div><span class="badge ${school.status==='inactive'?'bad':'good'}">${escapeHtml(school.status || 'active')}</span></div>
     </div>`;
 }
+
+
+// ============================================================
+// STAFF MODULE (school-scoped: schools/{schoolId}/staff/{uid})
+// ============================================================
+let schoolStaff = [];
+let schoolStaffUnsub = null;
+let allRoles = {};
+
+// ── Load staff list for the current school ──
+function loadSchoolStaff(){
+  if (schoolStaffUnsub) { schoolStaffUnsub(); schoolStaffUnsub = null; }
+  // Also load roles definitions
+  loadRolesDefinitions();
+
+  const q = query(collection(db, "schools", currentSchoolId, "staff"));
+  schoolStaffUnsub = onSnapshot(q, (snap) => {
+    schoolStaff = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderSchoolStaff();
+  }, (err) => showToast('Could not load staff: ' + err.message, true));
+}
+
+// ── Load role definitions from global collection ──
+async function loadRolesDefinitions(){
+  try {
+    const snap = await getDocs(collection(db, "roles"));
+    if (snap.empty) {
+      // Seed default roles if none exist
+      await seedDefaultRoles();
+      return;
+    }
+    allRoles = {};
+    snap.docs.forEach(d => { allRoles[d.id] = d.data(); });
+  } catch(e) {
+    console.error("Could not load roles:", e);
+  }
+}
+
+// ── Seed default roles ──
+async function seedDefaultRoles(){
+  const defaultRoles = {
+    CEO: {
+      label: "CEO",
+      description: "Full access to all school features",
+      pages: {
+        dashboard: { read: true, create: true, update: true, delete: true },
+        students: { read: true, create: true, update: true, delete: true },
+        instructors: { read: true, create: true, update: true, delete: true },
+        attendance: { read: true, create: true, update: true, delete: true },
+        classes: { read: true, create: true, update: true, delete: true },
+        vehicles: { read: true, create: true, update: true, delete: true },
+        certificates: { read: true, create: true, update: true, delete: true },
+        enquiries: { read: true, create: false, update: true, delete: false },
+        notifications: { read: false, create: true, update: false, delete: false },
+        permissions: { read: false, create: false, update: false, delete: false },
+        staff: { read: true, create: true, update: true, delete: true },
+        settings: { read: true, create: true, update: true, delete: false }
+      }
+    },
+    AdminAssistant: {
+      label: "Administrative Assistant",
+      description: "Can view and edit students, but cannot delete or manage instructors",
+      pages: {
+        dashboard: { read: true, create: false, update: false, delete: false },
+        students: { read: true, create: true, update: true, delete: false },
+        instructors: { read: true, create: false, update: false, delete: false },
+        attendance: { read: true, create: true, update: true, delete: false },
+        classes: { read: true, create: true, update: true, delete: false },
+        vehicles: { read: true, create: false, update: false, delete: false },
+        certificates: { read: true, create: false, update: false, delete: false },
+        enquiries: { read: true, create: false, update: true, delete: false },
+        notifications: { read: false, create: false, update: false, delete: false },
+        permissions: { read: false, create: false, update: false, delete: false },
+        staff: { read: false, create: false, update: false, delete: false },
+        settings: { read: false, create: false, update: false, delete: false }
+      }
+    },
+    BranchManager: {
+      label: "Branch Manager",
+      description: "Manage their branch only (students, instructors, classes)",
+      pages: {
+        dashboard: { read: true, create: false, update: false, delete: false },
+        students: { read: true, create: true, update: true, delete: false },
+        instructors: { read: true, create: true, update: true, delete: false },
+        attendance: { read: true, create: true, update: true, delete: false },
+        classes: { read: true, create: true, update: true, delete: false },
+        vehicles: { read: true, create: false, update: false, delete: false },
+        certificates: { read: true, create: false, update: false, delete: false },
+        enquiries: { read: true, create: false, update: true, delete: false },
+        notifications: { read: false, create: false, update: false, delete: false },
+        permissions: { read: false, create: false, update: false, delete: false },
+        staff: { read: false, create: false, update: false, delete: false },
+        settings: { read: false, create: false, update: false, delete: false }
+      }
+    }
+  };
+
+  try {
+    const writes = [];
+    Object.entries(defaultRoles).forEach(([key, role]) => {
+      writes.push(setDoc(doc(db, "roles", key), role));
+    });
+    await Promise.all(writes);
+    // Reload roles
+    const snap = await getDocs(collection(db, "roles"));
+    allRoles = {};
+    snap.docs.forEach(d => { allRoles[d.id] = d.data(); });
+  } catch(e) {
+    console.error("Could not seed default roles:", e);
+  }
+}
+
+// ── Render staff table ──
+function renderSchoolStaff(){
+  const term = (document.getElementById('schStaffSearch').value || '').toLowerCase();
+  const filtered = schoolStaff.filter(s => {
+    const name = `${s.firstName||''} ${s.lastName||''} ${s.email||''}`.toLowerCase();
+    const roleLabel = allRoles[s.role]?.label || s.role || '';
+    return !term || name.includes(term) || roleLabel.toLowerCase().includes(term);
+  });
+
+  const tbody = document.getElementById('schStaffTableBody');
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No staff members found.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(s => {
+    const roleLabel = allRoles[s.role]?.label || s.role || '—';
+    const statusClass = s.status === 'active' ? 'good' : 'bad';
+    const name = `${s.firstName||''} ${s.lastName||''}`.trim() || s.email || '—';
+    const avatar = s.avatarUrl
+      ? `<div style="width:30px;height:30px;border-radius:50%;background-image:url(${s.avatarUrl});background-size:cover;background-position:center;flex-shrink:0;border:1.5px solid var(--amber);"></div>`
+      : `<div style="width:30px;height:30px;border-radius:50%;background:rgba(242,169,59,0.15);border:1.5px solid var(--amber);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--amber);flex-shrink:0;">${(s.firstName?.[0]||'')+(s.lastName?.[0]||'')||'?'}</div>`;
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:10px;">${avatar}<div><strong>${escapeHtml(name)}</strong></div></div></td>
+      <td style="font-size:12px;color:var(--slate-dim);">${escapeHtml(s.email||'—')}</td>
+      <td><span class="badge">${escapeHtml(roleLabel)}</span></td>
+      <td>${s.branch ? `<span class="badge">${escapeHtml(s.branch)}</span>` : '—'}</td>
+      <td><span class="badge ${statusClass}">${escapeHtml(s.status||'active')}</span></td>
+      <td class="row-actions">
+        <button class="icon-btn" title="Edit staff" onclick="window.openEditStaffModal('${s.id}')"><i class="fas fa-pen"></i></button>
+        <button class="icon-btn" title="Edit role permissions" onclick="window.openEditRoleModal('${s.role}')"><i class="fas fa-shield-alt"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+document.getElementById('schStaffSearch').addEventListener('input', renderSchoolStaff);
+
+// ── Open Add Staff modal ──
+document.getElementById('schOpenAddStaffBtn').addEventListener('click', async () => {
+  document.getElementById('schAddStaffError').textContent = '';
+  ['schStaffFirst','schStaffLast','schStaffEmail','schStaffPhone','schStaffPassword'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('schStaffBranchSelect').value = '';
+  document.getElementById('schStaffStatusSelect').value = 'active';
+  document.getElementById('schStaffBranchField').style.display = 'none';
+
+  await loadRolesDefinitions();
+
+  const roleSel = document.getElementById('schStaffRoleSelect');
+  roleSel.innerHTML = '<option value="">Select role…</option>';
+  if (Object.keys(allRoles).length === 0) {
+    roleSel.innerHTML = '<option value="">No roles defined – please create roles first</option>';
+  } else {
+    Object.entries(allRoles).forEach(([key, role]) => {
+      roleSel.innerHTML += `<option value="${key}">${escapeHtml(role.label)}</option>`;
+    });
+  }
+  roleSel.onchange = function(){
+    document.getElementById('schStaffBranchField').style.display = this.value === 'BranchManager' ? 'block' : 'none';
+  };
+
+  openModal('schAddStaffModal');
+});
+
+// ── Create staff member (creates a real Firebase Auth account, same
+//    pattern as createStudent()/createInstructor()) ──
+document.getElementById('schCreateStaffBtn').addEventListener('click', async () => {
+  const errEl = document.getElementById('schAddStaffError');
+  errEl.textContent = '';
+  const first = document.getElementById('schStaffFirst').value.trim();
+  const last = document.getElementById('schStaffLast').value.trim();
+  const email = document.getElementById('schStaffEmail').value.trim();
+  const phone = document.getElementById('schStaffPhone').value.trim();
+  const role = document.getElementById('schStaffRoleSelect').value;
+  const branch = document.getElementById('schStaffBranchSelect').value;
+  const status = document.getElementById('schStaffStatusSelect').value;
+  const pass = document.getElementById('schStaffPassword').value;
+
+  if (!first || !last || !email || !pass || !role) { errEl.textContent = 'Fill in all required fields.'; return; }
+
+  const btn = document.getElementById('schCreateStaffBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating…';
+
+  try {
+    const apiKey = firebaseConfig.apiKey;
+    const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${apiKey}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass, returnSecureToken: false })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const msg = data.error?.message || 'Could not create account.';
+      errEl.textContent = msg.includes('EMAIL_EXISTS') ? 'That email is already registered.' : msg;
+      return;
+    }
+    const uid = data.localId;
+
+    await setDoc(doc(db, "schools", currentSchoolId, "staff", uid), {
+      uid, firstName: first, lastName: last, email, phone,
+      role, branch: (role === 'BranchManager' && branch) ? branch : null,
+      status: status || 'active',
+      createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+    });
+
+    closeModal('schAddStaffModal');
+    showToast(`${first} ${last} added as ${allRoles[role]?.label || role} ✓`);
+  } catch(e) {
+    console.error(e);
+    errEl.textContent = 'Could not add staff: ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-user-plus"></i> Create staff account';
+  }
+});
+
+// ── Open Edit Staff modal ──
+window.openEditStaffModal = function(staffUid){
+  const staff = schoolStaff.find(s => s.id === staffUid);
+  if (!staff) return;
+
+  document.getElementById('schEditStaffUid').value = staffUid;
+  document.getElementById('schEditStaffTitle').textContent = `Edit: ${staff.firstName||''} ${staff.lastName||''}`.trim() || 'Staff';
+
+  // Populate role dropdown
+  const roleSel = document.getElementById('schEditStaffRoleSelect');
+  roleSel.innerHTML = '<option value="">Select role…</option>';
+  Object.entries(allRoles).forEach(([key, role]) => {
+    roleSel.innerHTML += `<option value="${key}" ${key === staff.role ? 'selected' : ''}>${escapeHtml(role.label)}</option>`;
+  });
+
+  // Populate branch dropdown
+  const branchSel = document.getElementById('schEditStaffBranchSelect');
+  branchSel.value = staff.branch || '';
+
+  // Status
+  document.getElementById('schEditStaffStatusSelect').value = staff.status || 'active';
+
+  // Toggle branch field
+  const branchField = document.getElementById('schEditStaffBranchField');
+  branchField.style.display = staff.role === 'BranchManager' ? 'block' : 'none';
+  document.getElementById('schEditStaffRoleSelect').onchange = function(){
+    branchField.style.display = this.value === 'BranchManager' ? 'block' : 'none';
+  };
+
+  document.getElementById('schEditStaffError').textContent = '';
+  openModal('schEditStaffModal');
+};
+
+// ── Save staff changes ──
+document.getElementById('schSaveStaffBtn').addEventListener('click', async () => {
+  const errEl = document.getElementById('schEditStaffError');
+  errEl.textContent = '';
+  const uid = document.getElementById('schEditStaffUid').value;
+  const role = document.getElementById('schEditStaffRoleSelect').value;
+  const branch = document.getElementById('schEditStaffBranchSelect').value;
+  const status = document.getElementById('schEditStaffStatusSelect').value;
+
+  if (!uid || !role) {
+    errEl.textContent = 'Role is required.';
+    return;
+  }
+
+  const btn = document.getElementById('schSaveStaffBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+
+  try {
+    await updateDoc(doc(db, "schools", currentSchoolId, "staff", uid), {
+      role,
+      branch: (role === 'BranchManager' && branch) ? branch : null,
+      status,
+      updatedAt: serverTimestamp()
+    });
+    closeModal('schEditStaffModal');
+    showToast('Staff updated ✓');
+  } catch(e) {
+    console.error(e);
+    errEl.textContent = 'Could not update: ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save"></i> Save changes';
+  }
+});
+
+// ── Delete staff ──
+document.getElementById('schDeleteStaffBtn').addEventListener('click', async () => {
+  const uid = document.getElementById('schEditStaffUid').value;
+  if (!uid) return;
+  if (!(await showConfirm('Remove staff member', 'Remove this staff member from the school? They will still exist as a user but lose their staff role.'))) return;
+
+  try {
+    await deleteDoc(doc(db, "schools", currentSchoolId, "staff", uid));
+    closeModal('schEditStaffModal');
+    showToast('Staff removed.');
+  } catch(e) {
+    showToast('Remove failed: ' + e.message, true);
+  }
+});
+
+// ── Open Edit Role modal (global role permissions) ──
+window.openEditRoleModal = function(roleKey){
+  const role = allRoles[roleKey];
+  if (!role) {
+    showToast('Role not found.', true);
+    return;
+  }
+
+  document.getElementById('schEditRoleKey').value = roleKey;
+  document.getElementById('schEditRoleName').textContent = role.label || roleKey;
+  document.getElementById('schEditRoleError').textContent = '';
+
+  // Build the permission matrix
+  const matrix = document.getElementById('schEditRoleMatrix');
+  const pages = role.pages || {};
+  const pageNames = Object.keys(pages).sort();
+  const actions = ['create', 'read', 'update', 'delete'];
+  const actionLabels = { create: 'Create', read: 'Read', update: 'Update', delete: 'Delete' };
+  const actionColors = { create: 'var(--amber)', read: 'var(--info)', update: 'var(--good)', delete: 'var(--brake)' };
+
+  if (!pageNames.length) {
+    matrix.innerHTML = '<div style="color:var(--slate-dim);font-size:13px;">No pages defined for this role.</div>';
+    return;
+  }
+
+  let html = `<table style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr>
+        <th style="padding:6px 8px;text-align:left;font-size:11px;color:var(--slate);border-bottom:1px solid var(--border);">Page</th>
+        ${actions.map(a => `<th style="padding:6px 8px;text-align:center;font-size:11px;color:${actionColors[a]};border-bottom:1px solid var(--border);">${actionLabels[a]}</th>`).join('')}
+      </tr>
+    </thead>
+    <tbody>`;
+
+  pageNames.forEach(page => {
+    const perms = pages[page] || {};
+    html += `<tr>
+      <td style="padding:8px 8px;border-bottom:1px solid var(--border-subtle);font-size:13px;font-weight:500;">${page.charAt(0).toUpperCase()+page.slice(1)}</td>`;
+    actions.forEach(a => {
+      const checked = perms[a] === true ? 'checked' : '';
+      html += `<td style="padding:8px 8px;text-align:center;border-bottom:1px solid var(--border-subtle);">
+        <input type="checkbox" class="sch-role-perm-check" data-page="${page}" data-action="${a}" ${checked} style="accent-color:var(--amber);width:16px;height:16px;">
+      </td>`;
+    });
+    html += `</tr>`;
+  });
+
+  html += `</tbody></table>`;
+  matrix.innerHTML = html;
+
+  openModal('schEditRoleModal');
+};
+
+// ── Save role permissions ──
+document.getElementById('schSaveRoleBtn').addEventListener('click', async () => {
+  const roleKey = document.getElementById('schEditRoleKey').value;
+  const errEl = document.getElementById('schEditRoleError');
+  errEl.textContent = '';
+
+  const checkboxes = document.querySelectorAll('.sch-role-perm-check');
+  const pages = {};
+
+  checkboxes.forEach(cb => {
+    const page = cb.dataset.page;
+    const action = cb.dataset.action;
+    if (!pages[page]) pages[page] = {};
+    pages[page][action] = cb.checked;
+  });
+
+  const role = allRoles[roleKey];
+  if (!role) {
+    errEl.textContent = 'Role not found.';
+    return;
+  }
+
+  const btn = document.getElementById('schSaveRoleBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+
+  try {
+    await updateDoc(doc(db, "roles", roleKey), {
+      pages: pages,
+      updatedAt: serverTimestamp()
+    });
+    // Update local cache
+    allRoles[roleKey].pages = pages;
+    closeModal('schEditRoleModal');
+    showToast(`Permissions for "${role.label}" updated ✓`);
+  } catch(e) {
+    console.error(e);
+    errEl.textContent = 'Could not save: ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save"></i> Save permissions';
+  }
+});
 
 /* ============================================================
    REMAINING GAPS (documented, not yet built in this pass):

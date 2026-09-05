@@ -1299,6 +1299,15 @@
         <label>Description</label>
         <textarea id="newFolderDescription" rows="2" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-family:inherit;" placeholder="Brief description of this subfolder…"></textarea>
       </div>
+      <div class="field">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <label style="margin-bottom:0;">Visible to schools</label>
+          <button type="button" class="btn btn-outline" style="padding:4px 10px;font-size:11px;" onclick="window.toggleAllSchoolsCheck('newFolderSchoolsList')">All schools</button>
+        </div>
+        <input type="text" id="newFolderSchoolsSearch" placeholder="Search schools…" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-size:12.5px;margin-bottom:6px;" oninput="window.filterSchoolsChecklist(this,'newFolderSchoolsList')">
+        <div id="newFolderSchoolsList" style="max-height:160px;overflow-y:auto;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--asphalt-deep);"></div>
+        <div style="font-size:11px;color:var(--slate-dim);margin-top:6px;">No schools checked = hidden from every school.</div>
+      </div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-secondary" onclick="window.closeModal('addFolderModal')">Cancel</button>
@@ -1314,6 +1323,15 @@
       <input type="hidden" id="editFolderId">
       <div class="field"><label>Folder name</label><input type="text" id="editFolderTitle" placeholder="Folder name"></div>
       <div class="field"><label>Description</label><textarea id="editFolderDescription" rows="2" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-family:inherit;" placeholder="Brief description…"></textarea></div>
+      <div class="field">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <label style="margin-bottom:0;">Visible to schools</label>
+          <button type="button" class="btn btn-outline" style="padding:4px 10px;font-size:11px;" onclick="window.toggleAllSchoolsCheck('editFolderSchoolsList')">All schools</button>
+        </div>
+        <input type="text" id="editFolderSchoolsSearch" placeholder="Search schools…" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-size:12.5px;margin-bottom:6px;" oninput="window.filterSchoolsChecklist(this,'editFolderSchoolsList')">
+        <div id="editFolderSchoolsList" style="max-height:160px;overflow-y:auto;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--asphalt-deep);"></div>
+        <div style="font-size:11px;color:var(--slate-dim);margin-top:6px;">No schools checked = hidden from every school.</div>
+      </div>
       <div style="font-size:11px;color:var(--slate-dim);"><i class="fas fa-info-circle"></i> Renaming will automatically update any subfolders and lessons stored inside this folder.</div>
     </div>
     <div class="modal-foot">
@@ -1481,6 +1499,15 @@
       <div class="field" id="newQuizCategoryDescGroup" style="display:none;">
         <label>Description</label>
         <textarea id="newQuizCategoryDescription" rows="2" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-family:inherit;" placeholder="Brief description of this category…"></textarea>
+      </div>
+      <div class="field">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <label style="margin-bottom:0;">Visible to schools</label>
+          <button type="button" class="btn btn-outline" style="padding:4px 10px;font-size:11px;" onclick="window.toggleAllSchoolsCheck('newQuizCategorySchoolsList')">All schools</button>
+        </div>
+        <input type="text" id="newQuizCategorySchoolsSearch" placeholder="Search schools…" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-size:12.5px;margin-bottom:6px;" oninput="window.filterSchoolsChecklist(this,'newQuizCategorySchoolsList')">
+        <div id="newQuizCategorySchoolsList" style="max-height:160px;overflow-y:auto;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--asphalt-deep);"></div>
+        <div style="font-size:11px;color:var(--slate-dim);margin-top:6px;">No schools checked = hidden from every school.</div>
       </div>
     </div>
     <div class="modal-foot">

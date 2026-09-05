@@ -49,6 +49,50 @@ function avatarHtml(photoUrl, firstName, lastName, size){
 }
 window.avatarHtml = avatarHtml;
 
+// ── SCHOOL VISIBILITY CHECKLIST (shared by lesson folders & quiz categories) ──
+function renderSchoolsChecklist(containerId, selectedIds){
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const searchEl = document.getElementById(containerId.replace('SchoolsList', 'SchoolsSearch'));
+  if (searchEl) searchEl.value = '';
+  const ids = selectedIds || [];
+  if (!allSchools.length) {
+    container.innerHTML = '<div style="font-size:12px;color:var(--slate-dim);">No schools found.</div>';
+    return;
+  }
+  container.innerHTML = allSchools.map(s => `
+    <label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;border-bottom:1px solid var(--border);">
+      <input type="checkbox" value="${s.id}" class="school-visibility-check" ${ids.includes(s.id) ? 'checked' : ''} style="accent-color:var(--amber);width:15px;height:15px;">
+      <span style="font-size:13px;">${escapeHtml(s.name)}</span>
+    </label>`).join('');
+}
+window.renderSchoolsChecklist = renderSchoolsChecklist;
+
+window.toggleAllSchoolsCheck = function(containerId){
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const boxes = container.querySelectorAll('.school-visibility-check:not([style*="display: none"])');
+  const visibleBoxes = Array.from(boxes).filter(cb => cb.closest('label').style.display !== 'none');
+  const allChecked = visibleBoxes.every(cb => cb.checked);
+  visibleBoxes.forEach(cb => { cb.checked = !allChecked; });
+};
+
+window.filterSchoolsChecklist = function(inputEl, containerId){
+  const term = inputEl.value.trim().toLowerCase();
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.querySelectorAll('label').forEach(label => {
+    const name = label.querySelector('span')?.textContent.toLowerCase() || '';
+    label.style.display = !term || name.includes(term) ? 'flex' : 'none';
+  });
+};
+
+function getCheckedSchoolIds(containerId){
+  const container = document.getElementById(containerId);
+  if (!container) return [];
+  return Array.from(container.querySelectorAll('.school-visibility-check:checked')).map(cb => cb.value);
+}
+
 async function updateTopbarUser(user){
   const wrap = document.getElementById('topbarUser');
   const nameEl = document.getElementById('topbarUserName');
@@ -1379,37 +1423,49 @@ let allLessonFolders = [];
 let allLessonsFlat = [];
 let currentLessonFolderPath = null;
 
+let lessonFoldersUnsub = null;
+
+function rebuildCentralLessons(rawLessons, rawFolders, allProgress){
+  allLessonsFlat = rawLessons;
+  allLessonsFlat.forEach(l => {
+    const pcts = [];
+    Object.values(allProgress).forEach(progressMap => {
+      if (progressMap && progressMap[l.id] !== undefined) pcts.push(progressMap[l.id]);
+    });
+    l.avgCompletion = pcts.length ? Math.round(pcts.reduce((s,p) => s+p, 0) / pcts.length) : 0;
+    l.watcherCount = pcts.length;
+  });
+  window._allLessons = allLessonsFlat;
+
+  allLessonFolders = rawFolders.map(data => {
+    const parentPath = data.parentPath || null;
+    const path = data.path || (parentPath ? `${parentPath}/${data.name}` : data.name);
+    return { id: data.id, name: data.name, description: data.description || '', parentPath, path, allowedSchoolIds: data.allowedSchoolIds || [] };
+  }).sort((a,b) => a.name.localeCompare(b.name));
+
+  renderLessonFolderView();
+}
+
 async function loadLessons(){
   try {
-    const [lessonSnaps, folderSnaps, progressSnaps] = await Promise.all([
-      getDocs(collection(db, "lessons")),
-      getDocs(collection(db, "lessonFolders")),
-      getDocs(collection(db, "lessonProgress"))
-    ]);
-    allLessonsFlat = lessonSnaps.docs.map(d => ({ id: d.id, ...d.data() }));
-
-    // lessonProgress isn't schoolId-scoped from the central view — aggregate
-    // across every school so avg-completion reflects the whole platform.
+    const progressSnaps = await getDocs(collection(db, "lessonProgress"));
     const allProgress = {};
     progressSnaps.docs.forEach(d => { allProgress[d.id] = d.data(); });
-    allLessonsFlat.forEach(l => {
-      const pcts = [];
-      Object.values(allProgress).forEach(progressMap => {
-        if (progressMap && progressMap[l.id] !== undefined) pcts.push(progressMap[l.id]);
-      });
-      l.avgCompletion = pcts.length ? Math.round(pcts.reduce((s,p) => s+p, 0) / pcts.length) : 0;
-      l.watcherCount = pcts.length;
-    });
-    window._allLessons = allLessonsFlat;
+    window._centralLessonProgress = allProgress;
 
-    allLessonFolders = folderSnaps.docs.map(d => {
-      const data = d.data();
-      const parentPath = data.parentPath || null;
-      const path = data.path || (parentPath ? `${parentPath}/${data.name}` : data.name);
-      return { id: d.id, name: data.name, description: data.description || '', parentPath, path };
-    }).sort((a,b) => a.name.localeCompare(b.name));
+    if (!lessonFoldersUnsub) {
+      lessonFoldersUnsub = onSnapshot(collection(db, "lessonFolders"), (snap) => {
+        const rawFolders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        rebuildCentralLessons(allLessonsFlat, rawFolders, window._centralLessonProgress || {});
+      }, (e) => showToast('Could not load lesson folders: ' + e.message, true));
+    }
 
-    renderLessonFolderView();
+    const lessonSnaps = await getDocs(collection(db, "lessons"));
+    const rawLessons = lessonSnaps.docs.map(d => ({ id: d.id, ...d.data() }));
+    // seed folders once from a fresh read so first render doesn't wait on the listener
+    const folderSnaps = await getDocs(collection(db, "lessonFolders"));
+    const rawFolders = folderSnaps.docs.map(d => ({ id: d.id, ...d.data() }));
+    rebuildCentralLessons(rawLessons, rawFolders, allProgress);
   } catch(e) { console.error(e); showToast('Could not load lessons: ' + e.message, true); }
 }
 
@@ -1543,6 +1599,7 @@ window.openAddFolderModal = async function(){
       });
     } catch(e) { console.error(e); }
   }
+  renderSchoolsChecklist("newFolderSchoolsList", []);
   openModal("addFolderModal");
 };
 
@@ -1563,8 +1620,9 @@ window.createLessonFolder = async function(){
     showToast("A folder with that name already exists here.", true);
     return;
   }
+  const allowedSchoolIds = getCheckedSchoolIds("newFolderSchoolsList");
   try {
-    await addDoc(collection(db, "lessonFolders"), { name, description, parentPath, path, createdAt: serverTimestamp() });
+    await addDoc(collection(db, "lessonFolders"), { name, description, parentPath, path, allowedSchoolIds, createdAt: serverTimestamp() });
     closeModal("addFolderModal");
     showToast("Folder created ✓");
     await loadLessons();
@@ -1577,6 +1635,7 @@ window.openEditFolderModal = function(folderId){
   document.getElementById("editFolderId").value = folder.id;
   document.getElementById("editFolderTitle").value = folder.name || '';
   document.getElementById("editFolderDescription").value = folder.description || '';
+  renderSchoolsChecklist("editFolderSchoolsList", folder.allowedSchoolIds || []);
   openModal("editFolderModal");
 };
 
@@ -1593,11 +1652,12 @@ window.updateLessonFolder = async function(){
     showToast("A folder with that name already exists here.", true);
     return;
   }
+  const allowedSchoolIds = getCheckedSchoolIds("editFolderSchoolsList");
   const btn = document.querySelector("#editFolderModal .btn-primary");
   const originalHTML = btn.innerHTML;
   btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
   try {
-    await updateDoc(doc(db, "lessonFolders", folderId), { name: newName, description: newDescription, path: newPath });
+    await updateDoc(doc(db, "lessonFolders", folderId), { name: newName, description: newDescription, path: newPath, allowedSchoolIds });
     if (newPath !== oldPath) {
       const affectedSubfolders = allLessonFolders.filter(f => f.id !== folderId && f.path.startsWith(oldPath + '/'));
       for (const sf of affectedSubfolders) {
@@ -1905,18 +1965,29 @@ let allQuizzesFlat = [];
 let currentQuizCategoryPath = null;
 let currentQuizQuestions = [];
 
+let quizCategoriesUnsub = null;
+
+function rebuildCentralQuizCategories(rawCats){
+  allQuizCategories = rawCats.map(data => {
+    const parentPath = data.parentPath || null;
+    const path = data.path || (parentPath ? `${parentPath}/${data.name}` : data.name);
+    return { id: data.id, name: data.name, description: data.description || '', parentPath, path, allowedSchoolIds: data.allowedSchoolIds || [] };
+  }).sort((a,b) => a.name.localeCompare(b.name));
+  renderQuizFolderView();
+}
+
 async function loadQuizzes(){
   try {
+    if (!quizCategoriesUnsub) {
+      quizCategoriesUnsub = onSnapshot(collection(db, "quizCategories"), (snap) => {
+        rebuildCentralQuizCategories(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      }, (e) => showToast('Could not load quiz categories: ' + e.message, true));
+    }
     const [catSnaps, quizSnaps] = await Promise.all([
       getDocs(collection(db, "quizCategories")),
       getDocs(collection(db, "quizzes"))
     ]);
-    allQuizCategories = catSnaps.docs.map(d => {
-      const data = d.data();
-      const parentPath = data.parentPath || null;
-      const path = data.path || (parentPath ? `${parentPath}/${data.name}` : data.name);
-      return { id: d.id, name: data.name, description: data.description || '', parentPath, path };
-    }).sort((a,b) => a.name.localeCompare(b.name));
+    rebuildCentralQuizCategories(catSnaps.docs.map(d => ({ id: d.id, ...d.data() })));
     allQuizzesFlat = quizSnaps.docs.map(d => ({ id: d.id, ...d.data() }));
     window._allQuizzes = allQuizzesFlat;
     renderQuizFolderView();
@@ -2010,6 +2081,7 @@ window.deleteQuizCategory = async function(id, path){
 
 window.openAddQuizCategoryModal = async function(){
   document.getElementById("editQuizCategoryId").value = '';
+  renderSchoolsChecklist("newQuizCategorySchoolsList", []);
   const isTopLevel = !currentQuizCategoryPath;
   document.getElementById("newQuizCategoryCourseGroup").style.display = isTopLevel ? "block" : "none";
   document.getElementById("newQuizCategoryTitleGroup").style.display = isTopLevel ? "none" : "block";
@@ -2038,6 +2110,7 @@ window.openEditQuizCategoryModal = async function(id){
   const cat = allQuizCategories.find(f => f.id === id);
   if (!cat) return showToast("Category not found.", true);
   document.getElementById("editQuizCategoryId").value = id;
+  renderSchoolsChecklist("newQuizCategorySchoolsList", cat.allowedSchoolIds || []);
   const isTopLevel = !cat.parentPath;
   document.getElementById("newQuizCategoryCourseGroup").style.display = isTopLevel ? "block" : "none";
   document.getElementById("newQuizCategoryTitleGroup").style.display = isTopLevel ? "none" : "block";
@@ -2080,8 +2153,9 @@ window.saveQuizCategory = async function(){
       const btn = document.getElementById("quizCategorySaveBtn");
       const originalHTML = btn.innerHTML;
       btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+      const topAllowedSchoolIds = getCheckedSchoolIds("newQuizCategorySchoolsList");
       try {
-        await updateDoc(doc(db, "quizCategories", editId), { name: newCourseName, path: newPath });
+        await updateDoc(doc(db, "quizCategories", editId), { name: newCourseName, path: newPath, allowedSchoolIds: topAllowedSchoolIds });
         if (newPath !== oldPath) {
           const affectedSubcats = allQuizCategories.filter(f => f.id !== editId && f.path.startsWith(oldPath + '/'));
           for (const sf of affectedSubcats) {
@@ -2110,8 +2184,9 @@ window.saveQuizCategory = async function(){
     const newDesc = document.getElementById("newQuizCategoryDescription").value.trim();
     if (!newName) { showToast("Name is required.", true); return; }
     const newPath = cat.parentPath ? `${cat.parentPath}/${newName}` : newName;
+    const subAllowedSchoolIds = getCheckedSchoolIds("newQuizCategorySchoolsList");
     try {
-      await updateDoc(doc(db, "quizCategories", editId), { name: newName, description: newDesc, path: newPath });
+      await updateDoc(doc(db, "quizCategories", editId), { name: newName, description: newDesc, path: newPath, allowedSchoolIds: subAllowedSchoolIds });
       closeModal("addQuizCategoryModal");
       showToast("Category updated ✓");
       await loadQuizzes();
@@ -2134,8 +2209,9 @@ window.saveQuizCategory = async function(){
     showToast("A folder with that name already exists here.", true);
     return;
   }
+  const newCatAllowedSchoolIds = getCheckedSchoolIds("newQuizCategorySchoolsList");
   try {
-    await addDoc(collection(db, "quizCategories"), { name, description, parentPath, path, createdAt: serverTimestamp() });
+    await addDoc(collection(db, "quizCategories"), { name, description, parentPath, path, allowedSchoolIds: newCatAllowedSchoolIds, createdAt: serverTimestamp() });
     closeModal("addQuizCategoryModal");
     showToast("Folder created ✓");
     await loadQuizzes();

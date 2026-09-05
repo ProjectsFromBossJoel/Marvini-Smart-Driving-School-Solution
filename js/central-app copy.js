@@ -1750,7 +1750,7 @@ window.saveSchPermissions = async function(type){
 };
 
 // ============================================================
-// SETTINGS SUBPAGE — reuses the existing Add/Edit School modal
+//  — reuses the existing Add/Edit School modal
 // ============================================================
 function renderSchoolSettings(){
   const school = allSchools.find(s => s.id === currentSchoolId);

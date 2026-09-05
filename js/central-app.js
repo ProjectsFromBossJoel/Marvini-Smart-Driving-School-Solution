@@ -1,17 +1,4 @@
 // js/central-app.js
-// ============================================================
-// M-SMART CENTRAL ADMIN — v2
-// Architecture:
-//   - Top-level pages: dashboard / schools / reports / lessons / quizzes / profile
-//   - "schools" is now a card grid (schools collection + imageUrl field)
-//   - Clicking a card enters SCHOOL DETAIL SCOPE: sidebar swaps to school-scoped
-//     nav, breadcrumb shows Schools > <School> > <Section>, and every Firestore
-//     query in that scope is filtered with where("schoolId","==", currentSchoolId)
-//     — matching the schema Dekay's own admin already writes.
-//   - Students module is fully built as the reference implementation.
-//     Instructors / Attendance / Classes / Vehicles / Certificates / Enquiries /
-//     Permissions follow the exact same recipe (see comment block at bottom).
-// ============================================================
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import {
@@ -61,6 +48,150 @@ function avatarHtml(photoUrl, firstName, lastName, size){
   return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:rgba(242,169,59,0.15);border:1.5px solid var(--amber);display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*0.38)}px;font-weight:700;color:var(--amber);flex-shrink:0;">${escapeHtml(initials)}</div>`;
 }
 window.avatarHtml = avatarHtml;
+
+async function updateTopbarUser(user){
+  const wrap = document.getElementById('topbarUser');
+  const nameEl = document.getElementById('topbarUserName');
+  const avatarImg = document.getElementById('topbarUserAvatar');
+  const initialsEl = document.getElementById('topbarUserInitials');
+  if (!user) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'flex';
+  let name = user.email || 'Admin';
+  let photoUrl = null;
+  try {
+    const snap = await getDoc(doc(db, "portalAdmins", user.uid));
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data.name) name = data.name;
+      photoUrl = data.photoUrl || null;
+    }
+  } catch(e) { /* non-fatal — fall back to email / initials */ }
+  nameEl.textContent = name;
+  if (photoUrl) {
+    avatarImg.src = photoUrl;
+    avatarImg.style.display = 'block';
+    initialsEl.style.display = 'none';
+  } else {
+    avatarImg.style.display = 'none';
+    initialsEl.style.display = 'flex';
+    const initials = name.trim().split(/\s+/).map(w => w[0]).slice(0,2).join('').toUpperCase() || '?';
+    initialsEl.textContent = initials;
+  }
+}
+window.updateTopbarUser = updateTopbarUser;
+
+// ============================================================
+// DASHBOARD HERO — greeting, weather (Open-Meteo, no key needed), tip
+// ============================================================
+function renderDashGreeting(){
+  const greetEl = document.getElementById('dashGreeting');
+  const dateEl = document.getElementById('dashDate');
+  if (!greetEl || !dateEl) return;
+  const now = new Date();
+  const hour = now.getHours();
+  const greeting = hour < 5 ? 'Good night' : hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : hour < 21 ? 'Good evening' : 'Good night';
+  const nameEl = document.getElementById('topbarUserName');
+  const firstName = (nameEl && nameEl.textContent && nameEl.textContent !== '—') ? nameEl.textContent.split(' ')[0] : '';
+  greetEl.textContent = firstName ? `${greeting}, ${firstName} 👋` : `${greeting} 👋`;
+  dateEl.textContent = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+const WMO_WEATHER = {
+  0: ['sun', 'Clear sky'], 1: ['partlycloudy', 'Mostly clear'], 2: ['partlycloudy', 'Partly cloudy'], 3: ['cloudy', 'Overcast'],
+  45: ['fog', 'Foggy'], 48: ['fog', 'Foggy'],
+  51: ['rain', 'Light drizzle'], 53: ['rain', 'Drizzle'], 55: ['rain', 'Heavy drizzle'],
+  61: ['rain', 'Light rain'], 63: ['rain', 'Rain'], 65: ['heavyrain', 'Heavy rain'],
+  80: ['heavyrain', 'Rain showers'], 81: ['heavyrain', 'Rain showers'], 82: ['heavyrain', 'Violent showers'],
+  95: ['thunder', 'Thunderstorm'], 96: ['thunder', 'Thunderstorm'], 99: ['thunder', 'Thunderstorm']
+};
+
+// Small colored SVG weather icons (Google-Weather-ish: warm sun, soft cloud, blue rain, yellow bolt)
+function weatherIconSvg(type){
+  const sun = `<circle cx="32" cy="32" r="15" fill="url(#wSun)"/>
+    <g stroke="#FFB300" stroke-width="3" stroke-linecap="round">
+      <line x1="32" y1="4" x2="32" y2="12"/><line x1="32" y1="52" x2="32" y2="60"/>
+      <line x1="4" y1="32" x2="12" y2="32"/><line x1="52" y1="32" x2="60" y2="32"/>
+      <line x1="12.7" y1="12.7" x2="18.3" y2="18.3"/><line x1="45.7" y1="45.7" x2="51.3" y2="51.3"/>
+      <line x1="12.7" y1="51.3" x2="18.3" y2="45.7"/><line x1="45.7" y1="18.3" x2="51.3" y2="12.7"/>
+    </g>`;
+  const cloud = (cx, cy, scale) => `<g transform="translate(${cx} ${cy}) scale(${scale})" fill="url(#wCloud)">
+      <circle cx="24" cy="34" r="12"/><circle cx="36" cy="28" r="15"/><circle cx="46" cy="36" r="10"/>
+      <rect x="16" y="34" width="40" height="16" rx="8"/>
+    </g>`;
+  const drop = (x, y) => `<path d="M${x} ${y} c3 4 5 6.5 5 9a5 5 0 1 1-10 0c0-2.5 2-5 5-9z" fill="#4FC3F7"/>`;
+  const bolt = `<path d="M35 40 L26 54 L32 54 L28 66 L42 48 L35 48 Z" fill="#FFC107" transform="translate(0,-8)"/>`;
+
+  const defs = `<defs>
+      <radialGradient id="wSun" cx="35%" cy="35%" r="65%"><stop offset="0%" stop-color="#FFD54F"/><stop offset="100%" stop-color="#FFA000"/></radialGradient>
+      <linearGradient id="wCloud" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F7F9FA"/><stop offset="100%" stop-color="#CFD8DC"/></linearGradient>
+    </defs>`;
+
+  let body = '';
+  switch(type){
+    case 'sun': body = sun; break;
+    case 'partlycloudy': body = `<g transform="translate(-6,-8) scale(0.72)">${sun}</g>${cloud(4,10,0.72)}`; break;
+    case 'cloudy': body = cloud(0,0,1); break;
+    case 'fog': body = `${cloud(0,-6,0.85)}<g stroke="#B0BEC5" stroke-width="3" stroke-linecap="round">
+        <line x1="12" y1="46" x2="52" y2="46"/><line x1="16" y1="54" x2="48" y2="54"/></g>`; break;
+    case 'rain': body = `${cloud(0,-8,0.85)}${drop(22,44)}${drop(34,48)}${drop(44,44)}`; break;
+    case 'heavyrain': body = `${cloud(0,-10,0.85)}${drop(16,42)}${drop(26,48)}${drop(36,42)}${drop(46,48)}`; break;
+    case 'thunder': body = `${cloud(0,-10,0.85)}${bolt}`; break;
+    default: body = sun;
+  }
+  return `<svg viewBox="0 0 64 64" width="100%" height="100%">${defs}${body}</svg>`;
+}
+
+async function renderDashWeather(){
+  const iconEl = document.getElementById('dashWeatherIcon');
+  const tempEl = document.getElementById('dashWeatherTemp');
+  const descEl = document.getElementById('dashWeatherDesc');
+  if (!tempEl) return;
+  try {
+    // Accra, Ghana coordinates — no API key required for Open-Meteo.
+    const res = await fetch('https://api.open-meteo.com/v1/forecast?latitude=5.6037&longitude=-0.1870&current=temperature_2m,weather_code&timezone=Africa%2FAccra');
+    const data = await res.json();
+    const temp = Math.round(data?.current?.temperature_2m);
+    const code = data?.current?.weather_code;
+    const [icon, desc] = WMO_WEATHER[code] || ['partlycloudy', 'Weather unavailable'];
+    tempEl.textContent = isNaN(temp) ? '--°' : `${temp}°C`;
+    descEl.textContent = desc;
+    iconEl.innerHTML = weatherIconSvg(icon);
+  } catch(e) {
+    descEl.textContent = 'Weather unavailable';
+  }
+}
+
+const DASH_TIPS = [
+  "Remind instructors to log attendance right after each session — it keeps completion stats accurate for every school.",
+  "Encourage schools to keep their student photos up to date; it helps instructors verify identity on test day.",
+  "A quick weekly check of pending approvals keeps new students and instructors from waiting too long.",
+  "Schools with a filled-in bio and cover photo tend to get more enquiries from the public site.",
+  "Remind instructors that defensive driving habits are best taught early — Stage 1 sets the tone.",
+  "Enquiries marked 'New' for more than 48 hours are worth a nudge to the school — quick replies convert better.",
+  "Keeping vehicle maintenance notes current avoids double-booking a car that's actually in the shop.",
+  "A short WhatsApp follow-up after a road test can turn a good student experience into a referral."
+];
+let dashTipRotateTimer = null;
+let dashTipIndex = Math.floor(Date.now() / 86400000) % DASH_TIPS.length;
+function renderDashTip(){
+  const tipEl = document.getElementById('dashTipText');
+  if (!tipEl) return;
+  tipEl.textContent = DASH_TIPS[dashTipIndex];
+  if (dashTipRotateTimer) clearInterval(dashTipRotateTimer);
+  dashTipRotateTimer = setInterval(() => {
+    const el = document.getElementById('dashTipText');
+    if (!el) { clearInterval(dashTipRotateTimer); dashTipRotateTimer = null; return; }
+    dashTipIndex = (dashTipIndex + 1) % DASH_TIPS.length;
+    el.textContent = DASH_TIPS[dashTipIndex];
+  }, 9000);
+}
+
+function renderDashboardHero(){
+  renderDashGreeting();
+  renderDashWeather();
+  renderDashTip();
+}
+window.renderDashboardHero = renderDashboardHero;
 
 function fmtDate(ts){
   if (!ts) return '—';
@@ -153,6 +284,7 @@ onAuthStateChanged(auth, async (user) => {
     loginScreen.style.display = 'none';
     appShell.classList.add('show');
     adminEmailEl.textContent = user.email;
+    updateTopbarUser(user).then(renderDashboardHero);
     if (!unsubscribeSchools) startSchoolsListener();
   } else {
     appShell.classList.remove('show');
@@ -165,12 +297,14 @@ onAuthStateChanged(auth, async (user) => {
 // TOP-LEVEL NAVIGATION
 // ============================================================
 const PAGE_META = {
-  dashboard: { title: 'Dashboard', sub: 'Overview of every driving school on the portal' },
-  schools:   { title: 'Schools', sub: 'Click a school to manage everything about it' },
-  reports:   { title: 'Reports', sub: 'How schools are distributed across Ghana' },
-  lessons:   { title: 'Video Lessons', sub: 'Manage platform-wide video lessons (shared across all schools).' },
-  quizzes:   { title: 'Quizzes', sub: 'Manage platform-wide quizzes and questions (shared across all schools).' },
-  profile:   { title: 'Portal Profile', sub: 'Edit the profile card shown on the public landing page' }
+  dashboard:    { title: 'Dashboard', sub: 'Overview of every driving school on the portal' },
+  schools:      { title: 'Schools', sub: 'Click a school to manage everything about it' },
+  reports:      { title: 'Reports', sub: 'How schools are distributed across Ghana' },
+  lessons:      { title: 'Video Lessons', sub: 'Manage platform-wide video lessons (shared across all schools).' },
+  quizzes:      { title: 'Quizzes', sub: 'Manage platform-wide quizzes and questions (shared across all schools).' },
+  profile:      { title: 'My Profile', sub: 'Your personal admin profile' },
+  siteSettings: { title: 'Site Settings', sub: 'Edit the content shown on the public landing page' },
+  pmgmBio:      { title: 'PM/GM Bio', sub: 'Edit the PM/GM leadership bio card shown on the landing page' }
 };
 
 let currentSchoolId = null; // null = at top level
@@ -193,8 +327,12 @@ window.showPage = function(pageName, navLinkElement){
   const meta = PAGE_META[pageName];
   if (meta) { document.getElementById('pageTitle').textContent = meta.title; document.getElementById('pageSubtitle').textContent = meta.sub; }
 
+  if (pageName === 'dashboard') renderDashboardHero();
   if (pageName === 'lessons') loadLessons();
   if (pageName === 'quizzes') loadQuizzes();
+  if (pageName === 'profile') loadMyProfile();
+  if (pageName === 'siteSettings') loadSiteSettings();
+  if (pageName === 'pmgmBio') loadPmgmBio();
 };
 
 document.querySelectorAll('#navTopLevel .nav-link[data-page]').forEach(link => {
@@ -214,6 +352,7 @@ function startSchoolsListener(){
     renderSchoolGrid(document.getElementById('schoolSearch').value);
     renderReports();
     if (currentSchoolId) renderSchoolDetailOverview(); // keep detail view fresh if open
+    updatePmgmLiveStats();
   }, (err) => showToast('Could not load schools: ' + err.message, true));
 }
 
@@ -409,10 +548,7 @@ schoolForm.addEventListener('submit', async (e) => {
       imageUrl = await uploadSchoolImage(file);
     }
 
-    const data = { name, region, url, status };
-    if (email) data.email = email;
-    if (phone1) data.phone1 = phone1;
-    if (phone2) data.phone2 = phone2;
+    const data = { name, region, url, status, email: email || null, phone1: phone1 || null, phone2: phone2 || null };
     if (imageUrl) data.imageUrl = imageUrl;
 
     const id = schoolIdInput.value;
@@ -688,6 +824,33 @@ document.getElementById('schCreateStudentBtn').addEventListener('click', async (
   }
 });
 
+
+// Staff photo preview
+document.getElementById('schStaffPhotoFile').addEventListener('change', () => {
+  const file = document.getElementById('schStaffPhotoFile').files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById('schStaffPhotoPreview').src = e.target.result;
+    document.getElementById('schStaffPhotoPreview').style.display = 'block';
+    document.getElementById('schStaffPhotoText').textContent = file.name;
+  };
+  reader.readAsDataURL(file);
+});
+
+// Edit-staff photo preview
+document.getElementById('schEditStaffPhotoFile').addEventListener('change', () => {
+  const file = document.getElementById('schEditStaffPhotoFile').files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById('schEditStaffPhotoPreview').src = e.target.result;
+    document.getElementById('schEditStaffPhotoPreview').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+});
+
+
 // ── Student detail / edit / delete / reset password ──
 window.openStudentDetail = function(uid){
   const s = schoolStudents.find(x => x.id === uid);
@@ -719,12 +882,23 @@ window.openStudentDetail = function(uid){
         </select>
       </div>
     </div>
+    <div class="form-row">
+      <div class="field"><label>Branch</label>
+        <select id="schEditBranch" class="field-select">
+          <option value="">Select branch…</option>
+          ${['Ablekuma','Adenta','Amasaman','Dansoman'].map(b => `<option value="${b}" ${s.branch===b?'selected':''}>${b}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>Date of birth</label><input id="schEditDob" type="date" value="${s.dob||''}"></div>
+    </div>
+    <div class="field"><label>Ghana Card number</label><input id="schEditGhCardNumber" type="text" value="${escapeHtml(s.ghCardNumber||'')}" placeholder="GHA-123456789-1"></div>
     <div class="field"><label>Status</label>
       <select id="schEditStatus" class="field-select">
         <option value="active" ${s.status==='active'?'selected':''}>Active</option>
         <option value="inactive" ${s.status==='inactive'?'selected':''}>Inactive</option>
       </select>
     </div>
+    <div class="field" style="font-size:11.5px;color:var(--slate-dim);">Enrolled: ${s.enrolDate ? escapeHtml(s.enrolDate) : fmtDate(s.createdAt)}</div>
     <button class="btn btn-outline" style="width:100%;margin-top:6px;" onclick="window.resetStudentPassword('${s.email||''}')"><i class="fas fa-key"></i> Send password reset email</button>
   `;
   document.getElementById('schStudentSaveBtn').onclick = () => saveStudentDetail(uid);
@@ -743,6 +917,9 @@ async function saveStudentDetail(uid){
       phone: document.getElementById('schEditPhone').value.trim(),
       courseType: document.getElementById('schEditCourse').value,
       trainingStage: parseInt(document.getElementById('schEditStage').value),
+      branch: document.getElementById('schEditBranch').value || null,
+      dob: document.getElementById('schEditDob').value || null,
+      ghCardNumber: document.getElementById('schEditGhCardNumber').value.trim(),
       status: document.getElementById('schEditStatus').value
     };
     if (newPhotoFile) updates.avatarUrl = await uploadSchoolImage(newPhotoFile);
@@ -3144,6 +3321,287 @@ function renderSchoolSettings(){
 
 
 // ============================================================
+// MY PROFILE MODULE (personal, per signed-in admin account)
+// Firestore: portalAdmins/{uid}
+// ============================================================
+let pendingMyProfileImageUrl = null;
+
+window.viewMyProfilePhoto = function(){
+  const preview = document.getElementById('myProfileImgPreview');
+  if (!preview.src || preview.style.display === 'none') { showToast('No photo uploaded yet.', true); return; }
+  document.getElementById('myProfileImgViewLarge').src = preview.src;
+  openModal('myProfileImgViewModal');
+};
+
+async function loadMyProfile(){
+  const user = auth.currentUser;
+  document.getElementById('pAccountEmail').value = user?.email || '—';
+  document.getElementById('myProfileError').textContent = '';
+  if (!user) return;
+  try {
+    const snap = await getDoc(doc(db, "portalAdmins", user.uid));
+    const data = snap.exists() ? snap.data() : {};
+    document.getElementById('myProfileName').value = data.name || '';
+    document.getElementById('myProfileBio').value = data.bio || '';
+    pendingMyProfileImageUrl = data.photoUrl || null;
+    const preview = document.getElementById('myProfileImgPreview');
+    if (data.photoUrl) { preview.src = data.photoUrl; preview.style.display = 'block'; document.getElementById('myProfileImgText').textContent = 'Tap to change photo'; }
+    else { preview.style.display = 'none'; document.getElementById('myProfileImgText').textContent = 'Tap to upload a photo'; }
+  } catch(e) { showToast('Could not load your profile: ' + e.message, true); }
+}
+
+document.getElementById('myProfileImgFile').addEventListener('change', () => {
+  const file = document.getElementById('myProfileImgFile').files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById('myProfileImgPreview').src = e.target.result;
+    document.getElementById('myProfileImgPreview').style.display = 'block';
+    document.getElementById('myProfileImgText').textContent = file.name;
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById('myProfileForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById('myProfileError');
+  errEl.textContent = '';
+  const user = auth.currentUser;
+  if (!user) return;
+  const btn = document.getElementById('myProfileSaveBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+  try {
+    let photoUrl = pendingMyProfileImageUrl;
+    const file = document.getElementById('myProfileImgFile').files[0];
+    if (file) {
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading photo…';
+      photoUrl = await uploadInstructorImage(file, 'admins');
+    }
+    await setDoc(doc(db, "portalAdmins", user.uid), {
+      name: document.getElementById('myProfileName').value.trim(),
+      bio: document.getElementById('myProfileBio').value.trim(),
+      email: user.email,
+      photoUrl: photoUrl || null,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    pendingMyProfileImageUrl = photoUrl;
+    updateTopbarUser(user);
+    showToast('Profile saved ✓');
+  } catch(e) {
+    errEl.textContent = 'Could not save: ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save"></i> Save profile';
+  }
+});
+
+window.resetPortalAdminPassword = async function(){
+  const email = auth.currentUser?.email;
+  if (!email) { showToast('No signed-in account found.', true); return; }
+  if (!(await showConfirm('Send password reset', `Send a password reset link to ${email}?`))) return;
+  try {
+    await sendPasswordResetEmail(auth, email);
+    showToast(`Password reset email sent to ${email} ✓`);
+  } catch(e) { showToast('Could not send reset email: ' + e.message, true); }
+};
+
+// ============================================================
+// SITE SETTINGS MODULE (public landing page content)
+// Firestore: portalSettings/siteSettings
+// ============================================================
+const SITE_SETTINGS_DOC = doc(db, "portalSettings", "siteSettings");
+let pendingSiteSettingsImageUrl = null;
+
+async function loadSiteSettings(){
+  document.getElementById('pSiteError').textContent = '';
+  try {
+    const snap = await getDoc(SITE_SETTINGS_DOC);
+    const data = snap.exists() ? snap.data() : {};
+    document.getElementById('pSiteName').value = data.name || '';
+    document.getElementById('pSiteTagline').value = data.tagline || '';
+    document.getElementById('pSiteBio').value = data.bio || '';
+    document.getElementById('pSiteEmail').value = data.email || '';
+    document.getElementById('pSitePhone').value = data.phone || '';
+    document.getElementById('pSiteFacebook').value = data.facebook || '';
+    document.getElementById('pSiteInstagram').value = data.instagram || '';
+    document.getElementById('pSiteTwitter').value = data.twitter || '';
+    document.getElementById('pSiteWhatsapp').value = data.whatsapp || '';
+    pendingSiteSettingsImageUrl = data.imageUrl || null;
+    const preview = document.getElementById('pSiteImgPreview');
+    if (data.imageUrl) { preview.src = data.imageUrl; preview.style.display = 'block'; document.getElementById('pSiteImgText').textContent = 'Tap to change photo'; }
+    else { preview.style.display = 'none'; document.getElementById('pSiteImgText').textContent = 'Tap to upload a hero photo'; }
+  } catch(e) { showToast('Could not load site settings: ' + e.message, true); }
+}
+
+document.getElementById('pSiteImgFile').addEventListener('change', () => {
+  const file = document.getElementById('pSiteImgFile').files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById('pSiteImgPreview').src = e.target.result;
+    document.getElementById('pSiteImgPreview').style.display = 'block';
+    document.getElementById('pSiteImgText').textContent = file.name;
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById('siteSettingsForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById('pSiteError');
+  errEl.textContent = '';
+  const btn = document.getElementById('pSiteSaveBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+  try {
+    let imageUrl = pendingSiteSettingsImageUrl;
+    const file = document.getElementById('pSiteImgFile').files[0];
+    if (file) {
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading photo…';
+      imageUrl = await uploadInstructorImage(file, 'site');
+    }
+    const data = {
+      name: document.getElementById('pSiteName').value.trim(),
+      tagline: document.getElementById('pSiteTagline').value.trim(),
+      bio: document.getElementById('pSiteBio').value.trim(),
+      email: document.getElementById('pSiteEmail').value.trim(),
+      phone: document.getElementById('pSitePhone').value.trim(),
+      facebook: document.getElementById('pSiteFacebook').value.trim(),
+      instagram: document.getElementById('pSiteInstagram').value.trim(),
+      twitter: document.getElementById('pSiteTwitter').value.trim(),
+      whatsapp: document.getElementById('pSiteWhatsapp').value.trim(),
+      imageUrl: imageUrl || null,
+      updatedAt: serverTimestamp()
+    };
+    await setDoc(SITE_SETTINGS_DOC, data, { merge: true });
+    pendingSiteSettingsImageUrl = imageUrl;
+    showToast('Site settings saved ✓');
+  } catch(e) {
+    errEl.textContent = 'Could not save: ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save"></i> Save site settings';
+  }
+});
+
+// ============================================================
+// PM/GM BIO MODULE (leadership bio card shown on the landing page)
+// Firestore: portalSettings/pmgmBio
+// Stat 1 (schools) and Stat 2 (regions) are always computed live from
+// allSchools — never stored — so they can't drift out of date.
+// ============================================================
+const PMGM_BIO_DOC = doc(db, "portalSettings", "pmgmBio");
+let pendingPmgmImageUrl = null;
+
+function updatePmgmLiveStats(){
+  const schoolCount = allSchools.length;
+  const regionCount = new Set(allSchools.map(s => s.region).filter(Boolean)).size;
+  const num1 = document.getElementById('pmgmStat1Num');
+  const num2 = document.getElementById('pmgmStat2Num');
+  if (num1) num1.value = schoolCount;
+  if (num2) num2.value = regionCount;
+  const p1 = document.getElementById('pmgmPreviewS1Num');
+  const p2 = document.getElementById('pmgmPreviewS2Num');
+  if (p1) p1.textContent = schoolCount;
+  if (p2) p2.textContent = regionCount;
+}
+
+function wirePmgmPreview(inputEl, previewEl){
+  inputEl.addEventListener('input', () => { previewEl.textContent = inputEl.value.trim() || previewEl.textContent; });
+}
+
+async function loadPmgmBio(){
+  document.getElementById('pmgmError').textContent = '';
+  updatePmgmLiveStats();
+  try {
+    const snap = await getDoc(PMGM_BIO_DOC);
+    const data = snap.exists() ? snap.data() : {};
+    document.getElementById('pmgmName').value = data.name || '';
+    document.getElementById('pmgmBadge').value = data.badge || '';
+    document.getElementById('pmgmRole').value = data.role || '';
+    document.getElementById('pmgmBio').value = data.bio || '';
+    document.getElementById('pmgmStat1Label').value = data.stat1Label || 'Schools';
+    document.getElementById('pmgmStat2Label').value = data.stat2Label || 'Cities';
+    document.getElementById('pmgmStat3Num').value = data.stat3Num || '';
+    document.getElementById('pmgmStat3Label').value = data.stat3Label || '';
+    pendingPmgmImageUrl = data.imageUrl || null;
+    const preview = document.getElementById('pmgmImgPreview');
+    if (data.imageUrl) { preview.src = data.imageUrl; preview.style.display = 'block'; document.getElementById('pmgmImgText').textContent = 'Tap to change photo'; }
+    else { preview.style.display = 'none'; document.getElementById('pmgmImgText').textContent = 'Tap to upload a profile photo'; }
+
+    document.getElementById('pmgmPreviewName').textContent = data.name || '—';
+    document.getElementById('pmgmPreviewBadge').textContent = data.badge || 'PM/GM';
+    document.getElementById('pmgmPreviewRole').textContent = data.role || '—';
+    document.getElementById('pmgmPreviewBio').textContent = data.bio || '—';
+    document.getElementById('pmgmPreviewS1Label').textContent = data.stat1Label || 'Schools';
+    document.getElementById('pmgmPreviewS2Label').textContent = data.stat2Label || 'Cities';
+    document.getElementById('pmgmPreviewS3Num').textContent = data.stat3Num || '0';
+    document.getElementById('pmgmPreviewS3Label').textContent = data.stat3Label || 'Portal';
+    document.getElementById('pmgmPreviewImg').src = data.imageUrl || '';
+  } catch(e) { showToast('Could not load PM/GM bio: ' + e.message, true); }
+}
+
+wirePmgmPreview(document.getElementById('pmgmName'), document.getElementById('pmgmPreviewName'));
+wirePmgmPreview(document.getElementById('pmgmBadge'), document.getElementById('pmgmPreviewBadge'));
+wirePmgmPreview(document.getElementById('pmgmRole'), document.getElementById('pmgmPreviewRole'));
+wirePmgmPreview(document.getElementById('pmgmBio'), document.getElementById('pmgmPreviewBio'));
+wirePmgmPreview(document.getElementById('pmgmStat1Label'), document.getElementById('pmgmPreviewS1Label'));
+wirePmgmPreview(document.getElementById('pmgmStat2Label'), document.getElementById('pmgmPreviewS2Label'));
+wirePmgmPreview(document.getElementById('pmgmStat3Num'), document.getElementById('pmgmPreviewS3Num'));
+wirePmgmPreview(document.getElementById('pmgmStat3Label'), document.getElementById('pmgmPreviewS3Label'));
+
+document.getElementById('pmgmImgFile').addEventListener('change', () => {
+  const file = document.getElementById('pmgmImgFile').files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById('pmgmImgPreview').src = e.target.result;
+    document.getElementById('pmgmImgPreview').style.display = 'block';
+    document.getElementById('pmgmImgText').textContent = file.name;
+    document.getElementById('pmgmPreviewImg').src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById('pmgmBioForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById('pmgmError');
+  errEl.textContent = '';
+  const btn = document.getElementById('pmgmSaveBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+  try {
+    let imageUrl = pendingPmgmImageUrl;
+    const file = document.getElementById('pmgmImgFile').files[0];
+    if (file) {
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading photo…';
+      imageUrl = await uploadInstructorImage(file, 'pmgm'); // reuses school_images_upload preset
+    }
+    const data = {
+      name: document.getElementById('pmgmName').value.trim(),
+      badge: document.getElementById('pmgmBadge').value.trim(),
+      role: document.getElementById('pmgmRole').value.trim(),
+      bio: document.getElementById('pmgmBio').value.trim(),
+      stat1Label: document.getElementById('pmgmStat1Label').value.trim(),
+      stat2Label: document.getElementById('pmgmStat2Label').value.trim(),
+      stat3Num: document.getElementById('pmgmStat3Num').value.trim(),
+      stat3Label: document.getElementById('pmgmStat3Label').value.trim(),
+      imageUrl: imageUrl || null,
+      updatedAt: serverTimestamp()
+    };
+    await setDoc(PMGM_BIO_DOC, data, { merge: true });
+    pendingPmgmImageUrl = imageUrl;
+    showToast('PM/GM bio saved ✓');
+  } catch(e) {
+    errEl.textContent = 'Could not save: ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save"></i> Save PM/GM bio';
+  }
+});
+
+
+// ============================================================
 // STAFF MODULE (school-scoped: schools/{schoolId}/staff/{uid})
 // ============================================================
 let schoolStaff = [];
@@ -3298,6 +3756,9 @@ document.getElementById('schOpenAddStaffBtn').addEventListener('click', async ()
   document.getElementById('schStaffBranchSelect').value = '';
   document.getElementById('schStaffStatusSelect').value = 'active';
   document.getElementById('schStaffBranchField').style.display = 'none';
+  document.getElementById('schStaffPhotoFile').value = '';
+  document.getElementById('schStaffPhotoPreview').style.display = 'none';
+  document.getElementById('schStaffPhotoText').textContent = 'Tap to upload a photo';
 
   await loadRolesDefinitions();
 
@@ -3351,12 +3812,25 @@ document.getElementById('schCreateStaffBtn').addEventListener('click', async () 
     }
     const uid = data.localId;
 
-    await setDoc(doc(db, "schools", currentSchoolId, "staff", uid), {
-      uid, firstName: first, lastName: last, email, phone,
-      role, branch: (role === 'BranchManager' && branch) ? branch : null,
-      status: status || 'active',
-      createdAt: serverTimestamp(), updatedAt: serverTimestamp()
-    });
+// --- upload photo if selected ---
+let avatarUrl = null;
+const photoFile = document.getElementById('schStaffPhotoFile').files[0];
+if (photoFile) {
+  try {
+    avatarUrl = await uploadSchoolImage(photoFile);
+  } catch (uploadErr) {
+    console.warn('Staff photo upload failed:', uploadErr);
+    // non‑fatal – proceed without photo
+  }
+}
+
+await setDoc(doc(db, "schools", currentSchoolId, "staff", uid), {
+  uid, firstName: first, lastName: last, email, phone,
+  role, branch: (role === 'BranchManager' && branch) ? branch : null,
+  status: status || 'active',
+  avatarUrl,   // <-- added
+  createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+});
 
     closeModal('schAddStaffModal');
     showToast(`${first} ${last} added as ${allRoles[role]?.label || role} ✓`);
@@ -3370,12 +3844,30 @@ document.getElementById('schCreateStaffBtn').addEventListener('click', async () 
 });
 
 // ── Open Edit Staff modal ──
-window.openEditStaffModal = function(staffUid){
+window.openEditStaffModal = async function(staffUid){
   const staff = schoolStaff.find(s => s.id === staffUid);
-  if (!staff) return;
+  if (!staff) {
+    showToast('Staff member not found.', true);
+    return;
+  }
+
+  // Ensure roles are loaded
+  if (Object.keys(allRoles).length === 0) {
+    await loadRolesDefinitions();
+  }
 
   document.getElementById('schEditStaffUid').value = staffUid;
   document.getElementById('schEditStaffTitle').textContent = `Edit: ${staff.firstName||''} ${staff.lastName||''}`.trim() || 'Staff';
+
+  // Populate profile fields
+  document.getElementById('schEditStaffFirst').value = staff.firstName || '';
+  document.getElementById('schEditStaffLast').value = staff.lastName || '';
+  document.getElementById('schEditStaffEmail').value = staff.email || '';
+  document.getElementById('schEditStaffPhone').value = staff.phone || '';
+  document.getElementById('schEditStaffPhotoFile').value = '';
+  const photoPreview = document.getElementById('schEditStaffPhotoPreview');
+  if (staff.avatarUrl) { photoPreview.src = staff.avatarUrl; photoPreview.style.display = 'block'; }
+  else { photoPreview.src = ''; photoPreview.style.display = 'none'; }
 
   // Populate role dropdown
   const roleSel = document.getElementById('schEditStaffRoleSelect');
@@ -3407,6 +3899,9 @@ document.getElementById('schSaveStaffBtn').addEventListener('click', async () =>
   const errEl = document.getElementById('schEditStaffError');
   errEl.textContent = '';
   const uid = document.getElementById('schEditStaffUid').value;
+  const firstName = document.getElementById('schEditStaffFirst').value.trim();
+  const lastName = document.getElementById('schEditStaffLast').value.trim();
+  const phone = document.getElementById('schEditStaffPhone').value.trim();
   const role = document.getElementById('schEditStaffRoleSelect').value;
   const branch = document.getElementById('schEditStaffBranchSelect').value;
   const status = document.getElementById('schEditStaffStatusSelect').value;
@@ -3415,18 +3910,30 @@ document.getElementById('schSaveStaffBtn').addEventListener('click', async () =>
     errEl.textContent = 'Role is required.';
     return;
   }
+  if (!firstName || !lastName) {
+    errEl.textContent = 'First and last name are required.';
+    return;
+  }
 
   const btn = document.getElementById('schSaveStaffBtn');
   btn.disabled = true;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
 
   try {
-    await updateDoc(doc(db, "schools", currentSchoolId, "staff", uid), {
+    const updates = {
+      firstName, lastName, phone,
       role,
       branch: (role === 'BranchManager' && branch) ? branch : null,
       status,
       updatedAt: serverTimestamp()
-    });
+    };
+
+    const photoFile = document.getElementById('schEditStaffPhotoFile').files[0];
+    if (photoFile) {
+      updates.avatarUrl = await uploadSchoolImage(photoFile);
+    }
+
+    await updateDoc(doc(db, "schools", currentSchoolId, "staff", uid), updates);
     closeModal('schEditStaffModal');
     showToast('Staff updated ✓');
   } catch(e) {
@@ -3454,10 +3961,14 @@ document.getElementById('schDeleteStaffBtn').addEventListener('click', async () 
 });
 
 // ── Open Edit Role modal (global role permissions) ──
-window.openEditRoleModal = function(roleKey){
+window.openEditRoleModal = async function(roleKey){
+  // Ensure roles are loaded
+  if (Object.keys(allRoles).length === 0) {
+    await loadRolesDefinitions();
+  }
   const role = allRoles[roleKey];
   if (!role) {
-    showToast('Role not found.', true);
+    showToast('Role not found. Please ensure roles are seeded.', true);
     return;
   }
 
@@ -3475,6 +3986,7 @@ window.openEditRoleModal = function(roleKey){
 
   if (!pageNames.length) {
     matrix.innerHTML = '<div style="color:var(--slate-dim);font-size:13px;">No pages defined for this role.</div>';
+    openModal('schEditRoleModal');
     return;
   }
 
@@ -3492,9 +4004,6 @@ window.openEditRoleModal = function(roleKey){
     html += `<tr>
       <td style="padding:8px 8px;border-bottom:1px solid var(--border-subtle);font-size:13px;font-weight:500;">${page.charAt(0).toUpperCase()+page.slice(1)}</td>`;
     actions.forEach(a => {
-      // Back-compat: roles saved before "Page Access" existed have no explicit
-      // `access` field — fall back to their `read` value so nothing changes
-      // for existing staff until the admin re-saves this role.
       const rawVal = (a === 'access' && perms.access === undefined) ? perms.read : perms[a];
       const checked = rawVal === true ? 'checked' : '';
       html += `<td style="padding:8px 8px;text-align:center;border-bottom:1px solid var(--border-subtle);">
@@ -3553,11 +4062,3 @@ document.getElementById('schSaveRoleBtn').addEventListener('click', async () => 
     btn.innerHTML = '<i class="fas fa-save"></i> Save permissions';
   }
 });
-
-/* ============================================================
-   REMAINING GAPS (documented, not yet built in this pass):
-   - Lessons/Quizzes are still shared/platform-wide placeholders.
-   - Classes: no vehicle/student assignment or conflict checking.
-   - Certificates: view/delete only, no generation UI.
-   - Portal Profile page (top-level) still says "wire back in".
-============================================================ */

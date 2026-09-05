@@ -1,4 +1,4 @@
-<!-- Landing page-->
+<!-- Landing page, old-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1225,7 +1225,7 @@
         <div class="nav-links" id="navLinks">
             <a href="#" class="btn-home active">Home</a>
             <a href="about.html" class="btn-about">About Us</a>
-            <a href="mailto:trevorisadude@gmail.com" class="btn-contact" id="navContactBtn">Contact Us</a>
+            <a href="mailto:trevorisadude@gmail.com" class="btn-contact">Contact Us</a>
         </div>
     </nav>
 
@@ -1250,22 +1250,22 @@
         <div class="scene-caption">
             <p class="eyebrow">Marvini Smart Driving School Solution</p>
             <h1>M-Smart Driving School Solution.</h1>
-            <p id="heroIntro">Pick your driving school below and we'll take you straight to their website, no more bookmarking a dozen different sites.</p>
+            <p>Pick your driving school below and we'll take you straight to their website, no more bookmarking a dozen different sites.</p>
 
             <div class="stats-mini-card">
                 <div class="stat-item">
-                    <span class="stat-num" id="pfStat1Num">0</span>
-                    <span class="stat-label" id="pfStat1Label">Schools</span>
+                    <span class="stat-num" id="statCardSchools">0</span>
+                    <span class="stat-label">Schools</span>
                 </div>
                 <div class="stat-sep"></div>
                 <div class="stat-item">
-                    <span class="stat-num" id="pfStat2Num">0</span>
-                    <span class="stat-label" id="pfStat2Label">Cities</span>
+                    <span class="stat-num" id="statCardRegions">0</span>
+                    <span class="stat-label">Regions</span>
                 </div>
                 <div class="stat-sep"></div>
                 <div class="stat-item">
-                    <span class="stat-num" id="pfStat3Num">1</span>
-                    <span class="stat-label" id="pfStat3Label">Portal</span>
+                    <span class="stat-num">1</span>
+                    <span class="stat-label">Portal</span>
                 </div>
             </div>
         </div>
@@ -1279,8 +1279,8 @@
                         <img src="img/m-smart_driving_solution -logo.png" alt="M-Smart Driving SchoolSolution Logo" width="50" height="50" style="border-radius: 10px;"/>
                     </div>
                     <div class="brand-text">
-                        <h2 id="brandName">M-Smart Driving School Solution</h2>
-                        <span id="brandTagline">Ghana's leading driving school portal</span>
+                        <h2>M-Smart Driving School Solution</h2>
+                        <span>Ghana's leading driving school portal</span>
                     </div>
                 </div>
                 <div class="divider"></div>
@@ -1800,46 +1800,38 @@ Contact the Portal Team
     // Initialize - load schools + profile + live stats
     await loadSchools();
 
-    // Live school & region counts (feed the PM/GM bio card's auto stats)
-    const schoolCount = window.schools.length;
-    const regionCount = new Set(window.schools.map(s => s.loc).filter(Boolean)).size;
-    const pfStat1Num = document.getElementById('pfStat1Num');
-    const pfStat2Num = document.getElementById('pfStat2Num');
-    if (pfStat1Num) pfStat1Num.textContent = schoolCount > 0 ? schoolCount : '0';
-    if (pfStat2Num) pfStat2Num.textContent = regionCount > 0 ? regionCount : '0';
-
-    // Load stat labels/stat3 number from portalSettings/pmgmBio (name/badge/role/bio/photo
-    // stay off this page — they belong on about.html only)
+    // Live school & region counts from Firestore
     try {
-        const { doc: fsDoc, getDoc } = await import("firebase/firestore");
-        const bioSnap = await getDoc(fsDoc(db, 'portalSettings', 'pmgmBio'));
-        if (bioSnap.exists()) {
-            const p = bioSnap.data();
-            if (p.stat1Label) document.getElementById('pfStat1Label').textContent = p.stat1Label;
-            if (p.stat2Label) document.getElementById('pfStat2Label').textContent = p.stat2Label;
-            if (p.stat3Num) document.getElementById('pfStat3Num').textContent = p.stat3Num;
-            if (p.stat3Label) document.getElementById('pfStat3Label').textContent = p.stat3Label;
-        }
+        const schoolCardNum = document.getElementById('statCardSchools');
+        const regionCardNum = document.getElementById('statCardRegions');
+        const schoolCount = window.schools.length;
+        const regionCount = new Set(window.schools.map(s => s.loc).filter(Boolean)).size;
+        schoolCardNum.textContent = schoolCount > 0 ? schoolCount : '0';
+        regionCardNum.textContent = regionCount > 0 ? regionCount : '0';
     } catch (e) {
-        console.warn('Stat labels fetch:', e.message);
+        console.warn('Stats count:', e.message);
     }
 
-    // Load public site content from portalSettings/siteSettings
+    // Load portal profile from Firestore config doc
     try {
         const { doc: fsDoc, getDoc } = await import("firebase/firestore");
-        const siteSnap = await getDoc(fsDoc(db, 'portalSettings', 'siteSettings'));
-        if (siteSnap.exists()) {
-            const s = siteSnap.data();
-            if (s.name) document.getElementById('brandName').textContent = s.name;
-            if (s.tagline) document.getElementById('brandTagline').textContent = s.tagline;
-            if (s.bio) document.getElementById('heroIntro').textContent = s.bio;
-            if (s.email) {
-                document.getElementById('navContactBtn').href = `mailto:${s.email}`;
-                document.getElementById('contactLink').href = `mailto:${s.email}`;
+        const profSnap = await getDoc(fsDoc(db, 'config', 'portalProfile'));
+        if (profSnap.exists()) {
+            const p = profSnap.data();
+            if (p.name) document.querySelector('.profile-name').textContent = p.name;
+            if (p.badge) document.querySelector('.profile-badge').textContent = p.badge;
+            if (p.role) document.querySelector('.profile-role').textContent = p.role;
+            if (p.bio) document.querySelector('.profile-bio').textContent = p.bio;
+            // stat3 (Portal) is the only one still editable from profile
+            if (p.stat3Num) document.querySelectorAll('.stat-num')[2].textContent = p.stat3Num;
+            if (p.stat3Label) document.querySelectorAll('.stat-label')[2].textContent = p.stat3Label;
+            if (p.imgSrc) {
+                const img = document.querySelector('.profile-img');
+                if (img) img.src = p.imgSrc; // respects existing onerror fallback
             }
         }
     } catch (e) {
-        console.warn('Site settings fetch:', e.message);
+        console.warn('Profile fetch:', e.message);
     }
 </script>
 

@@ -1999,27 +1999,29 @@ try {
   console.warn('Stats count:', e.message);
 }
 
-// Portal profile (name, badge, role, bio, image, stat3)
+// PM/GM bio (name, badge, role, bio, image, stat labels + stat3)
 try {
-  const profSnap = await getDoc(doc(db, 'config', 'portalProfile'));
-  if (profSnap.exists()) {
-    const p = profSnap.data();
+  const bioSnap = await getDoc(doc(db, 'portalSettings', 'pmgmBio'));
+  if (bioSnap.exists()) {
+    const p = bioSnap.data();
     const profileCard = document.querySelector('.glass-profile');
     if (profileCard) {
       if (p.name)       profileCard.querySelector('.profile-name').textContent  = p.name;
       if (p.badge)      profileCard.querySelector('.profile-badge').textContent = p.badge;
       if (p.role)       profileCard.querySelector('.profile-role').textContent  = p.role;
-      if (p.bio)        profileCard.querySelector('.profile-bio').textContent   = p.bio;
+      if (p.bio)        profileCard.querySelector('#profileBioText').textContent = p.bio;
+      if (p.stat1Label) profileCard.querySelectorAll('.stat-label')[0].textContent = p.stat1Label;
+      if (p.stat2Label) profileCard.querySelectorAll('.stat-label')[1].textContent = p.stat2Label;
       if (p.stat3Num)   profileCard.querySelectorAll('.stat-num')[2].textContent   = p.stat3Num;
       if (p.stat3Label) profileCard.querySelectorAll('.stat-label')[2].textContent = p.stat3Label;
-      if (p.imgSrc) {
+      if (p.imageUrl) {
         const img = profileCard.querySelector('.profile-img');
-        if (img) img.src = p.imgSrc;
+        if (img) img.src = p.imageUrl;
       }
     }
   }
 } catch (e) {
-  console.warn('Profile fetch:', e.message);
+  console.warn('PM/GM bio fetch:', e.message);
 }
 </script>
 

@@ -1413,6 +1413,16 @@ window.resetInstructorPassword = async function(email){
   } catch(e) { showToast('Could not send reset email: ' + e.message, true); }
 };
 
+// ── STAFF PASSWORD RESET (used by the Staff Management table) ──
+window.resetStaffPassword = async function(email){
+  if (!email) { showToast('This staff member has no email on file.', true); return; }
+  if (!(await showConfirm('Send password reset', `Send a password reset link to ${email}?`))) return;
+  try {
+    await sendPasswordResetEmail(auth, email);
+    showToast(`Password reset email sent to ${email} ✓`);
+  } catch(e) { showToast('Could not send reset email: ' + e.message, true); }
+};
+
 // ============================================================
 // LESSONS & QUIZZES (platform-wide — unchanged, still placeholders)
 // ============================================================
@@ -3817,6 +3827,7 @@ function renderSchoolStaff(){
       <td><span class="badge ${statusClass}">${escapeHtml(s.status||'active')}</span></td>
       <td class="row-actions">
         <button class="icon-btn" title="Edit staff" onclick="window.openEditStaffModal('${s.id}')"><i class="fas fa-pen"></i></button>
+        <button class="icon-btn" title="Send password reset" onclick="window.resetStaffPassword('${escapeHtml(s.email||'')}')"><i class="fas fa-key"></i></button>
         <button class="icon-btn" title="Edit role permissions" onclick="window.openEditRoleModal('${s.role}')"><i class="fas fa-shield-alt"></i></button>
       </td>
     </tr>`;

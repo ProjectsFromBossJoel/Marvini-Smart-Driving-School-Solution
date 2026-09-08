@@ -27,7 +27,7 @@ const schoolsCol = collection(db, "schools");
 // ── Cloudinary (reusing Marvini's existing cloud) ──
 const CLOUDINARY_CLOUD = "drs2xpwho";
 // ── Manual password reset — Vercel function backed by Firebase Admin SDK ──
-const MANUAL_PASSWORD_RESET_API = "https://YOUR-VERCEL-PROJECT.vercel.app/api/manual-reset-password";
+const MANUAL_PASSWORD_RESET_API = "https://marvini-smart-driving-school-solution.vercel.app/api/manual-reset-password";
 // NOTE: create this UNSIGNED upload preset in the Cloudinary console before
 // school image uploads will work: Settings > Upload > Add upload preset,
 // name it exactly "school_images_upload", signing mode = Unsigned.

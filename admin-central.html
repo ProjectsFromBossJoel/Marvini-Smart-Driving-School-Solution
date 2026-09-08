@@ -995,6 +995,23 @@
   </div>
 </div>
 
+<!-- ================= MANUAL PASSWORD RESET MODAL ================= -->
+<div class="overlay" id="manualPasswordModal">
+  <div class="modal" style="width:400px;">
+    <div class="modal-head"><h3>Set new password</h3><button class="modal-close" onclick="window.closeModal('manualPasswordModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="manualPwdTargetUid">
+      <p style="font-size:12.5px;color:var(--slate-dim);margin:0 0 14px;line-height:1.6;">This immediately overwrites the account's password. The user is not notified — share the new password with them directly.</p>
+      <div class="field"><label>New password</label><input id="manualPwdNewValue" type="text" placeholder="Enter a new password (min. 6 characters)"></div>
+      <p class="form-error" id="manualPwdError"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('manualPasswordModal')">Cancel</button>
+      <button class="btn btn-primary" id="manualPwdSaveBtn"><i class="fas fa-key"></i> Set password</button>
+    </div>
+  </div>
+</div>
+
 <!-- ================= PROFILE PHOTO VIEW MODAL ================= -->
 <div class="overlay" id="myProfileImgViewModal">
   <div class="modal" style="width:360px;">

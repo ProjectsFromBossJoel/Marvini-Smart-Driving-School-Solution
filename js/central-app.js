@@ -26,6 +26,8 @@ const schoolsCol = collection(db, "schools");
 
 // ── Cloudinary (reusing Marvini's existing cloud) ──
 const CLOUDINARY_CLOUD = "drs2xpwho";
+// ── Manual password reset — Vercel function backed by Firebase Admin SDK ──
+const MANUAL_PASSWORD_RESET_API = "https://YOUR-VERCEL-PROJECT.vercel.app/api/manual-reset-password";
 // NOTE: create this UNSIGNED upload preset in the Cloudinary console before
 // school image uploads will work: Settings > Upload > Add upload preset,
 // name it exactly "school_images_upload", signing mode = Unsigned.
@@ -943,7 +945,10 @@ window.openStudentDetail = function(uid){
       </select>
     </div>
     <div class="field" style="font-size:11.5px;color:var(--slate-dim);">Enrolled: ${s.enrolDate ? escapeHtml(s.enrolDate) : fmtDate(s.createdAt)}</div>
-    <button class="btn btn-outline" style="width:100%;margin-top:6px;" onclick="window.resetStudentPassword('${s.email||''}')"><i class="fas fa-key"></i> Send password reset email</button>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button class="btn btn-outline" style="flex:1;" onclick="window.resetStudentPassword('${s.email||''}')"><i class="fas fa-key"></i> Email reset link</button>
+      <button class="btn btn-outline" style="flex:1;" onclick="window.openManualPasswordModal('${uid}')"><i class="fas fa-user-shield"></i> Set manually</button>
+    </div>
   `;
   document.getElementById('schStudentSaveBtn').onclick = () => saveStudentDetail(uid);
   document.getElementById('schStudentDeleteBtn').onclick = () => deleteStudentDetail(uid);
@@ -1319,7 +1324,10 @@ window.openInstructorDetail = function(uid){
         <option value="inactive" ${i.status==='inactive'?'selected':''}>Inactive</option>
       </select>
     </div>
-    <button class="btn btn-outline" style="width:100%;margin-top:6px;" onclick="window.resetInstructorPassword('${i.email||''}')"><i class="fas fa-key"></i> Send password reset email</button>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button class="btn btn-outline" style="flex:1;" onclick="window.resetInstructorPassword('${i.email||''}')"><i class="fas fa-key"></i> Email reset link</button>
+      <button class="btn btn-outline" style="flex:1;" onclick="window.openManualPasswordModal('${uid}')"><i class="fas fa-user-shield"></i> Set manually</button>
+    </div>
   `;
 
   wireInstrFilePreview2('schInstrEditPhotoFile', (url) => { _schInstrEditPhoto = url; });
@@ -1412,6 +1420,43 @@ window.resetInstructorPassword = async function(email){
     showToast(`Password reset email sent to ${email} ✓`);
   } catch(e) { showToast('Could not send reset email: ' + e.message, true); }
 };
+
+// ── Manual password set (superAdmin only, direct overwrite via Vercel function) ──
+window.openManualPasswordModal = function(uid){
+  if (!uid) { showToast('No account found for this user.', true); return; }
+  document.getElementById('manualPwdTargetUid').value = uid;
+  document.getElementById('manualPwdNewValue').value = '';
+  document.getElementById('manualPwdError').textContent = '';
+  openModal('manualPasswordModal');
+};
+
+document.getElementById('manualPwdSaveBtn').addEventListener('click', async () => {
+  const errEl = document.getElementById('manualPwdError');
+  errEl.textContent = '';
+  const targetUid = document.getElementById('manualPwdTargetUid').value;
+  const newPassword = document.getElementById('manualPwdNewValue').value;
+
+  if (!newPassword || newPassword.length < 6) { errEl.textContent = 'Enter a password of at least 6 characters.'; return; }
+
+  const btn = document.getElementById('manualPwdSaveBtn');
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+  try {
+    const idToken = await auth.currentUser.getIdToken();
+    const res = await fetch(MANUAL_PASSWORD_RESET_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken, targetUid, newPassword })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not set password.');
+    closeModal('manualPasswordModal');
+    showToast('Password updated ✓');
+  } catch(e) {
+    errEl.textContent = e.message;
+  } finally {
+    btn.disabled = false; btn.innerHTML = '<i class="fas fa-key"></i> Set password';
+  }
+});
 
 // ── STAFF PASSWORD RESET (used by the Staff Management table) ──
 window.resetStaffPassword = async function(email){
@@ -3827,7 +3872,8 @@ function renderSchoolStaff(){
       <td><span class="badge ${statusClass}">${escapeHtml(s.status||'active')}</span></td>
       <td class="row-actions">
         <button class="icon-btn" title="Edit staff" onclick="window.openEditStaffModal('${s.id}')"><i class="fas fa-pen"></i></button>
-        <button class="icon-btn" title="Send password reset" onclick="window.resetStaffPassword('${escapeHtml(s.email||'')}')"><i class="fas fa-key"></i></button>
+        <button class="icon-btn" title="Send password reset email" onclick="window.resetStaffPassword('${escapeHtml(s.email||'')}')"><i class="fas fa-key"></i></button>
+        <button class="icon-btn" title="Set password manually" onclick="window.openManualPasswordModal('${s.id}')"><i class="fas fa-user-shield"></i></button>
         <button class="icon-btn" title="Edit role permissions" onclick="window.openEditRoleModal('${s.role}')"><i class="fas fa-shield-alt"></i></button>
       </td>
     </tr>`;

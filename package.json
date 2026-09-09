@@ -1,0 +1,24 @@
+{
+  "name": "marvini-smart-driving-solution",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ProjectsFromBossJoel/Marvini-Smart-Driving-School-Solution.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/ProjectsFromBossJoel/Marvini-Smart-Driving-School-Solution/issues"
+  },
+  "homepage": "https://github.com/ProjectsFromBossJoel/Marvini-Smart-Driving-School-Solution#readme",
+  "dependencies": {
+    "firebase-admin": "^14.3.0"
+  }
+}

@@ -3805,6 +3805,8 @@ async function seedDefaultRoles(){
         classes: { access: true, read: true, create: true, update: true, delete: true },
         vehicles: { access: true, read: true, create: true, update: true, delete: true },
         certificates: { access: true, read: true, create: true, update: true, delete: true },
+        lessons: { access: true, read: true, create: true, update: true, delete: true },
+        quizzes: { access: true, read: true, create: true, update: true, delete: true },
         enquiries: { access: true, read: true, create: false, update: true, delete: false },
         notifications: { access: true, read: false, create: true, update: false, delete: false },
         permissions: { access: true, read: false, create: false, update: false, delete: false },
@@ -3823,6 +3825,8 @@ async function seedDefaultRoles(){
         classes: { access: true, read: true, create: true, update: true, delete: false },
         vehicles: { access: true, read: true, create: false, update: false, delete: false },
         certificates: { access: true, read: true, create: false, update: false, delete: false },
+        lessons: { access: true, read: true, create: false, update: false, delete: false },
+        quizzes: { access: true, read: true, create: false, update: false, delete: false },
         enquiries: { access: true, read: true, create: false, update: true, delete: false },
         notifications: { access: false, read: false, create: false, update: false, delete: false },
         permissions: { access: false, read: false, create: false, update: false, delete: false },
@@ -3841,6 +3845,8 @@ async function seedDefaultRoles(){
         classes: { access: true, read: true, create: true, update: true, delete: false },
         vehicles: { access: true, read: true, create: false, update: false, delete: false },
         certificates: { access: true, read: true, create: false, update: false, delete: false },
+        lessons: { access: true, read: true, create: false, update: false, delete: false },
+        quizzes: { access: true, read: true, create: false, update: false, delete: false },
         enquiries: { access: true, read: true, create: false, update: true, delete: false },
         notifications: { access: false, read: false, create: false, update: false, delete: false },
         permissions: { access: false, read: false, create: false, update: false, delete: false },
@@ -4134,6 +4140,10 @@ window.openEditRoleModal = async function(roleKey){
   // Build the permission matrix
   const matrix = document.getElementById('schEditRoleMatrix');
   const pages = role.pages || {};
+  // Backfill rows for roles that were seeded before Lessons/Quizzes existed,
+  // so the checkboxes still show up (defaulting to hidden until explicitly enabled)
+  if (!pages.lessons) pages.lessons = { access: false, read: false, create: false, update: false, delete: false };
+  if (!pages.quizzes) pages.quizzes = { access: false, read: false, create: false, update: false, delete: false };
   const pageNames = Object.keys(pages).sort();
   const actions = ['access', 'create', 'read', 'update', 'delete'];
   const actionLabels = { access: 'Page Access', create: 'Create', read: 'Read', update: 'Update', delete: 'Delete' };

@@ -1,4 +1,4 @@
-const admin = require('firebase-admin');
+import admin from 'firebase-admin';
 
 if (!admin.apps.length) {
   admin.initializeApp({
@@ -10,7 +10,7 @@ if (!admin.apps.length) {
   });
 }
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   // CORS — restrict this to your Firebase Hosting domain once live
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');

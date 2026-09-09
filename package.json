@@ -20,5 +20,8 @@
   "homepage": "https://github.com/ProjectsFromBossJoel/Marvini-Smart-Driving-School-Solution#readme",
   "dependencies": {
     "firebase-admin": "^14.3.0"
+  },
+  "overrides": {
+    "jose": "^4.15.5"
   }
 }

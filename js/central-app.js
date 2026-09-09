@@ -1458,7 +1458,30 @@ document.getElementById('manualPwdSaveBtn').addEventListener('click', async () =
   }
 });
 
-// ── STAFF PASSWORD RESET (used by the Staff Management table) ──
+// ── STAFF PASSWORD OPTIONS MODAL (used by the Staff Management table) ──
+window.openStaffPasswordOptions = function(uid, email){
+  document.getElementById('schStaffPwdTargetUid').value = uid || '';
+  document.getElementById('schStaffPwdTargetEmail').value = email || '';
+  openModal('schStaffPasswordModal');
+};
+
+window.chooseUpdateManually = function(){
+  const uid = document.getElementById('schStaffPwdTargetUid').value;
+  closeModal('schStaffPasswordModal');
+  window.openManualPasswordModal(uid);
+};
+
+window.chooseSendResetEmail = async function(){
+  const email = document.getElementById('schStaffPwdTargetEmail').value;
+  closeModal('schStaffPasswordModal');
+  if (!email) { showToast('This staff member has no email on file.', true); return; }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    showToast(`Password reset email sent to ${email} ✓`);
+  } catch(e) { showToast('Could not send reset email: ' + e.message, true); }
+};
+
+// Kept for the Students/Instructors detail modals, which still use the direct email-reset button.
 window.resetStaffPassword = async function(email){
   if (!email) { showToast('This staff member has no email on file.', true); return; }
   if (!(await showConfirm('Send password reset', `Send a password reset link to ${email}?`))) return;
@@ -3872,8 +3895,7 @@ function renderSchoolStaff(){
       <td><span class="badge ${statusClass}">${escapeHtml(s.status||'active')}</span></td>
       <td class="row-actions">
         <button class="icon-btn" title="Edit staff" onclick="window.openEditStaffModal('${s.id}')"><i class="fas fa-pen"></i></button>
-        <button class="icon-btn" title="Send password reset email" onclick="window.resetStaffPassword('${escapeHtml(s.email||'')}')"><i class="fas fa-key"></i></button>
-        <button class="icon-btn" title="Set password manually" onclick="window.openManualPasswordModal('${s.id}')"><i class="fas fa-user-shield"></i></button>
+        <button class="icon-btn" title="Password options" onclick="window.openStaffPasswordOptions('${s.id}','${escapeHtml(s.email||'')}')"><i class="fas fa-key"></i></button>
         <button class="icon-btn" title="Edit role permissions" onclick="window.openEditRoleModal('${s.role}')"><i class="fas fa-shield-alt"></i></button>
       </td>
     </tr>`;

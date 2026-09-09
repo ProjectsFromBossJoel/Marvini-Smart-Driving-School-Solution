@@ -995,6 +995,22 @@
   </div>
 </div>
 
+<!-- ================= STAFF PASSWORD OPTIONS MODAL ================= -->
+<div class="overlay" id="schStaffPasswordModal">
+  <div class="modal" style="width:400px;">
+    <div class="modal-head"><h3>Password options</h3><button class="modal-close" onclick="window.closeModal('schStaffPasswordModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="schStaffPwdTargetUid">
+      <input type="hidden" id="schStaffPwdTargetEmail">
+      <p style="font-size:13px;color:var(--slate);margin:0 0 18px;line-height:1.6;">Choose how you'd like to reset this staff member's password.</p>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button class="btn btn-primary" style="justify-content:center;" onclick="window.chooseUpdateManually()"><i class="fas fa-user-shield"></i> Update Manually</button>
+        <button class="btn btn-outline" style="justify-content:center;" onclick="window.chooseSendResetEmail()"><i class="fas fa-key"></i> Send Reset Email Link</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ================= MANUAL PASSWORD RESET MODAL ================= -->
 <div class="overlay" id="manualPasswordModal">
   <div class="modal" style="width:400px;">

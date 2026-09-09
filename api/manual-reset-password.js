@@ -1,14 +1,19 @@
-import admin from 'firebase-admin';
+import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
+import { getFirestore } from 'firebase-admin/firestore';
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
+if (!getApps().length) {
+  initializeApp({
+    credential: cert({
       projectId: process.env.FIREBASE_PROJECT_ID,
       clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
       privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
     }),
   });
 }
+
+const auth = getAuth();
+const db = getFirestore();
 
 export default async function handler(req, res) {
   // CORS — restrict this to your Firebase Hosting domain once live
@@ -27,8 +32,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const decoded = await admin.auth().verifyIdToken(idToken);
-    const db = admin.firestore();
+    const decoded = await auth.verifyIdToken(idToken);
     const callerDoc = await db.collection('users').doc(decoded.uid).get();
     const callerRole = callerDoc.exists ? callerDoc.data().role : null;
 
@@ -36,7 +40,7 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: 'Not authorized. Super admin access required.' });
     }
 
-    await admin.auth().updateUser(targetUid, { password: newPassword });
+    await auth.updateUser(targetUid, { password: newPassword });
     return res.status(200).json({ success: true });
   } catch (err) {
     console.error('manual-reset-password error:', err);

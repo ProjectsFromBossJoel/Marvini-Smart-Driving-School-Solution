@@ -243,13 +243,13 @@
       <a class="nav-link active" data-school-page="overview"><i class="fas fa-th-large"></i><span class="label">Overview</span></a>
       <a class="nav-link" data-school-page="students"><i class="fas fa-user-graduate"></i><span class="label">Students</span></a>
       <a class="nav-link" data-school-page="instructors"><i class="fas fa-chalkboard-teacher"></i><span class="label">Instructors</span></a>
+      <a class="nav-link" data-school-page="courses"><i class="fas fa-book"></i><span class="label">Courses</span></a>
       <a class="nav-link" data-school-page="attendance"><i class="fas fa-calendar-check"></i><span class="label">Attendance</span></a>
       <a class="nav-link" data-school-page="classes"><i class="fas fa-chalkboard"></i><span class="label">Classes</span></a>
       <a class="nav-link" data-school-page="vehicles"><i class="fas fa-car-side"></i><span class="label">Vehicles</span></a>
       <a class="nav-link" data-school-page="certificates"><i class="fas fa-certificate"></i><span class="label">Certificates</span></a>
       <a class="nav-link" data-school-page="notifications"><i class="fas fa-bell"></i><span class="label">Notifications</span></a>
       <a class="nav-link" data-school-page="enquiries"><i class="fas fa-headset"></i><span class="label">Enquiries</span> <span class="badge warn" id="schEnquiriesNavBadge" style="display:none;margin-left:auto;">0</span></a>
-      <a class="nav-link" data-school-page="permissions"><i class="fas fa-shield-alt"></i><span class="label">Permissions</span></a>
       <a class="nav-link" data-school-page="staff"><i class="fas fa-user-tie"></i><span class="label">Staff</span></a>  
       <a class="nav-link" data-school-page="settings"><i class="fas fa-cog"></i><span class="label">School Settings</span></a>
     </nav>
@@ -385,6 +385,19 @@
             </table>
           </div>
         </div>
+        <div class="school-subpage" id="schoolsub-courses" style="display:none;">
+          <div class="schools-toolbar">
+            <input class="search-input" id="schCourseSearch" type="text" placeholder="Search by course name…">
+            <button class="btn btn-primary" id="schOpenAddCourseBtn"><i class="fas fa-plus"></i> Add course</button>
+          </div>
+          <div class="panel">
+            <table>
+              <thead><tr><th>Course</th><th>Category</th><th>Duration</th><th>Price</th><th>Enrolled</th><th>Staffing</th><th></th></tr></thead>
+              <tbody id="schCoursesTableBody"><tr class="empty-row"><td colspan="7">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="school-subpage" id="schoolsub-attendance" style="display:none;">
           <div class="schools-toolbar">
             <input class="search-input" id="schAttSearch" type="text" placeholder="Search by student name…">
@@ -450,6 +463,7 @@
                 </div>
                 <div class="field">
                   <label>Recipient</label>
+                  <input type="text" id="schNotifRecipientSearch" placeholder="Search students / instructors…" style="width:100%;padding:9px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-size:13px;margin-bottom:8px;" oninput="window.filterSchNotifRecipients(this.value)">
                   <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-weight:600;color:var(--amber);border-bottom:1px solid var(--border);margin-bottom:8px;">
                     <input type="checkbox" id="schNotifyAll" onchange="window.toggleSchAllRecipients(this)" style="accent-color:var(--amber);">
                     <span id="schNotifyAllLabel">All students</span>
@@ -513,21 +527,7 @@
           </div>
         </div>
 
-         <!-- Permissions -->
-        <div class="school-subpage" id="schoolsub-permissions" style="display:none;">
-          <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
-            <button class="btn btn-primary" id="schPermTabStudentBtn" onclick="window.switchSchPermTab('student')">Student permissions</button>
-            <button class="btn btn-outline" id="schPermTabInstructorBtn" onclick="window.switchSchPermTab('instructor')">Instructor permissions</button>
-          </div>
-          <div class="panel" id="schPermStudentPanel">
-            <div class="panel-head"><h3>Student dashboard permissions</h3><button class="btn btn-primary" onclick="window.saveSchPermissions('student')"><i class="fas fa-save"></i> Save</button></div>
-            <div style="padding:20px;display:flex;flex-direction:column;gap:10px;" id="schPermStudentList">Loading…</div>
-          </div>
-          <div class="panel" id="schPermInstructorPanel" style="display:none;">
-            <div class="panel-head"><h3>Instructor dashboard permissions</h3><button class="btn btn-primary" onclick="window.saveSchPermissions('instructor')"><i class="fas fa-save"></i> Save</button></div>
-            <div style="padding:20px;display:flex;flex-direction:column;gap:10px;" id="schPermInstructorList">Loading…</div>
-          </div>
-        </div>
+
 
         <!-- Staff Management -->
         <div class="school-subpage" id="schoolsub-staff" style="display:none;">
@@ -839,6 +839,11 @@
         </select>
       </div>
       <div class="field">
+        <label>Role</label>
+        <select id="schNewRole" class="field-select"><option value="Standard">Standard</option></select>
+        <div style="font-size:11px;color:var(--slate-dim);margin-top:4px;">Controls which portal features this student can access.</div>
+      </div>
+      <div class="field">
         <label>Student photo <span style="color:var(--slate-dim);font-weight:400;">(optional)</span></label>
         <div class="img-upload-area" onclick="document.getElementById('schNewStudentPhotoFile').click()">
           <i class="fas fa-camera" style="color:var(--amber);margin-right:6px;"></i>
@@ -907,6 +912,10 @@
       <div class="form-row">
         <div class="field"><label>Date of engagement</label><input id="schInstrNewEngagementDate" type="date"></div>
         <div class="field"><label>Years of experience</label><input id="schInstrNewExp" type="number" min="0" placeholder="5"></div>
+      </div>
+      <div class="field"><label>Role</label>
+        <select id="schInstrNewRole" class="field-select"><option value="Standard">Standard</option></select>
+        <div style="font-size:11px;color:var(--slate-dim);margin-top:4px;">Controls which portal features this instructor can access.</div>
       </div>
 
       <div class="field"><label>Ghana Card number</label><input id="schInstrNewGhCardNumber" type="text" placeholder="GHA-123456789-1"></div>
@@ -1166,6 +1175,81 @@
   </div>
 </div>
 
+<!-- ================= ADD/EDIT COURSE MODAL ================= -->
+<div class="overlay" id="schCourseModal">
+  <div class="modal" style="width:560px;">
+    <div class="modal-head"><h3 id="schCourseModalTitle">Add course</h3><button class="modal-close" onclick="window.closeModal('schCourseModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="schCourseId">
+      <div class="field">
+        <label>Course name</label>
+        <select id="schCourseNameSelect" class="field-select" onchange="window.toggleSchCourseCustomName(this)">
+          <option value="">Select course…</option>
+          <option value="Manual">Manual Transmission</option>
+          <option value="Automatic">Automatic Transmission</option>
+          <option value="Motorcycle">Motorcycle</option>
+          <option value="Commercial Bus">Commercial Bus</option>
+          <option value="Truck / HGV">Truck / HGV</option>
+          <option value="__custom__">+ Type a custom course name…</option>
+        </select>
+        <input type="text" id="schCourseNameCustom" placeholder="Enter custom course name…" style="display:none;margin-top:8px;">
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Category</label>
+          <select id="schCourseCategory" class="field-select">
+            <option value="personal">Personal</option>
+            <option value="commercial">Commercial</option>
+          </select>
+        </div>
+        <div class="field"><label>Duration</label>
+          <select id="schCourseDuration" class="field-select">
+            <option value="">Select duration…</option>
+            <option value="1 week">1 week</option>
+            <option value="2 weeks">2 weeks</option>
+            <option value="3 weeks">3 weeks</option>
+            <option value="4 weeks">4 weeks</option>
+            <option value="4 – 6 weeks">4 – 6 weeks</option>
+            <option value="6 – 8 weeks">6 – 8 weeks</option>
+            <option value="6 – 10 weeks">6 – 10 weeks</option>
+            <option value="8 – 12 weeks">8 – 12 weeks</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Price (GH₵)</label><input id="schCoursePrice" type="number" placeholder="800"></div>
+        <div class="field"><label>Level</label>
+          <select id="schCourseLevel" class="field-select">
+            <option value="beginner">Beginner</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="advanced">Advanced</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Description</label><textarea id="schCourseDesc" rows="2" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-family:inherit;"></textarea></div>
+      <div class="field"><label>Icon</label>
+        <select id="schCourseIcon" class="field-select">
+          <option value="fa-car">🚗 Car (Manual / Automatic)</option>
+          <option value="fa-motorcycle">🏍 Motorcycle</option>
+          <option value="fa-bus">🚌 Bus / Commercial</option>
+          <option value="fa-truck">🚛 Truck / HGV</option>
+        </select>
+      </div>
+      <div class="field"><label>Assigned students</label>
+        <div id="schCourseStudentList" style="max-height:160px;overflow-y:auto;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--asphalt-deep);"></div>
+      </div>
+      <div class="field"><label>Assigned instructors</label>
+        <div id="schCourseInstructorList" style="max-height:160px;overflow-y:auto;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--asphalt-deep);"></div>
+      </div>
+      <p class="form-error" id="schCourseError"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="schCourseDeleteBtn" style="display:none;"><i class="fas fa-trash"></i> Delete</button>
+      <button class="btn btn-secondary" onclick="window.closeModal('schCourseModal')">Cancel</button>
+      <button class="btn btn-primary" id="schCourseSaveBtn"><i class="fas fa-save"></i> Save</button>
+    </div>
+  </div>
+</div>
+
 <!-- ================= ENQUIRY DETAIL MODAL ================= -->
 <div class="overlay" id="schEnquiryDetailModal">
   <div class="modal" style="width:500px;">
@@ -1174,6 +1258,24 @@
     <div class="modal-foot">
       <button class="btn btn-secondary" onclick="window.closeModal('schEnquiryDetailModal')">Close</button>
       <a class="btn btn-primary" id="schEnquiryDetailWaBtn" href="#" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> Chat on WhatsApp</a>
+    </div>
+  </div>
+</div>
+
+<!-- ================= EDIT STUDENT/INSTRUCTOR ROLE MODAL ================= -->
+<div class="overlay" id="schEditPortalRoleModal">
+  <div class="modal" style="width:480px;max-height:90vh;">
+    <div class="modal-head"><h3 id="schEditPortalRoleTitle">Edit role</h3><button class="modal-close" onclick="window.closeModal('schEditPortalRoleModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="schEditPortalRoleType">
+      <input type="hidden" id="schEditPortalRoleKey">
+      <div style="font-size:12px;color:var(--slate-dim);margin-bottom:14px;line-height:1.6;">Editing this role changes access for every student or instructor currently assigned to it.</div>
+      <div id="schEditPortalRoleMatrix" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <p class="form-error" id="schEditPortalRoleError"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('schEditPortalRoleModal')">Cancel</button>
+      <button class="btn btn-primary" id="schSavePortalRoleBtn"><i class="fas fa-save"></i> Save permissions</button>
     </div>
   </div>
 </div>

@@ -652,9 +652,9 @@ function showSchoolSubpage(subpage, navEl){
   if (target) target.style.display = 'block';
 
   const labelMap = {
-  overview:'Overview', students:'Students', instructors:'Instructors', attendance:'Attendance',
+  overview:'Overview', students:'Students', instructors:'Instructors', courses:'Courses', attendance:'Attendance',
   classes:'Classes', vehicles:'Vehicles', certificates:'Certificates', enquiries:'Enquiries',
-  permissions:'Permissions', staff:'Staff Management', settings:'School Settings'
+  staff:'Staff Management', settings:'School Settings'
 };
 
   document.getElementById('pageTitle').textContent = `${school.name} — ${labelMap[subpage] || subpage}`;
@@ -667,13 +667,13 @@ function showSchoolSubpage(subpage, navEl){
   if (subpage === 'overview') renderSchoolDetailOverview();
   if (subpage === 'students') loadSchoolStudents();
   if (subpage === 'instructors') loadSchoolInstructors();
+  if (subpage === 'courses') loadSchoolCourses();
   if (subpage === 'attendance') loadSchoolAttendance();
   if (subpage === 'classes') loadSchoolClasses();
   if (subpage === 'vehicles') loadSchoolVehicles();
   if (subpage === 'certificates') loadSchoolCertificates();
   if (subpage === 'notifications') loadSchoolNotificationsPage();
   if (subpage === 'enquiries') loadSchoolEnquiries();
-  if (subpage === 'permissions') loadSchoolPermissions();
   if (subpage === 'staff') loadSchoolStaff();
   if (subpage === 'settings') renderSchoolSettings();
 }
@@ -772,6 +772,7 @@ function renderSchoolStudents(){
       <td style="font-size:12px;color:var(--slate-dim);">${fmtDate(s.createdAt)}</td>
       <td class="row-actions">
         <button class="icon-btn" title="View / edit" onclick="window.openStudentDetail('${s.id}')"><i class="fas fa-eye"></i></button>
+        <button class="icon-btn" title="Edit role permissions" onclick="window.openEditStudentRoleModal('${s.roleKey || 'Standard'}')"><i class="fas fa-shield-alt"></i></button>
       </td>
     </tr>`;
   }).join('');
@@ -794,13 +795,14 @@ window.disapproveStudent = async function(uid){
 };
 
 // ── Add student ──
-document.getElementById('schOpenAddStudentBtn').addEventListener('click', () => {
+document.getElementById('schOpenAddStudentBtn').addEventListener('click', async () => {
   document.getElementById('schAddStudentError').textContent = '';
   ['schNewFirst','schNewLast','schNewEmail','schNewPhone','schNewPassword'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('schNewCourse').value = 'Manual';
   document.getElementById('schNewStudentPhotoFile').value = '';
   document.getElementById('schNewStudentPhotoPreview').style.display = 'none';
   document.getElementById('schNewStudentPhotoText').textContent = 'Tap to upload a photo';
+  await populatePortalRoleSelect('schNewRole', 'student', 'Standard');
   openModal('schAddStudentModal');
 });
 document.getElementById('schNewStudentPhotoFile').addEventListener('change', () => {
@@ -823,6 +825,7 @@ document.getElementById('schCreateStudentBtn').addEventListener('click', async (
   const email = document.getElementById('schNewEmail').value.trim();
   const phone = document.getElementById('schNewPhone').value.trim();
   const course = document.getElementById('schNewCourse').value;
+  const roleKey = document.getElementById('schNewRole')?.value || 'Standard';
   const pass = document.getElementById('schNewPassword').value;
 
   if (!first || !last || !email || !pass) { errEl.textContent = 'Fill in all required fields.'; return; }
@@ -853,7 +856,7 @@ document.getElementById('schCreateStudentBtn').addEventListener('click', async (
     const { setDoc } = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js");
     await setDoc(doc(db, 'students', uid), {
       firstName: first, lastName: last, email, phone,
-      courseType: course, role: 'student', trainingStage: 1, status: 'active',
+      courseType: course, role: 'student', roleKey, trainingStage: 1, status: 'active',
       avatarUrl,
       createdAt: serverTimestamp(), enrolDate: new Date().toLocaleDateString('en-GB'),
       schoolId: currentSchoolId
@@ -944,6 +947,10 @@ window.openStudentDetail = function(uid){
         <option value="inactive" ${s.status==='inactive'?'selected':''}>Inactive</option>
       </select>
     </div>
+    <div class="field"><label>Role</label>
+      <select id="schEditRole" class="field-select"><option value="${s.roleKey||'Standard'}">${escapeHtml(s.roleKey||'Standard')}</option></select>
+      <div style="font-size:11px;color:var(--slate-dim);margin-top:4px;">Controls which portal features this student can access.</div>
+    </div>
     <div class="field" style="font-size:11.5px;color:var(--slate-dim);">Enrolled: ${s.enrolDate ? escapeHtml(s.enrolDate) : fmtDate(s.createdAt)}</div>
     <div style="display:flex;gap:8px;margin-top:6px;">
       <button class="btn btn-outline" style="flex:1;" onclick="window.resetStudentPassword('${s.email||''}')"><i class="fas fa-key"></i> Email reset link</button>
@@ -952,6 +959,7 @@ window.openStudentDetail = function(uid){
   `;
   document.getElementById('schStudentSaveBtn').onclick = () => saveStudentDetail(uid);
   document.getElementById('schStudentDeleteBtn').onclick = () => deleteStudentDetail(uid);
+  populatePortalRoleSelect('schEditRole', 'student', s.roleKey || 'Standard');
   openModal('schStudentDetailModal');
 };
 
@@ -969,7 +977,8 @@ async function saveStudentDetail(uid){
       branch: document.getElementById('schEditBranch').value || null,
       dob: document.getElementById('schEditDob').value || null,
       ghCardNumber: document.getElementById('schEditGhCardNumber').value.trim(),
-      status: document.getElementById('schEditStatus').value
+      status: document.getElementById('schEditStatus').value,
+      roleKey: document.getElementById('schEditRole')?.value || 'Standard'
     };
     if (newPhotoFile) updates.avatarUrl = await uploadSchoolImage(newPhotoFile);
     await updateDoc(doc(db, 'students', uid), updates);
@@ -1057,6 +1066,7 @@ function renderSchoolInstructors(){
       <td><span class="badge ${statusClass}">${escapeHtml(i.status||'active')}</span></td>
       <td class="row-actions">
         <button class="icon-btn" title="View / edit" onclick="window.openInstructorDetail('${i.id}')"><i class="fas fa-eye"></i></button>
+        <button class="icon-btn" title="Edit role permissions" onclick="window.openEditInstructorRoleModal('${i.roleKey || 'Standard'}')"><i class="fas fa-shield-alt"></i></button>
       </td>
     </tr>`;
   }).join('');
@@ -1102,8 +1112,9 @@ document.getElementById('schInstrNewCertFile').addEventListener('change', () => 
   if (f) document.getElementById('schInstrNewCertFileText').textContent = f.name;
 });
 
-document.getElementById('schOpenAddInstructorBtn').addEventListener('click', () => {
+document.getElementById('schOpenAddInstructorBtn').addEventListener('click', async () => {
   document.getElementById('schAddInstructorError').textContent = '';
+  await populatePortalRoleSelect('schInstrNewRole', 'instructor', 'Standard');
   ['schInstrNewFirst','schInstrNewLast','schInstrNewEmail','schInstrNewPhone','schInstrNewPassword',
    'schInstrNewDob','schInstrNewEngagementDate','schInstrNewExp','schInstrNewGhCardNumber','schInstrNewQual','schInstrNewCert',
    'schInstrNewGuarName','schInstrNewGuarEmail','schInstrNewGuarPhone',
@@ -1154,6 +1165,7 @@ document.getElementById('schCreateInstructorBtn').addEventListener('click', asyn
     { name: document.getElementById('schInstrNewRef1Name').value.trim(), email: document.getElementById('schInstrNewRef1Email').value.trim(), phone: document.getElementById('schInstrNewRef1Phone').value.trim() },
     { name: document.getElementById('schInstrNewRef2Name').value.trim(), email: document.getElementById('schInstrNewRef2Email').value.trim(), phone: document.getElementById('schInstrNewRef2Phone').value.trim() }
   ];
+  const roleKey = document.getElementById('schInstrNewRole')?.value || 'Standard';
   const pass = document.getElementById('schInstrNewPassword').value;
 
   if (!first || !last || !email || !pass) { errEl.textContent = 'Fill in all required fields.'; return; }
@@ -1200,7 +1212,7 @@ document.getElementById('schCreateInstructorBtn').addEventListener('click', asyn
       profilePhoto, ghCardFront, ghCardBack, ghCardNumber,
       qualifications, certifications, experience,
       guarantor, references,
-      role: 'instructor', status: 'active',
+      role: 'instructor', roleKey, status: 'active',
       assignedCourses: [], createdAt: serverTimestamp(),
       schoolId: currentSchoolId
     });
@@ -1324,6 +1336,10 @@ window.openInstructorDetail = function(uid){
         <option value="inactive" ${i.status==='inactive'?'selected':''}>Inactive</option>
       </select>
     </div>
+    <div class="field"><label>Role</label>
+      <select id="schInstrEditRole" class="field-select"><option value="${i.roleKey||'Standard'}">${escapeHtml(i.roleKey||'Standard')}</option></select>
+      <div style="font-size:11px;color:var(--slate-dim);margin-top:4px;">Controls which portal features this instructor can access.</div>
+    </div>
     <div style="display:flex;gap:8px;margin-top:6px;">
       <button class="btn btn-outline" style="flex:1;" onclick="window.resetInstructorPassword('${i.email||''}')"><i class="fas fa-key"></i> Email reset link</button>
       <button class="btn btn-outline" style="flex:1;" onclick="window.openManualPasswordModal('${uid}')"><i class="fas fa-user-shield"></i> Set manually</button>
@@ -1336,6 +1352,7 @@ window.openInstructorDetail = function(uid){
 
   document.getElementById('schInstructorSaveBtn').onclick = () => saveInstructorDetail(uid);
   document.getElementById('schInstructorDeleteBtn').onclick = () => deleteInstructorDetail(uid);
+  populatePortalRoleSelect('schInstrEditRole', 'instructor', i.roleKey || 'Standard');
   openModal('schInstructorDetailModal');
 };
 
@@ -1377,7 +1394,8 @@ async function saveInstructorDetail(uid){
         { name: document.getElementById('schInstrEditRef1Name').value.trim(), email: document.getElementById('schInstrEditRef1Email').value.trim(), phone: document.getElementById('schInstrEditRef1Phone').value.trim() },
         { name: document.getElementById('schInstrEditRef2Name').value.trim(), email: document.getElementById('schInstrEditRef2Email').value.trim(), phone: document.getElementById('schInstrEditRef2Phone').value.trim() }
       ],
-      status: document.getElementById('schInstrEditStatus').value
+      status: document.getElementById('schInstrEditStatus').value,
+      roleKey: document.getElementById('schInstrEditRole')?.value || 'Standard'
     };
     // Upload any newly-picked images (data URLs) to Cloudinary before saving
     const photoFile = document.getElementById('schInstrEditPhotoFile').files[0];
@@ -1489,6 +1507,242 @@ window.resetStaffPassword = async function(email){
     await sendPasswordResetEmail(auth, email);
     showToast(`Password reset email sent to ${email} ✓`);
   } catch(e) { showToast('Could not send reset email: ' + e.message, true); }
+};
+
+// ============================================================
+// COURSES MODULE (school-scoped: courses collection filtered by schoolId)
+// NOTE: courses created here always carry schoolId. Pre-existing course docs
+// from before multi-tenancy (created by a school's own standalone admin
+// panel) won't have schoolId and so won't appear here until re-saved.
+// ============================================================
+let schoolCourses = [];
+let schoolCoursesUnsub = null;
+let schCourseStudentsCache = [];
+let schCourseInstructorsCache = [];
+
+function loadSchoolCourses(){
+  if (schoolCoursesUnsub) { schoolCoursesUnsub(); schoolCoursesUnsub = null; }
+  const q = query(collection(db, "courses"), where("schoolId", "==", currentSchoolId));
+  schoolCoursesUnsub = onSnapshot(q, (snap) => {
+    schoolCourses = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderSchoolCourses();
+  }, (err) => showToast('Could not load courses: ' + err.message, true));
+}
+
+function renderSchoolCourses(){
+  const term = (document.getElementById('schCourseSearch').value || '').toLowerCase();
+  const filtered = schoolCourses.filter(c => (c.name || c.title || '').toLowerCase().includes(term));
+  const tbody = document.getElementById('schCoursesTableBody');
+  if (!filtered.length) { tbody.innerHTML = `<tr class="empty-row"><td colspan="7">No courses added yet.</td></tr>`; return; }
+
+  const maxCount = Math.max(1, ...schoolCourses.map(x => Math.max((x.assignedStudents||[]).length, (x.assignedInstructors||[]).length)));
+  tbody.innerHTML = filtered.map(c => {
+    const name = c.name || c.title || '—';
+    const studentCount = (c.assignedStudents || []).length;
+    const instructorCount = (c.assignedInstructors || []).length;
+    const studentPct = Math.round((studentCount / maxCount) * 100);
+    const instructorPct = Math.round((instructorCount / maxCount) * 100);
+    const staffingHtml = (studentCount === 0 && instructorCount === 0)
+      ? '<span style="color:var(--slate-dim);font-size:12px;">Unassigned</span>'
+      : `<div style="display:flex;flex-direction:column;gap:4px;min-width:110px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <i class="fas fa-user-graduate" style="font-size:10px;color:var(--slate-dim);width:14px;"></i>
+            <div style="flex:1;height:6px;background:var(--asphalt-deep);border-radius:50px;overflow:hidden;"><div style="height:100%;width:${studentPct}%;background:var(--amber);border-radius:50px;"></div></div>
+            <span style="font-size:11px;font-weight:600;color:var(--amber);width:16px;text-align:right;">${studentCount}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <i class="fas fa-chalkboard-teacher" style="font-size:10px;color:var(--slate-dim);width:14px;"></i>
+            <div style="flex:1;height:6px;background:var(--asphalt-deep);border-radius:50px;overflow:hidden;"><div style="height:100%;width:${instructorPct}%;background:var(--info);border-radius:50px;"></div></div>
+            <span style="font-size:11px;font-weight:600;color:var(--info);width:16px;text-align:right;">${instructorCount}</span>
+          </div>
+        </div>`;
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:10px;"><i class="fas ${c.icon||'fa-car'}" style="color:var(--amber);font-size:16px;"></i><div><strong>${escapeHtml(name)}</strong><div style="font-size:11px;color:var(--slate-dim);">${escapeHtml(c.category||'personal')}</div></div></div></td>
+      <td><span class="badge">${escapeHtml(c.category||'personal')}</span></td>
+      <td style="font-size:12px;color:var(--slate-dim);">${escapeHtml(c.duration||'—')}</td>
+      <td style="color:var(--amber);font-weight:600;">GH₵ ${c.price != null ? c.price : '—'}</td>
+      <td style="font-weight:600;">${studentCount}</td>
+      <td>${staffingHtml}</td>
+      <td class="row-actions">
+        <button class="icon-btn" title="View / edit" onclick="window.openSchCourseModal('${c.id}')"><i class="fas fa-eye"></i></button>
+        <button class="icon-btn danger" title="Delete" onclick="window.deleteSchCourse('${c.id}')"><i class="fas fa-trash"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+document.getElementById('schCourseSearch').addEventListener('input', renderSchoolCourses);
+
+window.toggleSchCourseCustomName = function(sel){
+  const custom = document.getElementById('schCourseNameCustom');
+  custom.style.display = sel.value === '__custom__' ? 'block' : 'none';
+  if (sel.value !== '__custom__') custom.value = '';
+};
+
+async function loadSchCourseStudentsAndInstructors(assignedStudentIds, assignedInstructorIds){
+  try {
+    const [studSnap, instrSnap] = await Promise.all([
+      getDocs(query(collection(db, "students"), where("schoolId", "==", currentSchoolId))),
+      getDocs(query(collection(db, "instructors"), where("schoolId", "==", currentSchoolId)))
+    ]);
+    schCourseStudentsCache = studSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    schCourseInstructorsCache = instrSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(i => i.status !== 'pending');
+  } catch(e) { console.error(e); }
+
+  const studentList = document.getElementById('schCourseStudentList');
+  studentList.innerHTML = schCourseStudentsCache.length
+    ? schCourseStudentsCache.map(s => {
+        const name = `${s.firstName||''} ${s.lastName||''}`.trim() || s.email;
+        const checked = (assignedStudentIds||[]).includes(s.id) ? 'checked' : '';
+        return `<label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;border-bottom:1px solid var(--border);">
+          <input type="checkbox" value="${s.id}" data-name="${escapeHtml(name)}" class="sch-course-student-check" ${checked} style="accent-color:var(--amber);width:15px;height:15px;">
+          <span style="font-size:13px;">${escapeHtml(name)}</span>
+        </label>`;
+      }).join('')
+    : '<div style="font-size:12px;color:var(--slate-dim);">No students yet.</div>';
+
+  const instrList = document.getElementById('schCourseInstructorList');
+  instrList.innerHTML = schCourseInstructorsCache.length
+    ? schCourseInstructorsCache.map(i => {
+        const name = `${i.firstName||''} ${i.lastName||''}`.trim() || i.email;
+        const checked = (assignedInstructorIds||[]).includes(i.id) ? 'checked' : '';
+        return `<label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;border-bottom:1px solid var(--border);">
+          <input type="checkbox" value="${i.id}" data-name="${escapeHtml(name)}" class="sch-course-instructor-check" ${checked} style="accent-color:var(--amber);width:15px;height:15px;">
+          <span style="font-size:13px;">${escapeHtml(name)}</span>
+        </label>`;
+      }).join('')
+    : '<div style="font-size:12px;color:var(--slate-dim);">No active instructors yet.</div>';
+}
+
+document.getElementById('schOpenAddCourseBtn').addEventListener('click', async () => {
+  document.getElementById('schCourseError').textContent = '';
+  document.getElementById('schCourseId').value = '';
+  document.getElementById('schCourseModalTitle').textContent = 'Add course';
+  document.getElementById('schCourseNameSelect').value = '';
+  document.getElementById('schCourseNameCustom').style.display = 'none';
+  document.getElementById('schCourseNameCustom').value = '';
+  document.getElementById('schCourseCategory').value = 'personal';
+  document.getElementById('schCourseDuration').value = '';
+  document.getElementById('schCoursePrice').value = '';
+  document.getElementById('schCourseLevel').value = 'beginner';
+  document.getElementById('schCourseDesc').value = '';
+  document.getElementById('schCourseIcon').value = 'fa-car';
+  document.getElementById('schCourseDeleteBtn').style.display = 'none';
+  await loadSchCourseStudentsAndInstructors([], []);
+  openModal('schCourseModal');
+});
+
+window.openSchCourseModal = async function(id){
+  const c = schoolCourses.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('schCourseError').textContent = '';
+  document.getElementById('schCourseId').value = c.id;
+  document.getElementById('schCourseModalTitle').textContent = 'Edit course';
+  const known = ['Manual','Automatic','Motorcycle','Commercial Bus','Truck / HGV'];
+  const name = c.name || c.title || '';
+  if (known.includes(name)) {
+    document.getElementById('schCourseNameSelect').value = name;
+    document.getElementById('schCourseNameCustom').style.display = 'none';
+  } else {
+    document.getElementById('schCourseNameSelect').value = '__custom__';
+    document.getElementById('schCourseNameCustom').style.display = 'block';
+    document.getElementById('schCourseNameCustom').value = name;
+  }
+  document.getElementById('schCourseCategory').value = c.category || 'personal';
+  document.getElementById('schCourseDuration').value = c.duration || '';
+  document.getElementById('schCoursePrice').value = c.price != null ? c.price : '';
+  document.getElementById('schCourseLevel').value = c.level || 'beginner';
+  document.getElementById('schCourseDesc').value = c.description || '';
+  document.getElementById('schCourseIcon').value = c.icon || 'fa-car';
+  document.getElementById('schCourseDeleteBtn').style.display = 'inline-flex';
+  await loadSchCourseStudentsAndInstructors(c.assignedStudents || [], c.assignedInstructors || []);
+  openModal('schCourseModal');
+};
+
+document.getElementById('schCourseSaveBtn').addEventListener('click', async () => {
+  const errEl = document.getElementById('schCourseError');
+  errEl.textContent = '';
+  const id = document.getElementById('schCourseId').value;
+  const selectVal = document.getElementById('schCourseNameSelect').value;
+  const name = selectVal === '__custom__' ? document.getElementById('schCourseNameCustom').value.trim() : selectVal.trim();
+  const category = document.getElementById('schCourseCategory').value;
+  const duration = document.getElementById('schCourseDuration').value.trim();
+  const price = document.getElementById('schCoursePrice').value.trim();
+  const level = document.getElementById('schCourseLevel').value;
+  const description = document.getElementById('schCourseDesc').value.trim();
+  const icon = document.getElementById('schCourseIcon').value;
+
+  if (!name || !duration) { errEl.textContent = 'Course name and duration are required.'; return; }
+
+  const assignedStudents = Array.from(document.querySelectorAll('.sch-course-student-check:checked')).map(cb => cb.value);
+  const assignedStudentNames = Array.from(document.querySelectorAll('.sch-course-student-check:checked')).map(cb => cb.dataset.name);
+  const assignedInstructors = Array.from(document.querySelectorAll('.sch-course-instructor-check:checked')).map(cb => cb.value);
+  const assignedInstructorNames = Array.from(document.querySelectorAll('.sch-course-instructor-check:checked')).map(cb => cb.dataset.name);
+
+  const btn = document.getElementById('schCourseSaveBtn');
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+  try {
+    const payload = { name, category, duration, price: price ? Number(price) : null, level, description, icon, assignedStudents, assignedStudentNames, assignedInstructors, assignedInstructorNames, schoolId: currentSchoolId };
+
+    let prevAssignedInstructors = [];
+    let prevName = name;
+    if (id) {
+      const existing = schoolCourses.find(x => x.id === id);
+      prevAssignedInstructors = existing?.assignedInstructors || [];
+      prevName = existing?.name || existing?.title || name;
+      await updateDoc(doc(db, 'courses', id), payload);
+    } else {
+      await addDoc(collection(db, 'courses'), { ...payload, createdAt: serverTimestamp() });
+    }
+
+    // Keep each assigned student's courseType in sync
+    await Promise.all(assignedStudents.map(sid => updateDoc(doc(db, 'students', sid), { courseType: name }).catch(() => {})));
+
+    // Reciprocal sync: add this course to newly-assigned instructors, remove from unassigned ones
+    await Promise.all(assignedInstructors.map(async (iid) => {
+      try {
+        const iRef = doc(db, 'instructors', iid);
+        const iSnap = await getDoc(iRef);
+        if (!iSnap.exists()) return;
+        let courses = iSnap.data().assignedCourses || [];
+        if (courses && typeof courses === 'object' && !Array.isArray(courses)) courses = Object.values(courses);
+        if (!Array.isArray(courses)) courses = [];
+        courses = courses.filter(c => c !== prevName);
+        if (!courses.includes(name)) courses.push(name);
+        await updateDoc(iRef, { assignedCourses: courses });
+      } catch(e) { console.error(e); }
+    }));
+    const removedInstructorIds = prevAssignedInstructors.filter(pid => !assignedInstructors.includes(pid));
+    await Promise.all(removedInstructorIds.map(async (iid) => {
+      try {
+        const iRef = doc(db, 'instructors', iid);
+        const iSnap = await getDoc(iRef);
+        if (!iSnap.exists()) return;
+        let courses = iSnap.data().assignedCourses || [];
+        if (courses && typeof courses === 'object' && !Array.isArray(courses)) courses = Object.values(courses);
+        if (!Array.isArray(courses)) courses = [];
+        courses = courses.filter(c => c !== prevName && c !== name);
+        await updateDoc(iRef, { assignedCourses: courses });
+      } catch(e) { console.error(e); }
+    }));
+
+    closeModal('schCourseModal');
+    showToast('Course saved ✓');
+  } catch(e) { errEl.textContent = 'Save failed: ' + e.message; }
+  finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save'; }
+});
+
+document.getElementById('schCourseDeleteBtn').addEventListener('click', async () => {
+  const id = document.getElementById('schCourseId').value;
+  if (!id) return;
+  if (!(await showConfirm('Delete course', 'Delete this course?'))) return;
+  try { await deleteDoc(doc(db, 'courses', id)); closeModal('schCourseModal'); showToast('Course deleted.'); }
+  catch(e) { showToast('Delete failed: ' + e.message, true); }
+});
+
+window.deleteSchCourse = async function(id){
+  if (!(await showConfirm('Delete course', 'Delete this course?'))) return;
+  try { await deleteDoc(doc(db, 'courses', id)); showToast('Course deleted.'); }
+  catch(e) { showToast('Delete failed: ' + e.message, true); }
 };
 
 // ============================================================
@@ -3284,6 +3538,14 @@ function renderSchNotifCheckboxes(){
     : '<div style="font-size:12px;color:var(--slate-dim);">No instructors yet.</div>';
 }
 
+window.filterSchNotifRecipients = function(term){
+  const t = (term || '').toLowerCase();
+  document.querySelectorAll('#schNotifStudentList label, #schNotifInstructorList label').forEach(label => {
+    const name = label.querySelector('span')?.textContent.toLowerCase() || '';
+    label.style.display = !t || name.includes(t) ? 'flex' : 'none';
+  });
+};
+
 window.switchSchNotifType = function(type){
   schNotifType = type;
   document.getElementById('schNotifTabStudent').className = type === 'student' ? 'btn btn-primary' : 'btn btn-outline';
@@ -3297,6 +3559,8 @@ window.switchSchNotifType = function(type){
   allLabel.textContent = type === 'both' ? 'All recipients (students & instructors)' : (type === 'student' ? 'All students' : 'All instructors');
   document.getElementById('schNotifyAll').checked = false;
   document.querySelectorAll('.sch-notif-student-check, .sch-notif-instructor-check').forEach(cb => { cb.checked = false; cb.disabled = false; });
+  const searchInput = document.getElementById('schNotifRecipientSearch');
+  if (searchInput) { searchInput.value = ''; window.filterSchNotifRecipients(''); }
 };
 
 window.toggleSchAllRecipients = function(allCb){
@@ -3376,12 +3640,16 @@ async function loadSchNotifSentList(){
 }
 
 // ============================================================
-// PERMISSIONS MODULE (school-scoped: schools/{schoolId}/permissions/{type})
+// STUDENT / INSTRUCTOR ROLES MODULE (global: studentRoles/{key}, instructorRoles/{key})
+// Mirrors the Staff "Edit role" pattern — a named role holds a set of
+// page/feature toggles and can be assigned to any student or instructor
+// across every school. Replaces the old per-school Permissions page.
 // ============================================================
-const defaultStudentPerms = {
+const defaultStudentRolePages = {
   dashboard: { label: 'Dashboard', enabled: true, locked: true },
-  lessons: { label: 'Video Lessons', enabled: true, locked: true },
+  lessons: { label: 'Video Lessons', enabled: true },
   quizzes: { label: 'Quizzes', enabled: true },
+  courses: { label: 'Courses', enabled: true },
   attendance: { label: 'Attendance', enabled: true, locked: true },
   progress: { label: 'My Progress', enabled: true },
   classes: { label: 'My Classes', enabled: true },
@@ -3393,9 +3661,11 @@ const defaultStudentPerms = {
   checkin: { label: 'Attendance Check-in', enabled: true },
   editProfile: { label: 'Edit Profile', enabled: true }
 };
-const defaultInstructorPerms = {
+const defaultInstructorRolePages = {
   dashboard: { label: 'Dashboard', enabled: true, locked: true },
   students: { label: 'My Students', enabled: true, locked: true },
+  lessons: { label: 'Video Lessons', enabled: true },
+  courses: { label: 'Courses', enabled: true },
   attendance: { label: 'Student Attendance', enabled: true, locked: true },
   myAttendance: { label: 'My Attendance', enabled: true },
   quizzes: { label: 'Quizzes', enabled: true },
@@ -3405,55 +3675,114 @@ const defaultInstructorPerms = {
   manageMyAttendance: { label: 'Manage Own Attendance', enabled: true }
 };
 
-let currentSchPermTab = 'student';
-window.switchSchPermTab = function(tab){
-  currentSchPermTab = tab;
-  document.getElementById('schPermStudentPanel').style.display = tab === 'student' ? 'block' : 'none';
-  document.getElementById('schPermInstructorPanel').style.display = tab === 'instructor' ? 'block' : 'none';
-  document.getElementById('schPermTabStudentBtn').className = tab === 'student' ? 'btn btn-primary' : 'btn btn-outline';
-  document.getElementById('schPermTabInstructorBtn').className = tab === 'instructor' ? 'btn btn-primary' : 'btn btn-outline';
-};
+let allStudentRoles = {};
+let allInstructorRoles = {};
 
-async function loadSchoolPermissions(){
-  window.switchSchPermTab('student');
+async function loadStudentRoleDefinitions(){
   try {
-    const [studSnap, instrSnap] = await Promise.all([
-      getDoc(doc(db, "schools", currentSchoolId, "permissions", "student_permissions")),
-      getDoc(doc(db, "schools", currentSchoolId, "permissions", "instructor_permissions"))
-    ]);
-    renderSchPermList('schPermStudentList', studSnap.exists() ? studSnap.data() : defaultStudentPerms, 'student');
-    renderSchPermList('schPermInstructorList', instrSnap.exists() ? instrSnap.data() : defaultInstructorPerms, 'instructor');
-  } catch(e) { showToast('Could not load permissions: ' + e.message, true); }
+    const snap = await getDocs(collection(db, "studentRoles"));
+    if (snap.empty) { await seedDefaultStudentRoles(); return; }
+    allStudentRoles = {};
+    snap.docs.forEach(d => { allStudentRoles[d.id] = d.data(); });
+  } catch(e) { console.error("Could not load student roles:", e); }
+}
+async function seedDefaultStudentRoles(){
+  try {
+    await setDoc(doc(db, "studentRoles", "Standard"), { label: "Standard", pages: defaultStudentRolePages });
+    const snap = await getDocs(collection(db, "studentRoles"));
+    allStudentRoles = {};
+    snap.docs.forEach(d => { allStudentRoles[d.id] = d.data(); });
+  } catch(e) { console.error("Could not seed student roles:", e); }
 }
 
-function renderSchPermList(containerId, perms, type){
-  const container = document.getElementById(containerId);
-  container.innerHTML = Object.entries(perms).map(([key, p]) => {
+async function loadInstructorRoleDefinitions(){
+  try {
+    const snap = await getDocs(collection(db, "instructorRoles"));
+    if (snap.empty) { await seedDefaultInstructorRoles(); return; }
+    allInstructorRoles = {};
+    snap.docs.forEach(d => { allInstructorRoles[d.id] = d.data(); });
+  } catch(e) { console.error("Could not load instructor roles:", e); }
+}
+async function seedDefaultInstructorRoles(){
+  try {
+    await setDoc(doc(db, "instructorRoles", "Standard"), { label: "Standard", pages: defaultInstructorRolePages });
+    const snap = await getDocs(collection(db, "instructorRoles"));
+    allInstructorRoles = {};
+    snap.docs.forEach(d => { allInstructorRoles[d.id] = d.data(); });
+  } catch(e) { console.error("Could not seed instructor roles:", e); }
+}
+
+// Populates a role <select> for the add/edit student or instructor forms.
+async function populatePortalRoleSelect(selectId, type, selectedKey){
+  if (type === 'student') await loadStudentRoleDefinitions();
+  else await loadInstructorRoleDefinitions();
+  const roles = type === 'student' ? allStudentRoles : allInstructorRoles;
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  sel.innerHTML = Object.entries(roles).map(([key, r]) =>
+    `<option value="${key}" ${key === (selectedKey||'Standard') ? 'selected' : ''}>${escapeHtml(r.label || key)}</option>`
+  ).join('') || '<option value="Standard">Standard</option>';
+}
+
+// Shield-icon handlers on the Students/Instructors tables — opens the
+// permission matrix for that person's assigned role. Editing here changes
+// access for everyone assigned to the role, exactly like staff role editing.
+window.openEditStudentRoleModal = async function(roleKey){
+  await loadStudentRoleDefinitions();
+  openEditPortalRoleModal('student', roleKey || 'Standard', allStudentRoles, defaultStudentRolePages, 'studentRoles');
+};
+window.openEditInstructorRoleModal = async function(roleKey){
+  await loadInstructorRoleDefinitions();
+  openEditPortalRoleModal('instructor', roleKey || 'Standard', allInstructorRoles, defaultInstructorRolePages, 'instructorRoles');
+};
+
+function openEditPortalRoleModal(type, roleKey, rolesCache, defaults, collectionName){
+  const role = rolesCache[roleKey];
+  if (!role) { showToast('Role not found.', true); return; }
+  document.getElementById('schEditPortalRoleType').value = type;
+  document.getElementById('schEditPortalRoleKey').value = roleKey;
+  document.getElementById('schEditPortalRoleTitle').textContent = `Edit ${type === 'student' ? 'student' : 'instructor'} role: ${role.label || roleKey}`;
+  document.getElementById('schEditPortalRoleError').textContent = '';
+
+  const pages = { ...defaults, ...(role.pages || {}) };
+  const matrix = document.getElementById('schEditPortalRoleMatrix');
+  matrix.innerHTML = Object.entries(pages).map(([key, p]) => {
     const locked = p.locked ? 'disabled' : '';
     const lockIcon = p.locked ? '<i class="fas fa-lock" style="color:var(--amber);margin-left:6px;font-size:10px;" title="Required"></i>' : '';
     return `<label style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--asphalt-deep);border:1px solid var(--border);border-radius:8px;cursor:${p.locked?'default':'pointer'};">
-      <span style="font-size:13px;font-weight:500;">${escapeHtml(p.label)}${lockIcon}</span>
-      <input type="checkbox" class="sch-perm-${type}-check" data-key="${key}" ${p.enabled?'checked':''} ${locked} style="width:18px;height:18px;accent-color:var(--amber);" />
+      <span style="font-size:13px;font-weight:500;">${escapeHtml(p.label || key)}${lockIcon}</span>
+      <input type="checkbox" class="sch-portal-role-check" data-key="${key}" data-label="${escapeHtml(p.label || key)}" data-locked="${!!p.locked}" ${p.enabled !== false ? 'checked' : ''} ${locked} style="width:18px;height:18px;accent-color:var(--amber);" />
     </label>`;
   }).join('');
+
+  document.getElementById('schEditPortalRoleModal')._collectionName = collectionName;
+  openModal('schEditPortalRoleModal');
 }
 
-window.saveSchPermissions = async function(type){
-  const checkClass = `sch-perm-${type}-check`;
-  const defaults = type === 'student' ? defaultStudentPerms : defaultInstructorPerms;
-  const docId = type === 'student' ? 'student_permissions' : 'instructor_permissions';
-  const perms = {};
-  Object.entries(defaults).forEach(([key, p]) => { perms[key] = { ...p }; });
-  document.querySelectorAll(`.${checkClass}`).forEach(cb => {
-    const key = cb.dataset.key;
-    if (perms[key] && !perms[key].locked) perms[key].enabled = cb.checked;
+document.getElementById('schSavePortalRoleBtn').addEventListener('click', async () => {
+  const type = document.getElementById('schEditPortalRoleType').value;
+  const roleKey = document.getElementById('schEditPortalRoleKey').value;
+  const collectionName = document.getElementById('schEditPortalRoleModal')._collectionName;
+  const errEl = document.getElementById('schEditPortalRoleError');
+  errEl.textContent = '';
+  if (!roleKey || !collectionName) { errEl.textContent = 'Role not found.'; return; }
+
+  const pages = {};
+  document.querySelectorAll('.sch-portal-role-check').forEach(cb => {
+    pages[cb.dataset.key] = { label: cb.dataset.label, locked: cb.dataset.locked === 'true', enabled: cb.checked };
   });
+
+  const btn = document.getElementById('schSavePortalRoleBtn');
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
   try {
-    const { setDoc } = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js");
-    await setDoc(doc(db, "schools", currentSchoolId, "permissions", docId), perms, { merge: true });
-    showToast(`${type === 'student' ? 'Student' : 'Instructor'} permissions saved ✓`);
-  } catch(e) { showToast('Save failed: ' + e.message, true); }
-};
+    await updateDoc(doc(db, collectionName, roleKey), { pages, updatedAt: serverTimestamp() });
+    if (collectionName === 'studentRoles' && allStudentRoles[roleKey]) allStudentRoles[roleKey].pages = pages;
+    if (collectionName === 'instructorRoles' && allInstructorRoles[roleKey]) allInstructorRoles[roleKey].pages = pages;
+    closeModal('schEditPortalRoleModal');
+    showToast('Permissions updated ✓');
+  } catch(e) { errEl.textContent = 'Could not save: ' + e.message; }
+  finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save permissions'; }
+});
 
 // ============================================================
 // SETTINGS SUBPAGE — reuses the existing Add/Edit School modal
@@ -3807,6 +4136,7 @@ async function seedDefaultRoles(){
         certificates: { access: true, read: true, create: true, update: true, delete: true },
         lessons: { access: true, read: true, create: true, update: true, delete: true },
         quizzes: { access: true, read: true, create: true, update: true, delete: true },
+        courses: { access: true, read: true, create: true, update: true, delete: true },
         enquiries: { access: true, read: true, create: false, update: true, delete: false },
         notifications: { access: true, read: false, create: true, update: false, delete: false },
         permissions: { access: true, read: false, create: false, update: false, delete: false },
@@ -3827,6 +4157,7 @@ async function seedDefaultRoles(){
         certificates: { access: true, read: true, create: false, update: false, delete: false },
         lessons: { access: true, read: true, create: false, update: false, delete: false },
         quizzes: { access: true, read: true, create: false, update: false, delete: false },
+        courses: { access: true, read: true, create: false, update: false, delete: false },
         enquiries: { access: true, read: true, create: false, update: true, delete: false },
         notifications: { access: false, read: false, create: false, update: false, delete: false },
         permissions: { access: false, read: false, create: false, update: false, delete: false },
@@ -3847,6 +4178,7 @@ async function seedDefaultRoles(){
         certificates: { access: true, read: true, create: false, update: false, delete: false },
         lessons: { access: true, read: true, create: false, update: false, delete: false },
         quizzes: { access: true, read: true, create: false, update: false, delete: false },
+        courses: { access: true, read: true, create: false, update: false, delete: false },
         enquiries: { access: true, read: true, create: false, update: true, delete: false },
         notifications: { access: false, read: false, create: false, update: false, delete: false },
         permissions: { access: false, read: false, create: false, update: false, delete: false },
@@ -4144,6 +4476,7 @@ window.openEditRoleModal = async function(roleKey){
   // so the checkboxes still show up (defaulting to hidden until explicitly enabled)
   if (!pages.lessons) pages.lessons = { access: false, read: false, create: false, update: false, delete: false };
   if (!pages.quizzes) pages.quizzes = { access: false, read: false, create: false, update: false, delete: false };
+  if (!pages.courses) pages.courses = { access: false, read: false, create: false, update: false, delete: false };
   const pageNames = Object.keys(pages).sort();
   const actions = ['access', 'create', 'read', 'update', 'delete'];
   const actionLabels = { access: 'Page Access', create: 'Create', read: 'Read', update: 'Update', delete: 'Delete' };

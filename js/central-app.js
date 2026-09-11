@@ -246,6 +246,20 @@ function fmtDate(ts){
   return d.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
 }
 
+
+// ── Generic button-loading helper: disables + spins while an async action runs ──
+function withBtnLoading(btn, fn){
+  if (!btn) return Promise.resolve(fn());
+  const original = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+  return Promise.resolve(fn()).finally(() => {
+    btn.disabled = false;
+    btn.innerHTML = original;
+  });
+}
+window.withBtnLoading = withBtnLoading;
+
 let toastTimer = null;
 function showToast(message, isError){
   const toast = document.getElementById('toast');
@@ -1564,7 +1578,7 @@ function renderSchoolCourses(){
       <td style="font-weight:600;">${studentCount}</td>
       <td>${staffingHtml}</td>
       <td class="row-actions">
-        <button class="icon-btn" title="View / edit" onclick="window.openSchCourseModal('${c.id}')"><i class="fas fa-eye"></i></button>
+        <button class="icon-btn" title="View / edit" onclick="window.openSchCourseModal('${c.id}', this)"><i class="fas fa-eye"></i></button>
         <button class="icon-btn danger" title="Delete" onclick="window.deleteSchCourse('${c.id}')"><i class="fas fa-trash"></i></button>
       </td>
     </tr>`;
@@ -1631,7 +1645,7 @@ document.getElementById('schOpenAddCourseBtn').addEventListener('click', async (
   openModal('schCourseModal');
 });
 
-window.openSchCourseModal = async function(id){
+window.openSchCourseModal = async function(id, btn){
   const c = schoolCourses.find(x => x.id === id);
   if (!c) return;
   document.getElementById('schCourseError').textContent = '';
@@ -1654,7 +1668,7 @@ window.openSchCourseModal = async function(id){
   document.getElementById('schCourseDesc').value = c.description || '';
   document.getElementById('schCourseIcon').value = c.icon || 'fa-car';
   document.getElementById('schCourseDeleteBtn').style.display = 'inline-flex';
-  await loadSchCourseStudentsAndInstructors(c.assignedStudents || [], c.assignedInstructors || []);
+  await withBtnLoading(btn, () => loadSchCourseStudentsAndInstructors(c.assignedStudents || [], c.assignedInstructors || []));
   openModal('schCourseModal');
 };
 

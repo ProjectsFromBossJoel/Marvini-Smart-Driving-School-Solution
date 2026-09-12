@@ -181,6 +181,45 @@
   .phase2-placeholder{ text-align:center; padding:60px 20px; color:var(--slate-dim); }
   .phase2-placeholder i{ font-size:32px; margin-bottom:12px; display:block; color:var(--border); }
 
+  /* ===== Overview upgrade ===== */
+  .ov-hero{ display:flex; align-items:center; gap:18px; background:linear-gradient(135deg, var(--panel), var(--asphalt)); border:1px solid var(--border); border-radius:var(--radius-lg); padding:22px 24px; margin-bottom:22px; flex-wrap:wrap; }
+  .ov-hero-cover{ width:64px; height:64px; border-radius:14px; background:var(--asphalt-deep); background-size:cover; background-position:center; flex-shrink:0; display:flex; align-items:center; justify-content:center; border:1px solid var(--border); }
+  .ov-hero-cover i{ font-size:26px; color:var(--slate-dim); }
+  .ov-hero-info h3{ font-family:'Space Grotesk',sans-serif; font-size:19px; margin:0 0 4px; }
+  .ov-hero-info p{ margin:0; font-size:12.5px; color:var(--slate); }
+  .ov-hero-actions{ display:flex; gap:8px; flex-wrap:wrap; margin-left:auto; }
+  .ov-hero-actions .btn{ font-size:12px; padding:8px 13px; }
+
+  .ov-performers{ display:flex; gap:12px; flex-wrap:wrap; margin-left:auto; }
+  .ov-performer-card{ display:flex; align-items:center; gap:10px; background:var(--asphalt-deep); border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; min-width:200px; }
+  .ov-performer-card.top{ border-color:rgba(63,166,106,0.35); }
+  .ov-performer-card.bottom{ border-color:rgba(193,67,45,0.35); }
+  .ov-performer-label{ font-size:9.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--slate-dim); margin:0 0 2px; }
+  .ov-performer-name{ font-size:13px; font-weight:700; color:var(--chalk); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:120px; }
+  .ov-performer-meta{ font-size:11px; color:var(--slate); }
+  .ov-performer-trend{ margin-left:4px; flex-shrink:0; }
+  .ov-performer-empty{ font-size:12px; color:var(--slate-dim); padding:10px 14px; }
+
+  .stat-card.ov-accent-good .accent{ background:var(--good); }
+  .stat-card.ov-accent-info .accent{ background:var(--info); }
+  .stat-card.ov-accent-warn .accent{ background:var(--amber); }
+  .stat-card .stat-icon{ position:absolute; top:16px; right:16px; font-size:16px; color:var(--slate-dim); opacity:.6; }
+
+  .ov-grid{ display:grid; grid-template-columns:1.4fr 1fr; gap:18px; align-items:start; }
+  @media (max-width: 900px){ .ov-grid{ grid-template-columns:1fr; } }
+
+  .ov-detail-row{ display:flex; align-items:center; gap:12px; padding:11px 20px; border-bottom:1px solid var(--border); }
+  .ov-detail-row:last-child{ border-bottom:none; }
+  .ov-detail-row i{ width:18px; color:var(--amber); font-size:13px; text-align:center; flex-shrink:0; }
+  .ov-detail-row .ov-label{ font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--slate-dim); width:80px; flex-shrink:0; }
+  .ov-detail-row .ov-value{ font-size:13.5px; color:var(--chalk); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ov-copy-btn{ background:transparent; border:none; color:var(--slate-dim); cursor:pointer; padding:4px; flex-shrink:0; }
+  .ov-copy-btn:hover{ color:var(--amber); }
+
+  .ov-notes-textarea{ width:100%; min-height:110px; padding:12px 14px; border-radius:8px; border:1.5px solid var(--border); background:var(--asphalt-deep); color:var(--chalk); font-family:inherit; font-size:13px; resize:vertical; }
+  .ov-notes-foot{ display:flex; align-items:center; justify-content:space-between; margin-top:10px; }
+  .ov-notes-status{ font-size:11px; color:var(--slate-dim); }
+
   @media (max-width: 760px){
     .sidebar{ width:64px; }
     .sidebar-brand strong, .sidebar-brand small, .nav-link span.label, .admin-email, .nav-section-label{ display:none; }
@@ -329,15 +368,43 @@
 
         <!-- Overview -->
         <div class="school-subpage active" id="schoolsub-overview">
+
+          <div class="ov-hero">
+            <div class="ov-hero-cover" id="ovHeroCover"><i class="fas fa-school"></i></div>
+            <div class="ov-hero-info">
+              <h3 id="ovHeroName">—</h3>
+              <p id="ovHeroMeta">—</p>
+            </div>
+            <div class="ov-performers" id="ovPerformers">
+              <div class="ov-performer-empty">Loading performance…</div>
+            </div>
+          </div>
+
           <div class="stat-grid">
-            <div class="stat-card"><div class="accent"></div><p class="label">Total students</p><p class="value" id="schStatStudents">0</p><p class="sub" id="schStatStudentsSub">—</p></div>
-            <div class="stat-card"><div class="accent"></div><p class="label">Instructors</p><p class="value" id="schStatInstructors">0</p><p class="sub">Active + pending</p></div>
-            <div class="stat-card"><div class="accent"></div><p class="label">Pending approvals</p><p class="value" id="schStatPending">0</p><p class="sub">Students awaiting review</p></div>
+            <div class="stat-card"><div class="accent"></div><i class="fas fa-user-graduate stat-icon"></i><p class="label">Total students</p><p class="value" id="schStatStudents">0</p><p class="sub" id="schStatStudentsSub">—</p></div>
+            <div class="stat-card ov-accent-info"><div class="accent"></div><i class="fas fa-chalkboard-teacher stat-icon"></i><p class="label">Instructors</p><p class="value" id="schStatInstructors">0</p><p class="sub">Active + pending</p></div>
+            <div class="stat-card ov-accent-warn"><div class="accent"></div><i class="fas fa-clock stat-icon"></i><p class="label">Pending approvals</p><p class="value" id="schStatPending">0</p><p class="sub">Students awaiting review</p></div>
+            <div class="stat-card ov-accent-good"><div class="accent"></div><i class="fas fa-book stat-icon"></i><p class="label">Active courses</p><p class="value" id="schStatCourses">0</p><p class="sub" id="schStatCoursesSub">—</p></div>
           </div>
-          <div class="panel">
-            <div class="panel-head"><h3>School details</h3><button class="btn btn-outline" onclick="window.openSchoolEditFromDetail()"><i class="fas fa-pen"></i> Edit</button></div>
-            <div id="schoolDetailInfo" style="padding:20px;font-size:13.5px;color:var(--slate);">Loading…</div>
+
+          <div class="ov-grid">
+            <div class="panel">
+              <div class="panel-head"><h3><i class="fas fa-info-circle"></i> School details</h3><button class="btn btn-outline" onclick="window.openSchoolEditFromDetail()"><i class="fas fa-pen"></i> Edit</button></div>
+              <div id="schoolDetailInfo" style="padding:6px 0 10px;">Loading…</div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><h3><i class="fas fa-sticky-note"></i> Admin notes</h3></div>
+              <div style="padding:18px 20px;">
+                <textarea class="ov-notes-textarea" id="ovNotesTextarea" placeholder="Jot down anything worth remembering about this school — a promise made, a follow-up needed, an issue to watch…"></textarea>
+                <div class="ov-notes-foot">
+                  <span class="ov-notes-status" id="ovNotesStatus">Not saved yet</span>
+                  <button class="btn btn-primary" style="padding:8px 14px;font-size:12px;" onclick="window.saveOverviewNotes()"><i class="fas fa-save"></i> Save note</button>
+                </div>
+              </div>
+            </div>
           </div>
+
         </div>
 
         <!-- Students (fully built) -->

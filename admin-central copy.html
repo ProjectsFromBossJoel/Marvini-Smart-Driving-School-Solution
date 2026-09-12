@@ -1,3 +1,4 @@
+<!-- admin-central.html -->
 <!-- Marvini Smart Driving Solution — Central Admin Dashboard (v2) -->
 <!DOCTYPE html>
 <html lang="en">
@@ -71,9 +72,32 @@
 
   .main{ flex:1; min-width:0; }
   .topbar{ display:flex; align-items:center; justify-content:space-between; padding:20px 32px; border-bottom:1px solid var(--border); flex-wrap:wrap; gap:10px; }
+  .topbar-user{ display:flex; align-items:center; gap:10px; flex-shrink:0; padding:6px 14px 6px 6px; background:var(--panel); border:1px solid var(--border); border-radius:999px; }
+  .topbar-user img, .topbar-user-initials{ width:36px; height:36px; border-radius:50%; object-fit:cover; border:1.5px solid var(--amber); flex-shrink:0; }
+  .topbar-user-initials{ background:rgba(242,169,59,0.15); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:var(--amber); }
+  .topbar-user strong{ font-size:13.5px; font-weight:600; color:var(--chalk); max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .topbar h2{ font-family:'Space Grotesk', sans-serif; font-size:21px; margin:0; }
   .topbar p{ margin:3px 0 0; font-size:12.5px; color:var(--slate); }
   .content{ padding:28px 32px 60px; }
+
+  /* ===== Dashboard hero (greeting + weather) ===== */
+  .dash-hero{ display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; margin-bottom:20px; }
+  .dash-greeting h2{ font-family:'Space Grotesk', sans-serif; font-size:24px; margin:0 0 4px; }
+  .dash-greeting p{ margin:0; font-size:13px; color:var(--slate); }
+  .dash-weather{ display:flex; align-items:center; gap:14px; background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:14px 22px; flex-shrink:0; }
+  .dash-weather-icon{ width:44px; height:44px; flex-shrink:0; }
+  .dash-weather-temp{ font-family:'Space Grotesk', sans-serif; font-size:22px; font-weight:700; line-height:1.1; }
+  .dash-weather-desc{ font-size:12.5px; color:var(--slate); margin-top:1px; }
+  .dash-weather-loc{ font-size:10.5px; color:var(--slate-dim); text-transform:uppercase; letter-spacing:.05em; margin-top:3px; }
+  .dash-tip{ display:flex; align-items:flex-start; gap:14px; background:rgba(242,169,59,0.08); border:1px solid rgba(242,169,59,0.25); border-radius:var(--radius); padding:14px 18px; margin-bottom:24px; }
+  .dash-tip i{ color:var(--amber); font-size:18px; margin-top:2px; flex-shrink:0; }
+  .dash-tip strong{ display:block; font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--amber); margin-bottom:3px; }
+  .dash-tip p{ margin:0; font-size:13.5px; color:var(--chalk); line-height:1.5; }
+
+  @media (max-width: 640px){
+    .dash-hero{ flex-direction:column; align-items:stretch; }
+    .dash-weather{ justify-content:center; }
+  }
   .page{ display:none; } .page.active{ display:block; }
 
   .breadcrumb{ font-size:12.5px; color:var(--slate); margin-bottom:4px; }
@@ -127,7 +151,7 @@
   .school-card .mini-stat{ display:flex; flex-direction:column; gap:1px; }
   .school-card .mini-stat b{ font-family:'Space Grotesk', sans-serif; font-size:15px; }
   .school-card .mini-stat span{ font-size:10px; color:var(--slate-dim); text-transform:uppercase; letter-spacing:.05em; }
-  .school-card .edit-fab{ position:absolute; top:10px; left:10px; width:30px; height:30px; border-radius:8px; background:rgba(17,22,30,0.75); border:1px solid var(--border); color:var(--chalk); display:flex; align-items:center; justify-content:center; cursor:pointer; opacity:0; transition:opacity .15s ease; z-index:2; }
+  .school-card .edit-fab{ position:absolute; top:10px; left:10px; width:30px; height:30px; border-radius:8px; background:rgba(17,22,30,0.85); border:1px solid var(--border); color:var(--chalk); display:flex; align-items:center; justify-content:center; cursor:pointer; opacity:0.85; transition:opacity .15s ease; z-index:2; }
   .school-card:hover .edit-fab{ opacity:1; }
   .add-school-card{ border:1.5px dashed var(--border); border-radius:var(--radius-lg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; min-height:220px; cursor:pointer; color:var(--slate); }
   .add-school-card:hover{ border-color:var(--amber); color:var(--amber); }
@@ -146,6 +170,7 @@
   .modal-body{ padding:20px 22px; flex:1; min-height:0; overflow-y:auto; overflow-x:hidden; }
   .modal-foot{ display:flex; gap:10px; padding:16px 22px; border-top:1px solid var(--border); flex-shrink:0; }
   .modal-foot .btn{ flex:1; padding:11px; }
+  .modal > form{ display:flex; flex-direction:column; min-height:0; flex:1; }
   select.field-select{ width:100%; padding:11px 13px; border-radius:8px; border:1.5px solid var(--border); background:var(--asphalt-deep); color:var(--chalk); font-size:14px; outline:none; }
   .form-error{ color:var(--brake); font-size:12px; margin:0 0 12px; min-height:14px; }
   .form-row{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
@@ -207,6 +232,8 @@
       <a class="nav-link" data-page="quizzes"><i class="fas fa-tasks"></i><span class="label">Quizzes</span></a>
       <div class="nav-section-label">Account</div>
       <a class="nav-link" data-page="profile"><i class="fas fa-user-circle"></i><span class="label">Portal Profile</span></a>
+      <a class="nav-link" data-page="siteSettings"><i class="fas fa-sliders-h"></i><span class="label">Site Settings</span></a>
+      <a class="nav-link" data-page="pmgmBio"><i class="fas fa-id-badge"></i><span class="label">PM/GM Bio</span></a>
     </nav>
 
     <!-- SCHOOL-SCOPED NAV (shown only while inside a school's detail view) -->
@@ -216,13 +243,14 @@
       <a class="nav-link active" data-school-page="overview"><i class="fas fa-th-large"></i><span class="label">Overview</span></a>
       <a class="nav-link" data-school-page="students"><i class="fas fa-user-graduate"></i><span class="label">Students</span></a>
       <a class="nav-link" data-school-page="instructors"><i class="fas fa-chalkboard-teacher"></i><span class="label">Instructors</span></a>
+      <a class="nav-link" data-school-page="courses"><i class="fas fa-book"></i><span class="label">Courses</span></a>
       <a class="nav-link" data-school-page="attendance"><i class="fas fa-calendar-check"></i><span class="label">Attendance</span></a>
       <a class="nav-link" data-school-page="classes"><i class="fas fa-chalkboard"></i><span class="label">Classes</span></a>
       <a class="nav-link" data-school-page="vehicles"><i class="fas fa-car-side"></i><span class="label">Vehicles</span></a>
       <a class="nav-link" data-school-page="certificates"><i class="fas fa-certificate"></i><span class="label">Certificates</span></a>
       <a class="nav-link" data-school-page="notifications"><i class="fas fa-bell"></i><span class="label">Notifications</span></a>
       <a class="nav-link" data-school-page="enquiries"><i class="fas fa-headset"></i><span class="label">Enquiries</span> <span class="badge warn" id="schEnquiriesNavBadge" style="display:none;margin-left:auto;">0</span></a>
-      <a class="nav-link" data-school-page="permissions"><i class="fas fa-shield-alt"></i><span class="label">Permissions</span></a>
+      <a class="nav-link" data-school-page="staff"><i class="fas fa-user-tie"></i><span class="label">Staff</span></a>  
       <a class="nav-link" data-school-page="settings"><i class="fas fa-cog"></i><span class="label">School Settings</span></a>
     </nav>
 
@@ -239,12 +267,38 @@
         <h2 id="pageTitle">Dashboard</h2>
         <p id="pageSubtitle">Overview of every driving school on the portal</p>
       </div>
+      <div class="topbar-user" id="topbarUser" style="display:none;">
+        <img id="topbarUserAvatar" src="" alt="" style="display:none;">
+        <div id="topbarUserInitials" class="topbar-user-initials"></div>
+        <strong id="topbarUserName">—</strong>
+      </div>
     </div>
 
     <div class="content">
 
       <!-- ---------- DASHBOARD ---------- -->
       <section class="page active" id="page-dashboard">
+        <div class="dash-hero">
+          <div class="dash-greeting">
+            <h2 id="dashGreeting">Good morning</h2>
+            <p id="dashDate">—</p>
+          </div>
+          <div class="dash-weather" id="dashWeather">
+            <div class="dash-weather-icon" id="dashWeatherIcon"></div>
+            <div class="dash-weather-info">
+              <div class="dash-weather-temp" id="dashWeatherTemp">--°</div>
+              <div class="dash-weather-desc" id="dashWeatherDesc">Loading weather…</div>
+              <div class="dash-weather-loc">Accra, Ghana</div>
+            </div>
+          </div>
+        </div>
+        <div class="dash-tip" id="dashTipPanel">
+          <i class="fas fa-lightbulb"></i>
+          <div>
+            <strong>Tip of the day</strong>
+            <p id="dashTipText">—</p>
+          </div>
+        </div>
         <div class="stat-grid">
           <div class="stat-card"><div class="accent"></div><p class="label">Total schools</p><p class="value" id="statTotal">0</p><p class="sub">Listed on the public portal</p></div>
           <div class="stat-card"><div class="accent"></div><p class="label">Regions covered</p><p class="value" id="statRegions">0</p><p class="sub">Out of 16 regions in Ghana</p></div>
@@ -331,6 +385,19 @@
             </table>
           </div>
         </div>
+        <div class="school-subpage" id="schoolsub-courses" style="display:none;">
+          <div class="schools-toolbar">
+            <input class="search-input" id="schCourseSearch" type="text" placeholder="Search by course name…">
+            <button class="btn btn-primary" id="schOpenAddCourseBtn"><i class="fas fa-plus"></i> Add course</button>
+          </div>
+          <div class="panel">
+            <table>
+              <thead><tr><th>Course</th><th>Category</th><th>Duration</th><th>Price</th><th>Enrolled</th><th>Staffing</th><th></th></tr></thead>
+              <tbody id="schCoursesTableBody"><tr class="empty-row"><td colspan="7">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="school-subpage" id="schoolsub-attendance" style="display:none;">
           <div class="schools-toolbar">
             <input class="search-input" id="schAttSearch" type="text" placeholder="Search by student name…">
@@ -396,6 +463,7 @@
                 </div>
                 <div class="field">
                   <label>Recipient</label>
+                  <input type="text" id="schNotifRecipientSearch" placeholder="Search students / instructors…" style="width:100%;padding:9px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-size:13px;margin-bottom:8px;" oninput="window.filterSchNotifRecipients(this.value)">
                   <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-weight:600;color:var(--amber);border-bottom:1px solid var(--border);margin-bottom:8px;">
                     <input type="checkbox" id="schNotifyAll" onchange="window.toggleSchAllRecipients(this)" style="accent-color:var(--amber);">
                     <span id="schNotifyAllLabel">All students</span>
@@ -430,6 +498,8 @@
           </div>
         </div>
 
+
+          <!-- Enquiries -->
         <div class="school-subpage" id="schoolsub-enquiries" style="display:none;">
           <div class="schools-toolbar">
             <select class="search-input" id="schEnquiryStatusFilter" style="max-width:180px;">
@@ -440,28 +510,51 @@
               <option value="closed">Closed</option>
             </select>
           </div>
-          <div class="panel">
-            <table>
-              <thead><tr><th>Date</th><th>Name</th><th>Phone</th><th>Email</th><th>Course</th><th>Message</th><th>Status</th><th></th></tr></thead>
-              <tbody id="schEnquiriesTableBody"><tr class="empty-row"><td colspan="8">Loading…</td></tr></tbody>
+          <div class="panel" style="overflow-x:auto;">
+            <table style="table-layout:fixed;width:100%;">
+              <colgroup>
+                <col style="width:9%">
+                <col style="width:15%">
+                <col style="width:13%">
+                <col style="width:10%">
+                <col style="width:24%">
+                <col style="width:12%">
+                <col style="width:17%">
+              </colgroup>
+              <thead><tr><th>Date</th><th>Name</th><th>Phone</th><th>Course</th><th>Message</th><th>Status</th><th></th></tr></thead>
+              <tbody id="schEnquiriesTableBody"><tr class="empty-row"><td colspan="7">Loading…</td></tr></tbody>
             </table>
           </div>
         </div>
 
-        <div class="school-subpage" id="schoolsub-permissions" style="display:none;">
-          <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
-            <button class="btn btn-primary" id="schPermTabStudentBtn" onclick="window.switchSchPermTab('student')">Student permissions</button>
-            <button class="btn btn-outline" id="schPermTabInstructorBtn" onclick="window.switchSchPermTab('instructor')">Instructor permissions</button>
+
+
+        <!-- Staff Management -->
+        <div class="school-subpage" id="schoolsub-staff" style="display:none;">
+          <div class="schools-toolbar">
+            <input class="search-input" id="schStaffSearch" type="text" placeholder="Search by name or role…">
+            <button class="btn btn-primary" id="schOpenAddStaffBtn"><i class="fas fa-user-plus"></i> Add staff</button>
           </div>
-          <div class="panel" id="schPermStudentPanel">
-            <div class="panel-head"><h3>Student dashboard permissions</h3><button class="btn btn-primary" onclick="window.saveSchPermissions('student')"><i class="fas fa-save"></i> Save</button></div>
-            <div style="padding:20px;display:flex;flex-direction:column;gap:10px;" id="schPermStudentList">Loading…</div>
-          </div>
-          <div class="panel" id="schPermInstructorPanel" style="display:none;">
-            <div class="panel-head"><h3>Instructor dashboard permissions</h3><button class="btn btn-primary" onclick="window.saveSchPermissions('instructor')"><i class="fas fa-save"></i> Save</button></div>
-            <div style="padding:20px;display:flex;flex-direction:column;gap:10px;" id="schPermInstructorList">Loading…</div>
+          <div class="panel">
+            <table>
+              <thead>
+                <tr>
+                  <th>Staff</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Branch</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="schStaffTableBody">
+                <tr class="empty-row"><td colspan="6">Loading staff…</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
+
+        <!-- School settings -->
         <div class="school-subpage" id="schoolsub-settings" style="display:none;">
           <div class="panel">
             <div class="panel-head"><h3>School information</h3><button class="btn btn-outline" onclick="window.openSchoolEditFromDetail()"><i class="fas fa-pen"></i> Edit</button></div>
@@ -510,10 +603,161 @@
         </div>
       </section>
 
-      <!-- ---------- PROFILE (unchanged) ---------- -->
+      <!-- ---------- PROFILE (personal, signed-in admin only) ---------- -->
       <section class="page" id="page-profile">
-        <div class="panel"><div class="panel-head"><h3>Portal profile</h3></div>
-          <div style="padding:20px;color:var(--slate);font-size:13px;">Same profile editor as before — carried over unchanged. (Wire back in from the previous build if you want it visible here; omitted in this pass to keep focus on the Schools rebuild.)</div>
+        <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start;">
+
+          <div class="panel">
+            <div class="panel-head"><h3><i class="fas fa-user-circle"></i> My profile</h3></div>
+            <form id="myProfileForm" style="padding:20px;">
+              <div style="display:flex;align-items:center;gap:18px;margin-bottom:22px;flex-wrap:wrap;">
+                <div id="myProfileImgUploadArea" onclick="window.viewMyProfilePhoto()" title="View photo" style="width:80px;height:80px;border-radius:50%;flex-shrink:0;position:relative;cursor:pointer;">
+                  <div style="width:100%;height:100%;border-radius:50%;overflow:hidden;background:var(--asphalt-deep);border:1.5px dashed var(--border);display:flex;align-items:center;justify-content:center;">
+                    <i class="fas fa-user" style="color:var(--slate-dim);font-size:22px;"></i>
+                    <img id="myProfileImgPreview" src="" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                  </div>
+                  <button type="button" onclick="event.stopPropagation();document.getElementById('myProfileImgFile').click()" title="Change photo" style="position:absolute;bottom:-2px;right:-2px;width:26px;height:26px;border-radius:50%;background:var(--amber);border:2px solid var(--panel);color:var(--asphalt-deep);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;">
+                    <i class="fas fa-pencil-alt" style="font-size:10px;"></i>
+                  </button>
+                </div>
+                <input type="file" id="myProfileImgFile" accept="image/*" style="display:none">
+                <span id="myProfileImgText" style="display:none;"></span>
+                <div style="flex:1;min-width:180px;">
+                  <label for="myProfileName" style="display:block;font-size:12px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--slate);margin-bottom:7px;">Display name</label>
+                  <input id="myProfileName" type="text" placeholder="Your name" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-size:14px;">
+                </div>
+              </div>
+              <div class="field"><label for="myProfileBio">Bio</label><textarea id="myProfileBio" rows="4" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-family:inherit;" placeholder="A short bio about you…"></textarea></div>
+              <p class="form-error" id="myProfileError"></p>
+              <button class="btn btn-primary" type="submit" id="myProfileSaveBtn" style="width:100%;justify-content:center;margin-top:6px;"><i class="fas fa-save"></i> Save profile</button>
+            </form>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h3><i class="fas fa-user-shield"></i> Account settings</h3></div>
+            <div style="padding:20px;">
+              <div class="field"><label>Signed in as</label><input id="pAccountEmail" type="email" disabled style="opacity:.6;"></div>
+              <button class="btn btn-outline" style="width:100%;justify-content:center;" onclick="window.resetPortalAdminPassword()"><i class="fas fa-key"></i> Send password reset email</button>
+              <p style="font-size:11.5px;color:var(--slate-dim);margin-top:10px;line-height:1.6;">This account is a super admin — it has access to every school on the platform. Only share it with trusted staff.</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ---------- SITE SETTINGS (public landing page content) ---------- -->
+      <section class="page" id="page-siteSettings">
+        <div class="panel" style="max-width:640px;">
+          <div class="panel-head"><h3><i class="fas fa-globe"></i> Landing page content</h3><span style="font-size:11.5px;color:var(--slate-dim);">Shown on the public landing page</span></div>
+          <form id="siteSettingsForm" style="padding:20px;">
+            <div class="field">
+              <label>Cover / hero photo</label>
+              <div class="img-upload-area" id="pSiteImgUploadArea" onclick="document.getElementById('pSiteImgFile').click()">
+                <i class="fas fa-image" style="color:var(--amber);margin-right:6px;"></i>
+                <span id="pSiteImgText" style="font-size:12px;color:var(--slate-dim);">Tap to upload a hero photo</span>
+              </div>
+              <input type="file" id="pSiteImgFile" accept="image/*" style="display:none">
+              <img id="pSiteImgPreview" src="" style="display:none;max-width:100%;max-height:160px;border-radius:8px;margin-top:8px;border:1px solid var(--border);">
+            </div>
+            <div class="field"><label for="pSiteName">Display / company name</label><input id="pSiteName" type="text" placeholder="M-Smart Driving School Solution"></div>
+            <div class="field"><label for="pSiteTagline">Tagline</label><input id="pSiteTagline" type="text" placeholder="e.g. Connecting Ghana's driving schools, one platform."></div>
+            <div class="field"><label for="pSiteBio">About / bio</label><textarea id="pSiteBio" rows="4" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-family:inherit;" placeholder="A short description shown on the public landing page…"></textarea></div>
+            <div class="form-row">
+              <div class="field"><label for="pSiteEmail">Public contact email</label><input id="pSiteEmail" type="email" placeholder="hello@example.com"></div>
+              <div class="field"><label for="pSitePhone">Public contact phone</label><input id="pSitePhone" type="tel" placeholder="+233 XX XXX XXXX"></div>
+            </div>
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--slate-dim);margin:16px 0 10px;">Social links</div>
+            <div class="form-row">
+              <div class="field"><label for="pSiteFacebook">Facebook</label><input id="pSiteFacebook" type="url" placeholder="https://facebook.com/…"></div>
+              <div class="field"><label for="pSiteInstagram">Instagram</label><input id="pSiteInstagram" type="url" placeholder="https://instagram.com/…"></div>
+            </div>
+            <div class="form-row">
+              <div class="field"><label for="pSiteTwitter">X / Twitter</label><input id="pSiteTwitter" type="url" placeholder="https://x.com/…"></div>
+              <div class="field"><label for="pSiteWhatsapp">WhatsApp number</label><input id="pSiteWhatsapp" type="tel" placeholder="+233 XX XXX XXXX"></div>
+            </div>
+            <p class="form-error" id="pSiteError"></p>
+            <button class="btn btn-primary" type="submit" id="pSiteSaveBtn" style="width:100%;justify-content:center;margin-top:6px;"><i class="fas fa-save"></i> Save site settings</button>
+          </form>
+        </div>
+      </section>
+
+      <!-- ---------- PM/GM BIO ---------- -->
+      <section class="page" id="page-pmgmBio">
+        <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;">
+
+          <div class="panel">
+            <div class="panel-head"><h3><i class="fas fa-id-badge"></i> Edit PM/GM bio card</h3></div>
+            <form id="pmgmBioForm" style="padding:20px;">
+              <div class="field"><label for="pmgmName">Display name</label><input id="pmgmName" type="text" placeholder="e.g. Dr. Elvis Baidoo"></div>
+              <div class="field"><label for="pmgmBadge">Badge label</label><input id="pmgmBadge" type="text" placeholder="e.g. PM/GM"></div>
+              <div class="field"><label for="pmgmRole">Role / subtitle</label><input id="pmgmRole" type="text" placeholder="e.g. M-Smart Driving School Solution"></div>
+              <div class="field"><label for="pmgmBio">Bio text</label><textarea id="pmgmBio" rows="5" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-family:inherit;" placeholder="Short bio shown on the landing page…"></textarea></div>
+
+              <div class="form-row">
+                <div class="field"><label style="display:block;">Stat 1 number <span style="color:var(--slate-dim);font-weight:400;">(auto — live schools)</span></label><input id="pmgmStat1Num" type="text" disabled style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--slate-dim);font-size:14px;opacity:.55;cursor:not-allowed;"></div>
+                <div class="field"><label for="pmgmStat1Label">Stat 1 label</label><input id="pmgmStat1Label" type="text" placeholder="Schools"></div>
+              </div>
+              <div class="form-row">
+                <div class="field"><label style="display:block;">Stat 2 number <span style="color:var(--slate-dim);font-weight:400;">(auto — live regions)</span></label><input id="pmgmStat2Num" type="text" disabled style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--slate-dim);font-size:14px;opacity:.55;cursor:not-allowed;"></div>
+                <div class="field"><label for="pmgmStat2Label">Stat 2 label</label><input id="pmgmStat2Label" type="text" placeholder="Cities"></div>
+              </div>
+              <div class="form-row">
+                <div class="field"><label for="pmgmStat3Num">Stat 3 number</label><input id="pmgmStat3Num" type="text" placeholder="1"></div>
+                <div class="field"><label for="pmgmStat3Label">Stat 3 label</label><input id="pmgmStat3Label" type="text" placeholder="Portal"></div>
+              </div>
+
+              <div class="field" style="margin-top:14px;">
+                <label>Profile photo</label>
+                <div class="img-upload-area" id="pmgmImgUploadArea" onclick="document.getElementById('pmgmImgFile').click()">
+                  <i class="fas fa-image" style="color:var(--amber);margin-right:6px;"></i>
+                  <span id="pmgmImgText" style="font-size:12px;color:var(--slate-dim);">Tap to upload a profile photo</span>
+                </div>
+                <input type="file" id="pmgmImgFile" accept="image/*" style="display:none">
+                <img id="pmgmImgPreview" src="" style="display:none;max-width:120px;max-height:120px;border-radius:50%;object-fit:cover;margin-top:8px;border:1px solid var(--border);">
+              </div>
+
+              <p class="form-error" id="pmgmError"></p>
+              <button class="btn btn-primary" type="submit" id="pmgmSaveBtn" style="width:100%;justify-content:center;margin-top:6px;"><i class="fas fa-save"></i> Save PM/GM bio</button>
+            </form>
+          </div>
+
+          <div>
+            <p style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--slate);margin:0 0 14px;">Live preview</p>
+            <div id="pmgmPreview" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.13);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-radius:20px;padding:24px 24px 20px;box-shadow:0 8px 32px rgba(0,0,0,0.28),inset 0 1px 0 rgba(255,255,255,0.12);position:relative;overflow:hidden;">
+              <div style="position:absolute;top:-60px;right:-60px;width:180px;height:180px;background:radial-gradient(circle,rgba(242,169,59,0.18) 0%,transparent 70%);pointer-events:none;"></div>
+              <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;">
+                <div style="position:relative;flex-shrink:0;">
+                  <img id="pmgmPreviewImg" src="" alt="Preview" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2.5px solid rgba(242,169,59,0.6);box-shadow:0 0 0 4px rgba(242,169,59,0.12);display:block;background:#243040;">
+                  <div style="position:absolute;bottom:3px;right:3px;width:13px;height:13px;background:#2ECC71;border-radius:50%;border:2px solid rgba(17,22,30,0.85);box-shadow:0 0 6px rgba(46,204,113,0.7);"></div>
+                </div>
+                <div>
+                  <div id="pmgmPreviewBadge" style="display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#F2A93B;background:rgba(242,169,59,0.12);border:1px solid rgba(242,169,59,0.25);border-radius:4px;padding:2px 8px;margin-bottom:5px;">PM/GM</div>
+                  <h3 id="pmgmPreviewName" style="font-family:'Space Grotesk',sans-serif;font-size:19px;font-weight:700;margin:0 0 3px;color:#F7F5F0;line-height:1.1;">—</h3>
+                  <p id="pmgmPreviewRole" style="font-size:12.5px;color:#8A93A3;margin:0;">—</p>
+                </div>
+              </div>
+              <div style="height:1px;background:linear-gradient(90deg,rgba(242,169,59,0.4) 0%,rgba(255,255,255,0.05) 100%);margin-bottom:14px;"></div>
+              <p id="pmgmPreviewBio" style="font-size:13.5px;line-height:1.65;color:rgba(247,245,240,0.72);margin:0 0 18px;">—</p>
+              <div style="display:flex;align-items:center;">
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
+                  <span id="pmgmPreviewS1Num" style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:#F2A93B;line-height:1;">0</span>
+                  <span id="pmgmPreviewS1Label" style="font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#8A93A3;">Schools</span>
+                </div>
+                <div style="width:1px;height:32px;background:rgba(255,255,255,0.1);"></div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
+                  <span id="pmgmPreviewS2Num" style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:#F2A93B;line-height:1;">0</span>
+                  <span id="pmgmPreviewS2Label" style="font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#8A93A3;">Cities</span>
+                </div>
+                <div style="width:1px;height:32px;background:rgba(255,255,255,0.1);"></div>
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">
+                  <span id="pmgmPreviewS3Num" style="font-family:'Space Grotesk',sans-serif;font-size:20px;font-weight:700;color:#F2A93B;line-height:1;">1</span>
+                  <span id="pmgmPreviewS3Label" style="font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#8A93A3;">Portal</span>
+                </div>
+              </div>
+            </div>
+            <p style="margin-top:10px;font-size:12px;color:var(--slate-dim);">Changes appear live as you type. Hit <strong style="color:var(--chalk);">Save PM/GM bio</strong> to push to Firestore.</p>
+          </div>
+
         </div>
       </section>
 
@@ -595,6 +839,11 @@
         </select>
       </div>
       <div class="field">
+        <label>Role</label>
+        <select id="schNewRole" class="field-select"><option value="Standard">Standard</option></select>
+        <div style="font-size:11px;color:var(--slate-dim);margin-top:4px;">Controls which portal features this student can access.</div>
+      </div>
+      <div class="field">
         <label>Student photo <span style="color:var(--slate-dim);font-weight:400;">(optional)</span></label>
         <div class="img-upload-area" onclick="document.getElementById('schNewStudentPhotoFile').click()">
           <i class="fas fa-camera" style="color:var(--amber);margin-right:6px;"></i>
@@ -663,6 +912,10 @@
       <div class="form-row">
         <div class="field"><label>Date of engagement</label><input id="schInstrNewEngagementDate" type="date"></div>
         <div class="field"><label>Years of experience</label><input id="schInstrNewExp" type="number" min="0" placeholder="5"></div>
+      </div>
+      <div class="field"><label>Role</label>
+        <select id="schInstrNewRole" class="field-select"><option value="Standard">Standard</option></select>
+        <div style="font-size:11px;color:var(--slate-dim);margin-top:4px;">Controls which portal features this instructor can access.</div>
       </div>
 
       <div class="field"><label>Ghana Card number</label><input id="schInstrNewGhCardNumber" type="text" placeholder="GHA-123456789-1"></div>
@@ -747,6 +1000,49 @@
     <div class="modal-foot">
       <button class="btn btn-secondary" onclick="window.closeModal('confirmModal')">Cancel</button>
       <button class="btn btn-primary" id="confirmOkBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= STAFF PASSWORD OPTIONS MODAL ================= -->
+<div class="overlay" id="schStaffPasswordModal">
+  <div class="modal" style="width:400px;">
+    <div class="modal-head"><h3>Password options</h3><button class="modal-close" onclick="window.closeModal('schStaffPasswordModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="schStaffPwdTargetUid">
+      <input type="hidden" id="schStaffPwdTargetEmail">
+      <p style="font-size:13px;color:var(--slate);margin:0 0 18px;line-height:1.6;">Choose how you'd like to reset this staff member's password.</p>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <button class="btn btn-primary" style="justify-content:center;" onclick="window.chooseUpdateManually()"><i class="fas fa-user-shield"></i> Update Manually</button>
+        <button class="btn btn-outline" style="justify-content:center;" onclick="window.chooseSendResetEmail()"><i class="fas fa-key"></i> Send Reset Email Link</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MANUAL PASSWORD RESET MODAL ================= -->
+<div class="overlay" id="manualPasswordModal">
+  <div class="modal" style="width:400px;">
+    <div class="modal-head"><h3>Set new password</h3><button class="modal-close" onclick="window.closeModal('manualPasswordModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="manualPwdTargetUid">
+      <p style="font-size:12.5px;color:var(--slate-dim);margin:0 0 14px;line-height:1.6;">This immediately overwrites the account's password. The user is not notified — share the new password with them directly.</p>
+      <div class="field"><label>New password</label><input id="manualPwdNewValue" type="text" placeholder="Enter a new password (min. 6 characters)"></div>
+      <p class="form-error" id="manualPwdError"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('manualPasswordModal')">Cancel</button>
+      <button class="btn btn-primary" id="manualPwdSaveBtn"><i class="fas fa-key"></i> Set password</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= PROFILE PHOTO VIEW MODAL ================= -->
+<div class="overlay" id="myProfileImgViewModal">
+  <div class="modal" style="width:360px;">
+    <div class="modal-head"><h3>Profile photo</h3><button class="modal-close" onclick="window.closeModal('myProfileImgViewModal')">✕</button></div>
+    <div class="modal-body" style="text-align:center;padding:24px;">
+      <img id="myProfileImgViewLarge" src="" style="max-width:100%;max-height:60vh;border-radius:12px;border:1px solid var(--border);">
     </div>
   </div>
 </div>
@@ -875,6 +1171,576 @@
       <button class="btn btn-danger" id="schVehicleDeleteBtn" style="display:none;"><i class="fas fa-trash"></i> Delete</button>
       <button class="btn btn-secondary" onclick="window.closeModal('schVehicleModal')">Cancel</button>
       <button class="btn btn-primary" id="schVehicleSaveBtn"><i class="fas fa-save"></i> Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ADD/EDIT COURSE MODAL ================= -->
+<div class="overlay" id="schCourseModal">
+  <div class="modal" style="width:560px;">
+    <div class="modal-head"><h3 id="schCourseModalTitle">Add course</h3><button class="modal-close" onclick="window.closeModal('schCourseModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="schCourseId">
+      <div class="field">
+        <label>Course name</label>
+        <select id="schCourseNameSelect" class="field-select" onchange="window.toggleSchCourseCustomName(this)">
+          <option value="">Select course…</option>
+          <option value="Manual">Manual Transmission</option>
+          <option value="Automatic">Automatic Transmission</option>
+          <option value="Motorcycle">Motorcycle</option>
+          <option value="Commercial Bus">Commercial Bus</option>
+          <option value="Truck / HGV">Truck / HGV</option>
+          <option value="__custom__">+ Type a custom course name…</option>
+        </select>
+        <input type="text" id="schCourseNameCustom" placeholder="Enter custom course name…" style="display:none;margin-top:8px;">
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Category</label>
+          <select id="schCourseCategory" class="field-select">
+            <option value="personal">Personal</option>
+            <option value="commercial">Commercial</option>
+          </select>
+        </div>
+        <div class="field"><label>Duration</label>
+          <select id="schCourseDuration" class="field-select">
+            <option value="">Select duration…</option>
+            <option value="1 week">1 week</option>
+            <option value="2 weeks">2 weeks</option>
+            <option value="3 weeks">3 weeks</option>
+            <option value="4 weeks">4 weeks</option>
+            <option value="4 – 6 weeks">4 – 6 weeks</option>
+            <option value="6 – 8 weeks">6 – 8 weeks</option>
+            <option value="6 – 10 weeks">6 – 10 weeks</option>
+            <option value="8 – 12 weeks">8 – 12 weeks</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Price (GH₵)</label><input id="schCoursePrice" type="number" placeholder="800"></div>
+        <div class="field"><label>Level</label>
+          <select id="schCourseLevel" class="field-select">
+            <option value="beginner">Beginner</option>
+            <option value="intermediate">Intermediate</option>
+            <option value="advanced">Advanced</option>
+          </select>
+        </div>
+      </div>
+      <div class="field"><label>Description</label><textarea id="schCourseDesc" rows="2" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-family:inherit;"></textarea></div>
+      <div class="field"><label>Icon</label>
+        <select id="schCourseIcon" class="field-select">
+          <option value="fa-car">🚗 Car (Manual / Automatic)</option>
+          <option value="fa-motorcycle">🏍 Motorcycle</option>
+          <option value="fa-bus">🚌 Bus / Commercial</option>
+          <option value="fa-truck">🚛 Truck / HGV</option>
+        </select>
+      </div>
+      <div class="field"><label>Assigned students</label>
+        <div id="schCourseStudentList" style="max-height:160px;overflow-y:auto;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--asphalt-deep);"></div>
+      </div>
+      <div class="field"><label>Assigned instructors</label>
+        <div id="schCourseInstructorList" style="max-height:160px;overflow-y:auto;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--asphalt-deep);"></div>
+      </div>
+      <p class="form-error" id="schCourseError"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="schCourseDeleteBtn" style="display:none;"><i class="fas fa-trash"></i> Delete</button>
+      <button class="btn btn-secondary" onclick="window.closeModal('schCourseModal')">Cancel</button>
+      <button class="btn btn-primary" id="schCourseSaveBtn"><i class="fas fa-save"></i> Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ENQUIRY DETAIL MODAL ================= -->
+<div class="overlay" id="schEnquiryDetailModal">
+  <div class="modal" style="width:500px;">
+    <div class="modal-head"><h3>Enquiry details</h3><button class="modal-close" onclick="window.closeModal('schEnquiryDetailModal')">✕</button></div>
+    <div class="modal-body" id="schEnquiryDetailBody"></div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('schEnquiryDetailModal')">Close</button>
+      <a class="btn btn-primary" id="schEnquiryDetailWaBtn" href="#" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i> Chat on WhatsApp</a>
+    </div>
+  </div>
+</div>
+
+<!-- ================= EDIT STUDENT/INSTRUCTOR ROLE MODAL ================= -->
+<div class="overlay" id="schEditPortalRoleModal">
+  <div class="modal" style="width:480px;max-height:90vh;">
+    <div class="modal-head"><h3 id="schEditPortalRoleTitle">Edit role</h3><button class="modal-close" onclick="window.closeModal('schEditPortalRoleModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="schEditPortalRoleType">
+      <input type="hidden" id="schEditPortalRoleKey">
+      <div style="font-size:12px;color:var(--slate-dim);margin-bottom:14px;line-height:1.6;">Editing this role changes access for every student or instructor currently assigned to it.</div>
+      <div id="schEditPortalRoleMatrix" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <p class="form-error" id="schEditPortalRoleError"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('schEditPortalRoleModal')">Cancel</button>
+      <button class="btn btn-primary" id="schSavePortalRoleBtn"><i class="fas fa-save"></i> Save permissions</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ADD STAFF MODAL (school-scoped) ================= -->
+<div class="overlay" id="schAddStaffModal">
+  <div class="modal" style="width:480px;">
+    <div class="modal-head"><h3>Add staff member</h3><button class="modal-close" onclick="window.closeModal('schAddStaffModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="field"><label>First name</label><input id="schStaffFirst" type="text" placeholder="Kwame"></div>
+        <div class="field"><label>Last name</label><input id="schStaffLast" type="text" placeholder="Asante"></div>
+      </div>
+      <div class="field"><label>Email</label><input id="schStaffEmail" type="email" placeholder="staff@example.com"></div>
+      <div class="field"><label>Phone</label><input id="schStaffPhone" type="tel" placeholder="024 000 0000"></div>
+
+<div class="field">
+  <label>Profile photo <span style="color:var(--slate-dim);font-weight:400;">(optional)</span></label>
+  <div class="img-upload-area" onclick="document.getElementById('schStaffPhotoFile').click()">
+    <i class="fas fa-camera" style="color:var(--amber);margin-right:6px;"></i>
+    <span id="schStaffPhotoText" style="font-size:12px;color:var(--slate-dim);">Tap to upload a photo</span>
+  </div>
+  <input type="file" id="schStaffPhotoFile" accept="image/*" style="display:none">
+  <img id="schStaffPhotoPreview" src="" style="display:none;max-width:100%;max-height:120px;border-radius:8px;margin-top:8px;border:1px solid var(--border);">
+</div>
+      
+      
+      <div class="field"> 
+        <label>Role <span style="color:var(--brake)">*</span></label>
+        <select id="schStaffRoleSelect" class="field-select">
+          <option value="">Select role…</option>
+        </select>
+      </div>
+      <div class="field" id="schStaffBranchField" style="display:none;">
+        <label>Branch <span style="color:var(--slate-dim);font-weight:400;">(for Branch Manager)</span></label>
+        <select id="schStaffBranchSelect" class="field-select">
+          <option value="">Select branch…</option>
+          <option value="Ablekuma">Ablekuma</option>
+          <option value="Adenta">Adenta</option>
+          <option value="Amasaman">Amasaman</option>
+          <option value="Dansoman">Dansoman</option>
+        </select>
+      </div>
+      <div class="field"><label>Temporary password</label><input id="schStaffPassword" type="text" placeholder="Set a temporary password"></div>
+      <div class="field">
+        <label>Status</label>
+        <select id="schStaffStatusSelect" class="field-select">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+      <p class="form-error" id="schAddStaffError"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('schAddStaffModal')">Cancel</button>
+      <button class="btn btn-primary" id="schCreateStaffBtn"><i class="fas fa-user-plus"></i> Create staff account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= EDIT STAFF MODAL ================= -->
+<div class="overlay" id="schEditStaffModal">
+  <div class="modal" style="width:480px;">
+    <div class="modal-head"><h3 id="schEditStaffTitle">Edit staff</h3><button class="modal-close" onclick="window.closeModal('schEditStaffModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="schEditStaffUid">
+
+      <div class="field" style="text-align:center;">
+        <div id="schEditStaffPhotoUploadArea" onclick="document.getElementById('schEditStaffPhotoFile').click()" title="Change photo" style="width:80px;height:80px;border-radius:50%;margin:0 auto 10px;position:relative;cursor:pointer;">
+          <div style="width:100%;height:100%;border-radius:50%;overflow:hidden;background:var(--asphalt-deep);border:1.5px dashed var(--border);display:flex;align-items:center;justify-content:center;">
+            <i class="fas fa-user" style="color:var(--slate-dim);font-size:22px;"></i>
+            <img id="schEditStaffPhotoPreview" src="" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%;">
+          </div>
+          <button type="button" onclick="event.stopPropagation();document.getElementById('schEditStaffPhotoFile').click()" title="Change photo" style="position:absolute;bottom:-2px;right:-2px;width:26px;height:26px;border-radius:50%;background:var(--amber);border:2px solid var(--panel);color:var(--asphalt-deep);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;">
+            <i class="fas fa-pencil-alt" style="font-size:10px;"></i>
+          </button>
+        </div>
+        <input type="file" id="schEditStaffPhotoFile" accept="image/*" style="display:none">
+      </div>
+
+      <div class="form-row">
+        <div class="field"><label>First name</label><input id="schEditStaffFirst" type="text" placeholder="Kwame"></div>
+        <div class="field"><label>Last name</label><input id="schEditStaffLast" type="text" placeholder="Asante"></div>
+      </div>
+      <div class="field"><label>Email</label><input id="schEditStaffEmail" type="email" disabled style="opacity:.6;"></div>
+      <div class="field"><label>Phone</label><input id="schEditStaffPhone" type="tel" placeholder="024 000 0000"></div>
+
+      <div class="field">
+        <label>Role <span style="color:var(--brake)">*</span></label>
+        <select id="schEditStaffRoleSelect" class="field-select">
+          <option value="">Select role…</option>
+        </select>
+      </div>
+      <div class="field" id="schEditStaffBranchField">
+        <label>Branch <span style="color:var(--slate-dim);font-weight:400;">(for Branch Manager)</span></label>
+        <select id="schEditStaffBranchSelect" class="field-select">
+          <option value="">Select branch…</option>
+          <option value="Ablekuma">Ablekuma</option>
+          <option value="Adenta">Adenta</option>
+          <option value="Amasaman">Amasaman</option>
+          <option value="Dansoman">Dansoman</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="schEditStaffStatusSelect" class="field-select">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+      <p class="form-error" id="schEditStaffError"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="schDeleteStaffBtn"><i class="fas fa-trash"></i> Remove staff</button>
+      <button class="btn btn-secondary" onclick="window.closeModal('schEditStaffModal')">Cancel</button>
+      <button class="btn btn-primary" id="schSaveStaffBtn"><i class="fas fa-save"></i> Save changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= EDIT ROLE DEFINITION MODAL ================= -->
+<div class="overlay" id="schEditRoleModal">
+  <div class="modal" style="width:580px;max-height:90vh;">
+    <div class="modal-head"><h3 id="schEditRoleTitle">Edit role: <span id="schEditRoleName">—</span></h3><button class="modal-close" onclick="window.closeModal('schEditRoleModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="schEditRoleKey">
+      <div style="margin-bottom:16px;padding:12px 16px;background:var(--asphalt-deep);border:1px solid var(--border);border-radius:8px;">
+        <div style="font-size:13px;color:var(--text-muted);">Permission matrix — check the boxes for each page and action.</div>
+        <div style="font-size:11px;color:var(--slate-dim);margin-top:4px;">Legend: <span style="color:var(--chalk);">■</span> Page Access &nbsp; <span style="color:var(--amber);">■</span> Create &nbsp; <span style="color:var(--info);">■</span> Read &nbsp; <span style="color:var(--good);">■</span> Update &nbsp; <span style="color:var(--brake);">■</span> Delete</div>
+      </div>
+      <div id="schEditRoleMatrix" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <p class="form-error" id="schEditRoleError"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('schEditRoleModal')">Cancel</button>
+      <button class="btn btn-primary" id="schSaveRoleBtn"><i class="fas fa-save"></i> Save permissions</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= LESSON FOLDER MODALS ================= -->
+<div class="overlay" id="addFolderModal">
+  <div class="modal" style="width:420px;">
+    <div class="modal-head"><h3 id="addFolderModalTitle">New course folder</h3><button class="modal-close" onclick="window.closeModal('addFolderModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field" id="newFolderCourseGroup">
+        <label>Course</label>
+        <select id="newFolderCourseSelect" class="field-select"><option value="">Select course…</option></select>
+        <div id="newFolderParentHint" style="font-size:11px;color:var(--slate-dim);margin-top:6px;">This folder will be created at the top level.</div>
+      </div>
+      <div class="field" id="newFolderTitleGroup" style="display:none;">
+        <label>Subfolder title</label>
+        <input type="text" id="newFolderTitle" placeholder="e.g. Advanced">
+      </div>
+      <div class="field" id="newFolderDescGroup" style="display:none;">
+        <label>Description</label>
+        <textarea id="newFolderDescription" rows="2" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-family:inherit;" placeholder="Brief description of this subfolder…"></textarea>
+      </div>
+      <div class="field">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <label style="margin-bottom:0;">Visible to schools</label>
+          <button type="button" class="btn btn-outline" style="padding:4px 10px;font-size:11px;" onclick="window.toggleAllSchoolsCheck('newFolderSchoolsList')">All schools</button>
+        </div>
+        <input type="text" id="newFolderSchoolsSearch" placeholder="Search schools…" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-size:12.5px;margin-bottom:6px;" oninput="window.filterSchoolsChecklist(this,'newFolderSchoolsList')">
+        <div id="newFolderSchoolsList" style="max-height:160px;overflow-y:auto;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--asphalt-deep);"></div>
+        <div style="font-size:11px;color:var(--slate-dim);margin-top:6px;">No schools checked = hidden from every school.</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('addFolderModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="window.createLessonFolder()"><i class="fas fa-folder-plus"></i> Create folder</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="editFolderModal">
+  <div class="modal" style="width:420px;">
+    <div class="modal-head"><h3>Edit folder</h3><button class="modal-close" onclick="window.closeModal('editFolderModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editFolderId">
+      <div class="field"><label>Folder name</label><input type="text" id="editFolderTitle" placeholder="Folder name"></div>
+      <div class="field"><label>Description</label><textarea id="editFolderDescription" rows="2" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-family:inherit;" placeholder="Brief description…"></textarea></div>
+      <div class="field">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <label style="margin-bottom:0;">Visible to schools</label>
+          <button type="button" class="btn btn-outline" style="padding:4px 10px;font-size:11px;" onclick="window.toggleAllSchoolsCheck('editFolderSchoolsList')">All schools</button>
+        </div>
+        <input type="text" id="editFolderSchoolsSearch" placeholder="Search schools…" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-size:12.5px;margin-bottom:6px;" oninput="window.filterSchoolsChecklist(this,'editFolderSchoolsList')">
+        <div id="editFolderSchoolsList" style="max-height:160px;overflow-y:auto;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--asphalt-deep);"></div>
+        <div style="font-size:11px;color:var(--slate-dim);margin-top:6px;">No schools checked = hidden from every school.</div>
+      </div>
+      <div style="font-size:11px;color:var(--slate-dim);"><i class="fas fa-info-circle"></i> Renaming will automatically update any subfolders and lessons stored inside this folder.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('editFolderModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="window.updateLessonFolder()"><i class="fas fa-save"></i> Save changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ADD LESSON MODAL ================= -->
+<div class="overlay" id="addLessonModal">
+  <div class="modal" style="width:520px;">
+    <div class="modal-head"><h3>Add video lesson</h3><button class="modal-close" onclick="window.closeModal('addLessonModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Course folder</label>
+        <select id="lessonFolder" class="field-select" onchange="window.refreshLessonQuizOptions('lessonFolder','lessonAssignedQuiz')"></select>
+      </div>
+      <div class="field"><label>Lesson title</label><input type="text" id="lessonTitle" placeholder="e.g. Road signs — warning signs"></div>
+      <div class="form-row">
+        <div class="field">
+          <label>Category</label>
+          <select id="lessonCategory" class="field-select">
+            <option value="Theory">Theory</option>
+            <option value="Road safety">Road safety</option>
+            <option value="Practical tips">Practical tips</option>
+            <option value="DVLA prep">DVLA prep</option>
+          </select>
+        </div>
+        <div class="field"><label>Duration</label><input type="text" id="lessonDuration" placeholder="e.g. 8:30"></div>
+      </div>
+      <div class="field">
+        <label>Video file</label>
+        <div class="img-upload-area" id="lessonVideoUploadArea" onclick="document.getElementById('lessonVideoFile').click()">
+          <i class="fas fa-video" style="color:var(--amber);margin-right:6px;"></i>
+          <span id="lessonVideoText" style="font-size:12px;color:var(--slate-dim);">Tap to upload lesson video (MP4)</span>
+        </div>
+        <input type="file" id="lessonVideoFile" accept="video/*" style="display:none" onchange="window.previewLessonVideo(this)">
+        <video id="lessonVideoPreview" controls style="display:none;width:100%;margin-top:8px;border-radius:8px;border:1px solid var(--border);"></video>
+        <div id="lessonUploadProgressWrap" style="display:none;margin-top:10px;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--slate-dim);margin-bottom:4px;">
+            <span id="lessonUploadProgressLabel">Uploading video…</span><span id="lessonUploadProgressPct">0%</span>
+          </div>
+          <div style="height:8px;background:var(--asphalt-deep);border-radius:50px;overflow:hidden;">
+            <div id="lessonUploadProgressBar" style="height:100%;width:0%;background:var(--amber);border-radius:50px;transition:width 0.15s ease;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Thumbnail image</label>
+        <div class="img-upload-area" id="lessonThumbUploadArea" onclick="document.getElementById('lessonThumbFile').click()">
+          <i class="fas fa-image" style="color:var(--amber);margin-right:6px;"></i>
+          <span id="lessonThumbText" style="font-size:12px;color:var(--slate-dim);">Tap to upload thumbnail (leave blank for auto)</span>
+        </div>
+        <input type="file" id="lessonThumbFile" accept="image/*" style="display:none" onchange="window.previewLessonThumb(this)">
+        <img id="lessonThumbPreview" src="" style="display:none;max-width:160px;margin-top:8px;border-radius:8px;border:1px solid var(--border);">
+      </div>
+      <div class="field">
+        <label>Assign to quiz <span style="font-weight:normal;color:var(--slate-dim);">(optional)</span></label>
+        <select id="lessonAssignedQuiz" class="field-select"><option value="">No quiz — don't auto-launch</option></select>
+        <div style="font-size:11px;color:var(--slate-dim);margin-top:4px;">When set, this quiz will automatically pop up for the student right after they finish watching the video.</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('addLessonModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="window.addLesson()"><i class="fas fa-plus"></i> Publish lesson</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= LESSON QUIZ PROMPT MODAL ================= -->
+<div class="overlay" id="lessonQuizPromptModal">
+  <div class="modal" style="width:440px;">
+    <div class="modal-head"><h3>Assign a quiz?</h3><button class="modal-close" onclick="window.closeModal('lessonQuizPromptModal')">✕</button></div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:var(--chalk);line-height:1.6;">Will you assign this video lesson to a quiz? If yes, make sure to upload or create a quiz first so you can find it in the dropdown to assign to the video lesson.</p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.handleLessonQuizPromptNo()">No, just add lesson</button>
+      <button class="btn btn-primary" onclick="window.handleLessonQuizPromptYes()"><i class="fas fa-tasks"></i> Yes, create/upload quiz</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= EDIT LESSON MODAL ================= -->
+<div class="overlay" id="editLessonModal">
+  <div class="modal" style="width:520px;">
+    <div class="modal-head"><h3>Edit lesson</h3><button class="modal-close" onclick="window.closeEditLessonModal()">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editLessonId">
+      <div class="field">
+        <label>Course folder</label>
+        <select id="editLessonFolder" class="field-select" onchange="window.refreshLessonQuizOptions('editLessonFolder','editLessonAssignedQuiz')"></select>
+      </div>
+      <div class="field"><label>Lesson title</label><input type="text" id="editLessonTitle"></div>
+      <div class="form-row">
+        <div class="field">
+          <label>Category</label>
+          <select id="editLessonCategory" class="field-select">
+            <option value="Theory">Theory</option>
+            <option value="Road safety">Road safety</option>
+            <option value="Practical tips">Practical tips</option>
+            <option value="DVLA prep">DVLA prep</option>
+          </select>
+        </div>
+        <div class="field"><label>Duration</label><input type="text" id="editLessonDuration" placeholder="e.g. 8:30"></div>
+      </div>
+      <div class="field">
+        <label>Video file</label>
+        <div style="font-size:11px;color:var(--slate-dim);margin-bottom:6px;">Leave untouched to keep the current video, or upload a new file to replace it.</div>
+        <div class="img-upload-area" id="editLessonVideoUploadArea" onclick="document.getElementById('editLessonVideoFile').click()">
+          <i class="fas fa-video" style="color:var(--amber);margin-right:6px;"></i>
+          <span id="editLessonVideoText" style="font-size:12px;color:var(--slate-dim);">Tap to replace video</span>
+        </div>
+        <input type="file" id="editLessonVideoFile" accept="video/*" style="display:none" onchange="window.previewEditLessonVideo(this)">
+        <video id="editLessonVideoPreview" controls style="display:none;width:100%;margin-top:8px;border-radius:8px;border:1px solid var(--border);"></video>
+        <div id="editLessonUploadProgressWrap" style="display:none;margin-top:10px;">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--slate-dim);margin-bottom:4px;">
+            <span id="editLessonUploadProgressLabel">Uploading video…</span><span id="editLessonUploadProgressPct">0%</span>
+          </div>
+          <div style="height:8px;background:var(--asphalt-deep);border-radius:50px;overflow:hidden;">
+            <div id="editLessonUploadProgressBar" style="height:100%;width:0%;background:var(--amber);border-radius:50px;transition:width 0.15s ease;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Thumbnail image</label>
+        <div class="img-upload-area" id="editLessonThumbUploadArea" onclick="document.getElementById('editLessonThumbFile').click()">
+          <i class="fas fa-image" style="color:var(--amber);margin-right:6px;"></i>
+          <span id="editLessonThumbText" style="font-size:12px;color:var(--slate-dim);">Tap to replace thumbnail</span>
+        </div>
+        <input type="file" id="editLessonThumbFile" accept="image/*" style="display:none" onchange="window.previewEditLessonThumb(this)">
+        <img id="editLessonThumbPreview" src="" style="display:none;max-width:160px;margin-top:8px;border-radius:8px;border:1px solid var(--border);">
+      </div>
+      <div class="field">
+        <label>Assign to quiz <span style="font-weight:normal;color:var(--slate-dim);">(optional)</span></label>
+        <select id="editLessonAssignedQuiz" class="field-select"><option value="">No quiz — don't auto-launch</option></select>
+      </div>
+      <div class="field">
+        <label>Watch progress <span id="editLessonAvgCompletion" style="font-weight:normal;color:var(--slate-dim);"></span></label>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeEditLessonModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="window.updateLesson()"><i class="fas fa-save"></i> Save changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= QUIZ CATEGORY MODAL ================= -->
+<div class="overlay" id="addQuizCategoryModal">
+  <div class="modal" style="width:420px;">
+    <div class="modal-head"><h3 id="addQuizCategoryModalTitle">New course folder</h3><button class="modal-close" onclick="window.closeModal('addQuizCategoryModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editQuizCategoryId">
+      <div class="field" id="newQuizCategoryCourseGroup">
+        <label>Course</label>
+        <select id="newQuizCategoryCourseSelect" class="field-select"><option value="">Select course…</option></select>
+        <div id="newQuizCategoryParentHint" style="font-size:11px;color:var(--slate-dim);margin-top:6px;">This folder will be created at the top level.</div>
+      </div>
+      <div class="field" id="newQuizCategoryTitleGroup" style="display:none;">
+        <label>Category name</label>
+        <input type="text" id="newQuizCategoryTitle" placeholder="e.g. Defensive Driving">
+      </div>
+      <div class="field" id="newQuizCategoryDescGroup" style="display:none;">
+        <label>Description</label>
+        <textarea id="newQuizCategoryDescription" rows="2" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-family:inherit;" placeholder="Brief description of this category…"></textarea>
+      </div>
+      <div class="field">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <label style="margin-bottom:0;">Visible to schools</label>
+          <button type="button" class="btn btn-outline" style="padding:4px 10px;font-size:11px;" onclick="window.toggleAllSchoolsCheck('newQuizCategorySchoolsList')">All schools</button>
+        </div>
+        <input type="text" id="newQuizCategorySchoolsSearch" placeholder="Search schools…" style="width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-size:12.5px;margin-bottom:6px;" oninput="window.filterSchoolsChecklist(this,'newQuizCategorySchoolsList')">
+        <div id="newQuizCategorySchoolsList" style="max-height:160px;overflow-y:auto;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--asphalt-deep);"></div>
+        <div style="font-size:11px;color:var(--slate-dim);margin-top:6px;">No schools checked = hidden from every school.</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('addQuizCategoryModal')">Cancel</button>
+      <button class="btn btn-primary" id="quizCategorySaveBtn" onclick="window.saveQuizCategory()"><i class="fas fa-folder-plus"></i> Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ADD/EDIT QUIZ MODAL ================= -->
+<div class="overlay" id="editQuizModal">
+  <div class="modal" style="width:560px;">
+    <div class="modal-head"><h3 id="editQuizModalTitle">New quiz</h3><button class="modal-close" onclick="window.closeModal('editQuizModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editQuizId">
+      <div class="form-row">
+        <div class="field"><label>Quiz title</label><input type="text" id="editQuizTitle" placeholder="e.g. Highway Code — General"></div>
+        <div class="field"><label>Pass mark (%)</label><input type="number" id="editQuizPassMark" value="60" min="1" max="100"></div>
+      </div>
+      <div id="quizQuestionsSection" style="display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:14px 0 8px;">
+          <div style="font-weight:700;font-size:13px;color:var(--amber);">Questions <span id="quizQuestionCount" style="color:var(--slate-dim);font-weight:normal;"></span></div>
+          <div style="display:flex;gap:8px;">
+            <button class="icon-btn" title="Import CSV" onclick="window.openQuizCsvModal()"><i class="fas fa-file-csv"></i></button>
+            <button class="icon-btn" title="Add question" onclick="window.openAddQuestionModal()"><i class="fas fa-plus"></i></button>
+          </div>
+        </div>
+        <div id="quizQuestionsList" style="display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto;">
+          <div style="color:var(--slate-dim);font-size:13px;">No questions yet.</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="quizDeleteBtn" style="display:none;" onclick="window.deleteQuizFromModal()"><i class="fas fa-trash"></i> Delete quiz</button>
+      <button class="btn btn-secondary" onclick="window.closeModal('editQuizModal')">Close</button>
+      <button class="btn btn-primary" onclick="window.saveQuizMeta()"><i class="fas fa-save"></i> Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ADD/EDIT QUESTION MODAL ================= -->
+<div class="overlay" id="addQuestionModal">
+  <div class="modal" style="width:480px;">
+    <div class="modal-head"><h3 id="addQuestionModalTitle">Add question</h3><button class="modal-close" onclick="window.closeModal('addQuestionModal')">✕</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="editQuestionId">
+      <div class="field"><label>Question text</label><textarea id="qBuilderText" rows="2" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-family:inherit;" placeholder="e.g. What does this road sign mean?"></textarea></div>
+      <div class="field">
+        <label>Image <span style="font-weight:normal;color:var(--slate-dim);">(optional)</span></label>
+        <div class="img-upload-area" id="qBuilderImgUploadArea" onclick="document.getElementById('qBuilderImgFile').click()">
+          <i class="fas fa-image" style="color:var(--amber);margin-right:6px;"></i>
+          <span id="qBuilderImgText" style="font-size:12px;color:var(--slate-dim);">Tap to upload an image</span>
+        </div>
+        <input type="file" id="qBuilderImgFile" accept="image/*" style="display:none" onchange="window.previewQuestionImage(this)">
+        <img id="qBuilderImgPreview" src="" style="display:none;max-width:100%;max-height:140px;border-radius:8px;margin-top:8px;border:1px solid var(--border);">
+      </div>
+      <div class="field"><label>Option A</label><input type="text" id="qBuilderOptA"></div>
+      <div class="field"><label>Option B</label><input type="text" id="qBuilderOptB"></div>
+      <div class="field"><label>Option C</label><input type="text" id="qBuilderOptC"></div>
+      <div class="field"><label>Option D</label><input type="text" id="qBuilderOptD"></div>
+      <div class="field">
+        <label>Correct answer</label>
+        <select id="qBuilderCorrect" class="field-select">
+          <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('addQuestionModal')">Cancel</button>
+      <button class="btn btn-primary" id="qBuilderSaveBtn" onclick="window.saveQuestion()"><i class="fas fa-save"></i> Save question</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= CSV IMPORT MODAL ================= -->
+<div class="overlay" id="quizCsvModal">
+  <div class="modal" style="width:480px;">
+    <div class="modal-head"><h3>Import questions from CSV</h3><button class="modal-close" onclick="window.closeModal('quizCsvModal')">✕</button></div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--slate-dim);margin-bottom:14px;line-height:1.6;">
+        CSV columns, in order: <strong style="color:var(--amber);">question, imageUrl, optionA, optionB, optionC, optionD, correct</strong><br>
+        <code style="color:var(--chalk);">imageUrl</code> is optional — leave blank if no image. <code style="color:var(--chalk);">correct</code> must be A, B, C, or D.<br>
+        First row is treated as a header and skipped.
+      </div>
+      <div class="field"><input type="file" id="quizCsvFile" accept=".csv"></div>
+      <div id="quizCsvPreview" style="font-size:12px;color:var(--slate-dim);"></div>
+      <div id="quizCsvProgressWrap" style="display:none;margin-top:14px;">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--slate-dim);margin-bottom:4px;">
+          <span id="quizCsvProgressLabel">Importing questions…</span><span id="quizCsvProgressPct">0%</span>
+        </div>
+        <div style="height:8px;background:var(--asphalt-deep);border-radius:50px;overflow:hidden;">
+          <div id="quizCsvProgressBar" style="height:100%;width:0%;background:var(--amber);border-radius:50px;transition:width 0.15s ease;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('quizCsvModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="window.importQuizCsv()"><i class="fas fa-file-import"></i> Import</button>
     </div>
   </div>
 </div>

@@ -699,31 +699,113 @@ document.querySelectorAll('#navSchoolScope .nav-link[data-school-page]').forEach
 async function renderSchoolDetailOverview(){
   const school = allSchools.find(s => s.id === currentSchoolId);
   if (!school) return;
+
+  // Hero
+  const heroCover = document.getElementById('ovHeroCover');
+  heroCover.style.backgroundImage = school.imageUrl ? `url(${school.imageUrl})` : '';
+  heroCover.innerHTML = school.imageUrl ? '' : '<i class="fas fa-school"></i>';
+  document.getElementById('ovHeroName').textContent = school.name || '—';
+  document.getElementById('ovHeroMeta').innerHTML = `<i class="fas fa-map-marker-alt" style="margin-right:4px;"></i>${escapeHtml(school.region || '—')} &nbsp;·&nbsp; Added ${fmtDate(school.createdAt)} &nbsp;·&nbsp; <span class="badge ${school.status==='inactive'?'bad':'good'}">${escapeHtml(school.status || 'active')}</span>`;
+
+  // Details rows (with copy buttons)
   const infoEl = document.getElementById('schoolDetailInfo');
-  infoEl.innerHTML = `
-    <div style="display:grid;grid-template-columns:140px 1fr;gap:10px 16px;">
-      <div style="color:var(--slate-dim);">Region</div><div>${escapeHtml(school.region || '—')}</div>
-      <div style="color:var(--slate-dim);">Email</div><div>${school.email ? escapeHtml(school.email) : '—'}</div>
-      <div style="color:var(--slate-dim);">Phone 1</div><div>${school.phone1 ? escapeHtml(school.phone1) : '—'}</div>
-      <div style="color:var(--slate-dim);">Phone 2</div><div>${school.phone2 ? escapeHtml(school.phone2) : '—'}</div>
-      <div style="color:var(--slate-dim);">Website</div><div><a class="site-link" href="${escapeHtml(school.url)}" target="_blank">${escapeHtml(school.url || '—')}</a></div>
-      <div style="color:var(--slate-dim);">Status</div><div><span class="badge ${school.status==='inactive'?'bad':'good'}">${escapeHtml(school.status || 'active')}</span></div>
-      <div style="color:var(--slate-dim);">Added</div><div>${fmtDate(school.createdAt)}</div>
+  const detailRow = (icon, label, valueHtml, copyValue) => `
+    <div class="ov-detail-row">
+      <i class="fas ${icon}"></i>
+      <span class="ov-label">${label}</span>
+      <span class="ov-value">${valueHtml}</span>
+      ${copyValue ? `<button class="ov-copy-btn" title="Copy" onclick="navigator.clipboard.writeText('${escapeHtml(copyValue).replace(/'/g,"\\'")}');window.showToast('Copied ✓')"><i class="fas fa-copy"></i></button>` : ''}
     </div>`;
+  infoEl.innerHTML =
+    detailRow('fa-map-marker-alt', 'Region', escapeHtml(school.region || '—')) +
+    detailRow('fa-envelope', 'Email', school.email ? escapeHtml(school.email) : '—', school.email || '') +
+    detailRow('fa-phone', 'Phone 1', school.phone1 ? escapeHtml(school.phone1) : '—', school.phone1 || '') +
+    detailRow('fa-phone-alt', 'Phone 2', school.phone2 ? escapeHtml(school.phone2) : '—', school.phone2 || '') +
+    detailRow('fa-globe', 'Website', school.url ? `<a class="site-link" href="${escapeHtml(school.url)}" target="_blank">${escapeHtml(school.url)}</a>` : '—', school.url || '') +
+    detailRow('fa-toggle-on', 'Status', `<span class="badge ${school.status==='inactive'?'bad':'good'}">${escapeHtml(school.status || 'active')}</span>`) +
+    detailRow('fa-calendar', 'Added', fmtDate(school.createdAt));
+
+  // Notes
+  const notesArea = document.getElementById('ovNotesTextarea');
+  const notesStatus = document.getElementById('ovNotesStatus');
+  notesArea.value = school.adminNotes || '';
+  notesStatus.textContent = school.notesUpdatedAt ? `Last saved ${fmtDate(school.notesUpdatedAt)}` : 'Not saved yet';
 
   try {
-    const [studSnap, instrSnap] = await Promise.all([
+    const [studSnap, instrSnap, courseSnap] = await Promise.all([
       getDocs(query(collection(db, "students"), where("schoolId", "==", currentSchoolId))),
-      getDocs(query(collection(db, "instructors"), where("schoolId", "==", currentSchoolId)))
+      getDocs(query(collection(db, "instructors"), where("schoolId", "==", currentSchoolId))),
+      getDocs(query(collection(db, "courses"), where("schoolId", "==", currentSchoolId)))
     ]);
-    const students = studSnap.docs.map(d => d.data());
+    const students = studSnap.docs.map(d => ({ id: d.id, ...d.data() }));
     const pending = students.filter(s => s.status === 'pending').length;
     document.getElementById('schStatStudents').textContent = students.length;
     document.getElementById('schStatStudentsSub').textContent = `${students.filter(s=>s.status==='active').length} active`;
     document.getElementById('schStatInstructors').textContent = instrSnap.size;
     document.getElementById('schStatPending').textContent = pending;
+    document.getElementById('schStatCourses').textContent = courseSnap.size;
+    document.getElementById('schStatCoursesSub').textContent = courseSnap.size ? 'Offered by this school' : 'None added yet';
+    renderOverviewPerformers(students);
   } catch(e) { console.error(e); }
 }
+
+// Small zigzag trend-arrow icons (stock-chart style)
+const OV_TREND_UP_SVG = `<svg width="20" height="16" viewBox="0 0 24 16"><polyline points="1,14 7,8 11,11 17,3" fill="none" stroke="var(--good)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><polyline points="11,3 17,3 17,9" fill="none" stroke="var(--good)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const OV_TREND_DOWN_SVG = `<svg width="20" height="16" viewBox="0 0 24 16"><polyline points="1,3 7,9 11,6 17,14" fill="none" stroke="var(--brake)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><polyline points="11,14 17,14 17,8" fill="none" stroke="var(--brake)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+// Ranks active students by training stage (best available performance signal —
+// no per-student quiz-score collection exists in the current schema) and
+// renders the top/bottom performer cards in the Overview hero.
+function renderOverviewPerformers(students){
+  const wrap = document.getElementById('ovPerformers');
+  if (!wrap) return;
+  const active = (students || []).filter(s => s.status === 'active');
+  if (active.length < 2) {
+    wrap.innerHTML = `<div class="ov-performer-empty">Not enough active students yet to rank.</div>`;
+    return;
+  }
+  const sorted = [...active].sort((a, b) => (Number(b.trainingStage) || 1) - (Number(a.trainingStage) || 1));
+  const top = sorted[0];
+  const bottom = sorted[sorted.length - 1];
+
+  const card = (s, kind) => {
+    const name = `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.email || '—';
+    const label = kind === 'top' ? 'Top performer' : 'Needs support';
+    const trend = kind === 'top' ? OV_TREND_UP_SVG : OV_TREND_DOWN_SVG;
+    return `<div class="ov-performer-card ${kind}">
+      ${avatarHtml(s.avatarUrl, s.firstName, s.lastName, 38)}
+      <div>
+        <p class="ov-performer-label">${label}</p>
+        <p class="ov-performer-name">${escapeHtml(name)}</p>
+        <p class="ov-performer-meta">Stage ${s.trainingStage || 1}</p>
+      </div>
+      <div class="ov-performer-trend">${trend}</div>
+    </div>`;
+  };
+
+  wrap.innerHTML = top.id === bottom.id
+    ? card(top, 'top')
+    : card(top, 'top') + card(bottom, 'bottom');
+}
+
+// Save the admin's free-text note for this school straight to Firestore
+window.saveOverviewNotes = async function(){
+  if (!currentSchoolId) return;
+  const notesArea = document.getElementById('ovNotesTextarea');
+  const notesStatus = document.getElementById('ovNotesStatus');
+  const value = notesArea.value.trim();
+  try {
+    await updateDoc(doc(db, 'schools', currentSchoolId), { adminNotes: value, notesUpdatedAt: serverTimestamp() });
+    notesStatus.textContent = 'Saved ✓';
+    showToast('Note saved ✓');
+  } catch(e) { showToast('Could not save note: ' + e.message, true); }
+};
+
+// Lets the hero's quick-action buttons jump straight to a school-scoped subpage
+window.showSchoolSubpageExternal = function(subpage){
+  const link = document.querySelector(`#navSchoolScope .nav-link[data-school-page="${subpage}"]`);
+  showSchoolSubpage(subpage, link);
+};
 
 // ============================================================
 // STUDENTS MODULE (school-scoped, fully built — the reference module)
@@ -2323,6 +2405,7 @@ function rebuildCentralQuizCategories(rawCats){
 }
 
 async function loadQuizzes(){
+  startQuizResultsListener(); // keep quiz-result stats live as students submit scores
   try {
     if (!quizCategoriesUnsub) {
       quizCategoriesUnsub = onSnapshot(collection(db, "quizCategories"), (snap) => {
@@ -2377,7 +2460,7 @@ function renderQuizFolderView(){
     breadcrumbEl.style.display = "block"; breadcrumbEl.innerHTML = renderQuizBreadcrumb(path);
     addQuizBtn.style.display = isLeaf ? "inline-flex" : "none";
     tableCard.style.display = isLeaf ? "block" : "none";
-    if (isLeaf) renderQuizzesTableForCategory(path);
+    if (isLeaf) { renderQuizzesTableForCategory(path); hydrateQuizStatsForCategory(path); }
   }
 
   const subfolders = allQuizCategories.filter(f => (f.parentPath || null) === path);
@@ -2563,6 +2646,50 @@ window.saveQuizCategory = async function(){
     await loadQuizzes();
   } catch(e) { showToast("Could not create folder: " + e.message, true); }
 };
+
+// Cache of every quizResults doc (one per student), kept live via a
+// real-time listener so a student's newly-submitted score shows up in the
+// admin table immediately — no manual refresh or re-navigation needed.
+let _allQuizResultsCache = null;
+let quizResultsUnsub = null;
+function startQuizResultsListener(){
+  if (quizResultsUnsub) return;
+  quizResultsUnsub = onSnapshot(collection(db, "quizResults"), (snap) => {
+    _allQuizResultsCache = snap.docs.map(d => d.data());
+    // Re-run stats for whatever quiz category the admin currently has open
+    if (currentQuizCategoryPath && currentQuizCategoryPath.split('/').length >= 2) {
+      hydrateQuizStatsForCategory(currentQuizCategoryPath);
+    }
+  }, (e) => console.error('Could not watch quiz results:', e));
+}
+async function getAllQuizResults(){
+  if (_allQuizResultsCache) return _allQuizResultsCache;
+  const snap = await getDocs(collection(db, "quizResults"));
+  _allQuizResultsCache = snap.docs.map(d => d.data());
+  return _allQuizResultsCache;
+}
+
+// Computes avg score + completion % per quiz in this category by scanning
+// quizResults (keyed by quizId -> score) against students enrolled in the
+// quiz's course, then re-renders the table with real numbers.
+async function hydrateQuizStatsForCategory(path){
+  const quizzes = allQuizzesFlat.filter(q => (q.categoryPath || '') === path);
+  if (!quizzes.length) return;
+  const courseName = quizzes[0].courseName || (path.split('/')[0] || '');
+  try {
+    const [resultsData, studentsSnap] = await Promise.all([
+      getAllQuizResults(),
+      courseName ? getDocs(query(collection(db, "students"), where("courseType", "==", courseName))) : Promise.resolve({ size: 0 })
+    ]);
+    const totalStudents = studentsSnap.size || 0;
+    quizzes.forEach(q => {
+      const scores = resultsData.filter(r => r[q.id] !== undefined).map(r => r[q.id]);
+      q.avgScore = scores.length ? Math.round(scores.reduce((s,v) => s+v, 0) / scores.length) : null;
+      q.completionPct = totalStudents ? Math.round((scores.length / totalStudents) * 100) : null;
+    });
+    if (currentQuizCategoryPath === path) renderQuizzesTableForCategory(path);
+  } catch(e) { console.error('Could not compute quiz stats:', e); }
+}
 
 function renderQuizzesTableForCategory(path){
   const tbody = document.getElementById("adminQuizTable");

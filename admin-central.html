@@ -467,18 +467,38 @@
 
         <div class="school-subpage" id="schoolsub-attendance" style="display:none;">
           <div class="schools-toolbar">
-            <input class="search-input" id="schAttSearch" type="text" placeholder="Search by student name…">
+            <input class="search-input" id="schAttSearch" type="text" placeholder="Search by student or instructor name…">
             <select class="search-input" id="schAttStatusFilter" style="max-width:160px;">
               <option value="">All statuses</option>
               <option value="present">Present</option>
               <option value="absent">Absent</option>
               <option value="excused">Excused</option>
             </select>
+            <button class="btn btn-outline" id="schAttCleanupBtn" style="display:none;" onclick="window.cleanupOrphanedAttendance()">
+              <i class="fas fa-broom"></i> Clean up orphaned records (<span id="schAttOrphanCount">0</span>)
+            </button>
           </div>
-          <div class="panel">
+
+          <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+            <button class="btn btn-primary" id="schAttTabStudent" onclick="window.switchSchAttTab('student')" style="min-width:160px;justify-content:center;">
+              <i class="fas fa-users"></i> Student Attendance
+            </button>
+            <button class="btn btn-outline" id="schAttTabInstructor" onclick="window.switchSchAttTab('instructor')" style="min-width:160px;justify-content:center;">
+              <i class="fas fa-chalkboard-teacher"></i> Instructor Attendance
+            </button>
+          </div>
+
+          <div class="panel" id="schAttStudentCard">
             <table>
               <thead><tr><th>Student</th><th>Date</th><th>Course</th><th>Class</th><th>Status</th><th></th></tr></thead>
               <tbody id="schAttTableBody"><tr class="empty-row"><td colspan="6">Loading…</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="panel" id="schAttInstructorCard" style="display:none;">
+            <table>
+              <thead><tr><th>Instructor</th><th>Date</th><th>Class</th><th>Course</th><th>Status</th><th></th></tr></thead>
+              <tbody id="schInstrAttTableBody"><tr class="empty-row"><td colspan="6">Loading…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -529,12 +549,11 @@
                   </div>
                 </div>
                 <div class="field">
-                  <label>Recipient</label>
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                    <label style="margin-bottom:0;">Recipient</label>
+                    <button type="button" class="btn btn-outline" id="schNotifyAllBtn" data-active="false" style="padding:4px 10px;font-size:11px;" onclick="window.toggleSchAllRecipients()"><span id="schNotifyAllLabel">Select all students</span></button>
+                  </div>
                   <input type="text" id="schNotifRecipientSearch" placeholder="Search students / instructors…" style="width:100%;padding:9px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-size:13px;margin-bottom:8px;" oninput="window.filterSchNotifRecipients(this.value)">
-                  <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-weight:600;color:var(--amber);border-bottom:1px solid var(--border);margin-bottom:8px;">
-                    <input type="checkbox" id="schNotifyAll" onchange="window.toggleSchAllRecipients(this)" style="accent-color:var(--amber);">
-                    <span id="schNotifyAllLabel">All students</span>
-                  </label>
                   <div id="schNotifStudentList" style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--asphalt-deep);"></div>
                   <div id="schNotifInstructorList" style="display:none;max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--asphalt-deep);"></div>
                 </div>
@@ -1123,18 +1142,20 @@
       <div class="field"><label>Class title</label><input id="schClassTitle" type="text" placeholder="e.g. Road Signs — Warning Signs"></div>
       <div class="field"><label>Description</label><textarea id="schClassDesc" rows="2" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-family:inherit;"></textarea></div>
       <div class="form-row">
-        <div class="field"><label>Course name</label><input id="schClassCourse" type="text" placeholder="e.g. Manual"></div>
         <div class="field"><label>Instructor</label>
-          <select id="schClassInstructor" class="field-select"><option value="">Select instructor…</option></select>
+          <select id="schClassInstructor" class="field-select" onchange="window.onSchClassInstructorChange()"><option value="">Select instructor…</option></select>
+        </div>
+        <div class="field"><label>Course</label>
+          <select id="schClassCourse" class="field-select" onchange="window.refreshSchClassAvailability()" disabled><option value="">Select instructor first…</option></select>
         </div>
       </div>
       <div class="form-row">
-        <div class="field"><label>Date</label><input id="schClassDate" type="date"></div>
-        <div class="field"><label>Time</label><input id="schClassTime" type="time"></div>
+        <div class="field"><label>Date</label><input id="schClassDate" type="date" onchange="window.refreshSchClassAvailability()"></div>
+        <div class="field"><label>Time</label><input id="schClassTime" type="time" onchange="window.refreshSchClassAvailability()"></div>
       </div>
       <div class="form-row">
-        <div class="field"><label>End date</label><input id="schClassEndDate" type="date"></div>
-        <div class="field"><label>End time</label><input id="schClassEndTime" type="time"></div>
+        <div class="field"><label>End date</label><input id="schClassEndDate" type="date" onchange="window.refreshSchClassAvailability()"></div>
+        <div class="field"><label>End time</label><input id="schClassEndTime" type="time" onchange="window.refreshSchClassAvailability()"></div>
       </div>
       <div class="field"><label>Mode</label>
         <select id="schClassMode" class="field-select" onchange="window.toggleSchClassOnlineFields()">
@@ -1162,7 +1183,11 @@
         <select id="schClassVehicle" class="field-select"><option value="">Select vehicle…</option></select>
       </div>
 
-      <div class="field"><label>Assign students</label>
+      <div class="field">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <label style="margin-bottom:0;">Assign students <span style="color:var(--slate-dim);font-weight:400;">(greyed = already booked this day)</span></label>
+          <button type="button" class="btn btn-outline" style="padding:4px 10px;font-size:11px;" onclick="window.showSchAllClassesPopupWithRange()"><i class="fas fa-calendar-alt"></i> View all classes</button>
+        </div>
         <div id="schClassStudentList" style="max-height:160px;overflow-y:auto;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--asphalt-deep);"></div>
       </div>
 
@@ -1187,6 +1212,17 @@
       <button class="btn btn-danger" id="schClassDeleteBtn" style="display:none;"><i class="fas fa-trash"></i> Delete</button>
       <button class="btn btn-secondary" onclick="window.closeModal('schClassModal')">Cancel</button>
       <button class="btn btn-primary" id="schClassSaveBtn"><i class="fas fa-save"></i> Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ALL CLASSES (SCHEDULE) POPUP ================= -->
+<div class="overlay" id="schAllClassesModal">
+  <div class="modal" style="width:640px;max-height:85vh;">
+    <div class="modal-head"><h3>All scheduled classes</h3><button class="modal-close" onclick="window.closeModal('schAllClassesModal')">✕</button></div>
+    <div class="modal-body" id="schAllClassesBody" style="font-size:13px;"></div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('schAllClassesModal')">Close</button>
     </div>
   </div>
 </div>

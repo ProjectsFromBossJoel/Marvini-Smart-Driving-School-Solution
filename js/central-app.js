@@ -4265,15 +4265,54 @@ function openEditPortalRoleModal(type, roleKey, rolesCache, defaults, collection
   document.getElementById('schEditPortalRoleError').textContent = '';
 
   const pages = { ...defaults, ...(role.pages || {}) };
+  const pageNames = Object.keys(pages);
+  const actions = ['access', 'create', 'read', 'update', 'delete'];
+  const actionLabels = { access: 'Page Access', create: 'Create', read: 'Read', update: 'Update', delete: 'Delete' };
+  const actionColors = { access: 'var(--chalk)', create: 'var(--amber)', read: 'var(--info)', update: 'var(--good)', delete: 'var(--brake)' };
+
   const matrix = document.getElementById('schEditPortalRoleMatrix');
-  matrix.innerHTML = Object.entries(pages).map(([key, p]) => {
-    const locked = p.locked ? 'disabled' : '';
-    const lockIcon = p.locked ? '<i class="fas fa-lock" style="color:var(--amber);margin-left:6px;font-size:10px;" title="Required"></i>' : '';
-    return `<label style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--asphalt-deep);border:1px solid var(--border);border-radius:8px;cursor:${p.locked?'default':'pointer'};">
-      <span style="font-size:13px;font-weight:500;">${escapeHtml(p.label || key)}${lockIcon}</span>
-      <input type="checkbox" class="sch-portal-role-check" data-key="${key}" data-label="${escapeHtml(p.label || key)}" data-locked="${!!p.locked}" ${p.enabled !== false ? 'checked' : ''} ${locked} style="width:18px;height:18px;accent-color:var(--amber);" />
-    </label>`;
-  }).join('');
+  if (!pageNames.length) {
+    matrix.innerHTML = '<div style="color:var(--slate-dim);font-size:13px;">No pages defined for this role.</div>';
+    document.getElementById('schEditPortalRoleModal')._collectionName = collectionName;
+    openModal('schEditPortalRoleModal');
+    return;
+  }
+
+  let html = `<table style="width:100%;border-collapse:collapse;">
+    <thead>
+      <tr>
+        <th style="padding:6px 8px;text-align:left;font-size:11px;color:var(--slate);border-bottom:1px solid var(--border);">Page</th>
+        ${actions.map(a => `<th style="padding:6px 8px;text-align:center;font-size:11px;color:${actionColors[a]};border-bottom:1px solid var(--border);">${actionLabels[a]}</th>`).join('')}
+      </tr>
+    </thead>
+    <tbody>`;
+
+  pageNames.forEach(key => {
+    const p = pages[key] || {};
+    // Migrate legacy single-checkbox pages: enabled -> access, and default
+    // read to whatever access/enabled was so existing data doesn't regress.
+    const access = p.access !== undefined ? p.access : (p.enabled !== false);
+    const readVal = p.read !== undefined ? p.read : access;
+    const createVal = p.create === true;
+    const updateVal = p.update === true;
+    const deleteVal = p.delete === true;
+    const vals = { access, create: createVal, read: readVal, update: updateVal, delete: deleteVal };
+    const locked = !!p.locked;
+    const lockIcon = locked ? '<i class="fas fa-lock" style="color:var(--amber);margin-left:6px;font-size:10px;" title="Required"></i>' : '';
+    html += `<tr>
+      <td style="padding:8px 8px;border-bottom:1px solid var(--border-subtle);font-size:13px;font-weight:500;">${escapeHtml(p.label || key)}${lockIcon}</td>`;
+    actions.forEach(a => {
+      const checked = vals[a] ? 'checked' : '';
+      const disabled = locked ? 'disabled' : '';
+      html += `<td style="padding:8px 8px;text-align:center;border-bottom:1px solid var(--border-subtle);">
+        <input type="checkbox" class="sch-portal-role-perm-check" data-key="${key}" data-label="${escapeHtml(p.label || key)}" data-locked="${locked}" data-action="${a}" ${checked} ${disabled} style="accent-color:var(--amber);width:16px;height:16px;">
+      </td>`;
+    });
+    html += `</tr>`;
+  });
+
+  html += `</tbody></table>`;
+  matrix.innerHTML = html;
 
   document.getElementById('schEditPortalRoleModal')._collectionName = collectionName;
   openModal('schEditPortalRoleModal');
@@ -4288,9 +4327,16 @@ document.getElementById('schSavePortalRoleBtn').addEventListener('click', async 
   if (!roleKey || !collectionName) { errEl.textContent = 'Role not found.'; return; }
 
   const pages = {};
-  document.querySelectorAll('.sch-portal-role-check').forEach(cb => {
-    pages[cb.dataset.key] = { label: cb.dataset.label, locked: cb.dataset.locked === 'true', enabled: cb.checked };
+  document.querySelectorAll('.sch-portal-role-perm-check').forEach(cb => {
+    const key = cb.dataset.key;
+    if (!pages[key]) {
+      pages[key] = { label: cb.dataset.label, locked: cb.dataset.locked === 'true' };
+    }
+    pages[key][cb.dataset.action] = cb.checked;
   });
+  // The student/instructor portals only ever check pages[key].enabled — keep
+  // it in sync with the "access" column so existing portal code needs no changes.
+  Object.values(pages).forEach(p => { p.enabled = p.access !== false; });
 
   const btn = document.getElementById('schSavePortalRoleBtn');
   btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';

@@ -699,31 +699,135 @@ document.querySelectorAll('#navSchoolScope .nav-link[data-school-page]').forEach
 async function renderSchoolDetailOverview(){
   const school = allSchools.find(s => s.id === currentSchoolId);
   if (!school) return;
+
+  // Hero
+  const heroCover = document.getElementById('ovHeroCover');
+  heroCover.style.backgroundImage = school.imageUrl ? `url(${school.imageUrl})` : '';
+  heroCover.innerHTML = school.imageUrl ? '' : '<i class="fas fa-school"></i>';
+  document.getElementById('ovHeroName').textContent = school.name || '—';
+  document.getElementById('ovHeroMeta').innerHTML = `<i class="fas fa-map-marker-alt" style="margin-right:4px;"></i>${escapeHtml(school.region || '—')} &nbsp;·&nbsp; Added ${fmtDate(school.createdAt)} &nbsp;·&nbsp; <span class="badge ${school.status==='inactive'?'bad':'good'}">${escapeHtml(school.status || 'active')}</span>`;
+
+  // Details rows (with copy buttons)
   const infoEl = document.getElementById('schoolDetailInfo');
-  infoEl.innerHTML = `
-    <div style="display:grid;grid-template-columns:140px 1fr;gap:10px 16px;">
-      <div style="color:var(--slate-dim);">Region</div><div>${escapeHtml(school.region || '—')}</div>
-      <div style="color:var(--slate-dim);">Email</div><div>${school.email ? escapeHtml(school.email) : '—'}</div>
-      <div style="color:var(--slate-dim);">Phone 1</div><div>${school.phone1 ? escapeHtml(school.phone1) : '—'}</div>
-      <div style="color:var(--slate-dim);">Phone 2</div><div>${school.phone2 ? escapeHtml(school.phone2) : '—'}</div>
-      <div style="color:var(--slate-dim);">Website</div><div><a class="site-link" href="${escapeHtml(school.url)}" target="_blank">${escapeHtml(school.url || '—')}</a></div>
-      <div style="color:var(--slate-dim);">Status</div><div><span class="badge ${school.status==='inactive'?'bad':'good'}">${escapeHtml(school.status || 'active')}</span></div>
-      <div style="color:var(--slate-dim);">Added</div><div>${fmtDate(school.createdAt)}</div>
+  const detailRow = (icon, label, valueHtml, copyValue) => `
+    <div class="ov-detail-row">
+      <i class="fas ${icon}"></i>
+      <span class="ov-label">${label}</span>
+      <span class="ov-value">${valueHtml}</span>
+      ${copyValue ? `<button class="ov-copy-btn" title="Copy" onclick="navigator.clipboard.writeText('${escapeHtml(copyValue).replace(/'/g,"\\'")}');window.showToast('Copied ✓')"><i class="fas fa-copy"></i></button>` : ''}
     </div>`;
+  infoEl.innerHTML =
+    detailRow('fa-map-marker-alt', 'Region', escapeHtml(school.region || '—')) +
+    detailRow('fa-envelope', 'Email', school.email ? escapeHtml(school.email) : '—', school.email || '') +
+    detailRow('fa-phone', 'Phone 1', school.phone1 ? escapeHtml(school.phone1) : '—', school.phone1 || '') +
+    detailRow('fa-phone-alt', 'Phone 2', school.phone2 ? escapeHtml(school.phone2) : '—', school.phone2 || '') +
+    detailRow('fa-globe', 'Website', school.url ? `<a class="site-link" href="${escapeHtml(school.url)}" target="_blank">${escapeHtml(school.url)}</a>` : '—', school.url || '') +
+    detailRow('fa-toggle-on', 'Status', `<span class="badge ${school.status==='inactive'?'bad':'good'}">${escapeHtml(school.status || 'active')}</span>`) +
+    detailRow('fa-calendar', 'Added', fmtDate(school.createdAt));
+
+  // Notes
+  const notesArea = document.getElementById('ovNotesTextarea');
+  const notesStatus = document.getElementById('ovNotesStatus');
+  notesArea.value = school.adminNotes || '';
+  notesStatus.textContent = school.notesUpdatedAt ? `Last saved ${fmtDate(school.notesUpdatedAt)}` : 'Not saved yet';
 
   try {
-    const [studSnap, instrSnap] = await Promise.all([
+    const [studSnap, instrSnap, courseSnap] = await Promise.all([
       getDocs(query(collection(db, "students"), where("schoolId", "==", currentSchoolId))),
-      getDocs(query(collection(db, "instructors"), where("schoolId", "==", currentSchoolId)))
+      getDocs(query(collection(db, "instructors"), where("schoolId", "==", currentSchoolId))),
+      getDocs(query(collection(db, "courses"), where("schoolId", "==", currentSchoolId)))
     ]);
-    const students = studSnap.docs.map(d => d.data());
+    const students = studSnap.docs.map(d => ({ id: d.id, ...d.data() }));
     const pending = students.filter(s => s.status === 'pending').length;
     document.getElementById('schStatStudents').textContent = students.length;
     document.getElementById('schStatStudentsSub').textContent = `${students.filter(s=>s.status==='active').length} active`;
     document.getElementById('schStatInstructors').textContent = instrSnap.size;
     document.getElementById('schStatPending').textContent = pending;
+    document.getElementById('schStatCourses').textContent = courseSnap.size;
+    document.getElementById('schStatCoursesSub').textContent = courseSnap.size ? 'Offered by this school' : 'None added yet';
+    await renderOverviewPerformers(students);
   } catch(e) { console.error(e); }
 }
+
+// Small zigzag trend-arrow icons (stock-chart style)
+const OV_TREND_UP_SVG = `<svg width="20" height="16" viewBox="0 0 24 16"><polyline points="1,14 7,8 11,11 17,3" fill="none" stroke="var(--good)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><polyline points="11,3 17,3 17,9" fill="none" stroke="var(--good)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const OV_TREND_DOWN_SVG = `<svg width="20" height="16" viewBox="0 0 24 16"><polyline points="1,3 7,9 11,6 17,14" fill="none" stroke="var(--brake)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><polyline points="11,14 17,14 17,8" fill="none" stroke="var(--brake)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+// Ranks active students by their average quiz score — pulled from
+// quizResults/{studentId} docs, where each field is quizId -> score — and
+// renders the top/bottom performer cards in the Overview hero.
+async function renderOverviewPerformers(students){
+  const wrap = document.getElementById('ovPerformers');
+  if (!wrap) return;
+  const active = (students || []).filter(s => s.status === 'active');
+  if (active.length < 2) {
+    wrap.innerHTML = `<div class="ov-performer-empty">Not enough active students yet to rank.</div>`;
+    return;
+  }
+
+  const withAvg = await Promise.all(active.map(async (s) => {
+    let avgQuiz = null;
+    try {
+      const snap = await getDoc(doc(db, 'quizResults', s.id));
+      if (snap.exists()) {
+        const scores = Object.values(snap.data()).filter(v => typeof v === 'number');
+        if (scores.length) avgQuiz = Math.round(scores.reduce((sum, v) => sum + v, 0) / scores.length);
+      }
+    } catch(e) { /* non-fatal — student just won't be eligible for ranking */ }
+    return { ...s, avgQuiz };
+  }));
+
+  // Prefer quiz-score ranking; fall back to training stage when too few
+  // students have quiz data yet, so the cards are never just empty.
+  const ranked = withAvg.filter(s => s.avgQuiz !== null);
+  const useQuizRanking = ranked.length >= 2;
+  const pool = useQuizRanking ? ranked : active;
+
+  const sorted = useQuizRanking
+    ? [...pool].sort((a, b) => b.avgQuiz - a.avgQuiz)
+    : [...pool].sort((a, b) => (Number(b.trainingStage) || 1) - (Number(a.trainingStage) || 1));
+  const top = sorted[0];
+  const bottom = sorted[sorted.length - 1];
+
+  const card = (s, kind) => {
+    const name = `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.email || '—';
+    const label = kind === 'top' ? 'Top performer' : 'Needs support';
+    const trend = kind === 'top' ? OV_TREND_UP_SVG : OV_TREND_DOWN_SVG;
+    const meta = useQuizRanking ? `Avg quiz: ${s.avgQuiz}%` : `Stage ${s.trainingStage || 1}`;
+    return `<div class="ov-performer-card ${kind}">
+      ${avatarHtml(s.avatarUrl, s.firstName, s.lastName, 38)}
+      <div>
+        <p class="ov-performer-label">${label}</p>
+        <p class="ov-performer-name">${escapeHtml(name)}</p>
+        <p class="ov-performer-meta">${meta}</p>
+      </div>
+      <div class="ov-performer-trend">${trend}</div>
+    </div>`;
+  };
+
+  wrap.innerHTML = top.id === bottom.id
+    ? card(top, 'top')
+    : card(top, 'top') + card(bottom, 'bottom');
+}
+
+// Save the admin's free-text note for this school straight to Firestore
+window.saveOverviewNotes = async function(){
+  if (!currentSchoolId) return;
+  const notesArea = document.getElementById('ovNotesTextarea');
+  const notesStatus = document.getElementById('ovNotesStatus');
+  const value = notesArea.value.trim();
+  try {
+    await updateDoc(doc(db, 'schools', currentSchoolId), { adminNotes: value, notesUpdatedAt: serverTimestamp() });
+    notesStatus.textContent = 'Saved ✓';
+    showToast('Note saved ✓');
+  } catch(e) { showToast('Could not save note: ' + e.message, true); }
+};
+
+// Lets the hero's quick-action buttons jump straight to a school-scoped subpage
+window.showSchoolSubpageExternal = function(subpage){
+  const link = document.querySelector(`#navSchoolScope .nav-link[data-school-page="${subpage}"]`);
+  showSchoolSubpage(subpage, link);
+};
 
 // ============================================================
 // STUDENTS MODULE (school-scoped, fully built — the reference module)
@@ -2323,6 +2427,7 @@ function rebuildCentralQuizCategories(rawCats){
 }
 
 async function loadQuizzes(){
+  startQuizResultsListener(); // keep quiz-result stats live as students submit scores
   try {
     if (!quizCategoriesUnsub) {
       quizCategoriesUnsub = onSnapshot(collection(db, "quizCategories"), (snap) => {
@@ -2377,7 +2482,7 @@ function renderQuizFolderView(){
     breadcrumbEl.style.display = "block"; breadcrumbEl.innerHTML = renderQuizBreadcrumb(path);
     addQuizBtn.style.display = isLeaf ? "inline-flex" : "none";
     tableCard.style.display = isLeaf ? "block" : "none";
-    if (isLeaf) renderQuizzesTableForCategory(path);
+    if (isLeaf) { renderQuizzesTableForCategory(path); hydrateQuizStatsForCategory(path); }
   }
 
   const subfolders = allQuizCategories.filter(f => (f.parentPath || null) === path);
@@ -2563,6 +2668,50 @@ window.saveQuizCategory = async function(){
     await loadQuizzes();
   } catch(e) { showToast("Could not create folder: " + e.message, true); }
 };
+
+// Cache of every quizResults doc (one per student), kept live via a
+// real-time listener so a student's newly-submitted score shows up in the
+// admin table immediately — no manual refresh or re-navigation needed.
+let _allQuizResultsCache = null;
+let quizResultsUnsub = null;
+function startQuizResultsListener(){
+  if (quizResultsUnsub) return;
+  quizResultsUnsub = onSnapshot(collection(db, "quizResults"), (snap) => {
+    _allQuizResultsCache = snap.docs.map(d => d.data());
+    // Re-run stats for whatever quiz category the admin currently has open
+    if (currentQuizCategoryPath && currentQuizCategoryPath.split('/').length >= 2) {
+      hydrateQuizStatsForCategory(currentQuizCategoryPath);
+    }
+  }, (e) => console.error('Could not watch quiz results:', e));
+}
+async function getAllQuizResults(){
+  if (_allQuizResultsCache) return _allQuizResultsCache;
+  const snap = await getDocs(collection(db, "quizResults"));
+  _allQuizResultsCache = snap.docs.map(d => d.data());
+  return _allQuizResultsCache;
+}
+
+// Computes avg score + completion % per quiz in this category by scanning
+// quizResults (keyed by quizId -> score) against students enrolled in the
+// quiz's course, then re-renders the table with real numbers.
+async function hydrateQuizStatsForCategory(path){
+  const quizzes = allQuizzesFlat.filter(q => (q.categoryPath || '') === path);
+  if (!quizzes.length) return;
+  const courseName = quizzes[0].courseName || (path.split('/')[0] || '');
+  try {
+    const [resultsData, studentsSnap] = await Promise.all([
+      getAllQuizResults(),
+      courseName ? getDocs(query(collection(db, "students"), where("courseType", "==", courseName))) : Promise.resolve({ size: 0 })
+    ]);
+    const totalStudents = studentsSnap.size || 0;
+    quizzes.forEach(q => {
+      const scores = resultsData.filter(r => r[q.id] !== undefined).map(r => r[q.id]);
+      q.avgScore = scores.length ? Math.round(scores.reduce((s,v) => s+v, 0) / scores.length) : null;
+      q.completionPct = totalStudents ? Math.round((scores.length / totalStudents) * 100) : null;
+    });
+    if (currentQuizCategoryPath === path) renderQuizzesTableForCategory(path);
+  } catch(e) { console.error('Could not compute quiz stats:', e); }
+}
 
 function renderQuizzesTableForCategory(path){
   const tbody = document.getElementById("adminQuizTable");
@@ -2886,8 +3035,14 @@ let schoolAttendance = [];
 let schoolAttendanceStudentMap = {};
 let schoolAttendanceUnsub = null;
 
+let schoolInstructorAttendance = [];
+let schoolInstructorAttendanceUnsub = null;
+let schAttTab = 'student';
+
 async function loadSchoolAttendance(){
   if (schoolAttendanceUnsub) { schoolAttendanceUnsub(); schoolAttendanceUnsub = null; }
+  if (schoolInstructorAttendanceUnsub) { schoolInstructorAttendanceUnsub(); schoolInstructorAttendanceUnsub = null; }
+  window.switchSchAttTab('student');
   try {
     const studSnap = await getDocs(query(collection(db, "students"), where("schoolId", "==", currentSchoolId)));
     schoolAttendanceStudentMap = {};
@@ -2902,10 +3057,114 @@ async function loadSchoolAttendance(){
   }, (err) => showToast('Could not load attendance: ' + err.message, true));
 }
 
+function loadSchoolInstructorAttendance(){
+  if (schoolInstructorAttendanceUnsub) { schoolInstructorAttendanceUnsub(); schoolInstructorAttendanceUnsub = null; }
+  const q = query(collection(db, "instructorAttendance"), where("schoolId", "==", currentSchoolId));
+  schoolInstructorAttendanceUnsub = onSnapshot(q, (snap) => {
+    schoolInstructorAttendance = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a,b) => (b.date?.toDate?.() || new Date(b.date||0)) - (a.date?.toDate?.() || new Date(a.date||0)));
+    renderSchoolInstructorAttendance();
+  }, (err) => showToast('Could not load instructor attendance: ' + err.message, true));
+}
+
+function renderSchoolInstructorAttendance(){
+  const term = (document.getElementById('schAttSearch').value || '').toLowerCase();
+  const statusFilter = document.getElementById('schAttStatusFilter').value;
+  const tbody = document.getElementById('schInstrAttTableBody');
+  if (!tbody) return;
+
+  const filtered = schoolInstructorAttendance.filter(r => {
+    const name = (r.instructorName || '').toLowerCase();
+    return (!term || name.includes(term)) && (!statusFilter || r.status === statusFilter);
+  });
+
+  if (!filtered.length) { tbody.innerHTML = `<tr class="empty-row"><td colspan="6">No instructor attendance records found.</td></tr>`; return; }
+
+  tbody.innerHTML = filtered.map(r => {
+    const dateStr = r.date?.toDate ? fmtDate(r.date) : (r.date || '—');
+    const statusClass = r.status === 'present' ? 'good' : r.status === 'excused' ? 'warn' : 'bad';
+    const classTitle = r.classTitle || (r.notes ? r.notes.replace('Class: ', '') : '—');
+    return `<tr>
+      <td><strong>${escapeHtml(r.instructorName || 'Unknown instructor')}</strong></td>
+      <td style="font-size:12px;color:var(--slate-dim);">${dateStr}</td>
+      <td style="font-size:12px;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(classTitle)}">${escapeHtml(classTitle)}</td>
+      <td><span class="badge">${escapeHtml(r.courseName || r.sessionType || '—')}</span></td>
+      <td><span class="badge ${statusClass}">${escapeHtml(r.status || '—')}</span></td>
+      <td class="row-actions">
+        <button class="icon-btn" style="color:var(--good);border-color:rgba(63,166,106,0.4);" title="Mark present" onclick="window.toggleSchInstructorAttendance('${r.id}','present')"><i class="fas fa-check"></i></button>
+        <button class="icon-btn danger" title="Mark absent" onclick="window.toggleSchInstructorAttendance('${r.id}','absent')"><i class="fas fa-times"></i></button>
+        <button class="icon-btn danger" title="Delete" onclick="window.deleteSchInstructorAttendance('${r.id}')"><i class="fas fa-trash"></i></button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+window.toggleSchInstructorAttendance = async function(id, status){
+  try { await updateDoc(doc(db, 'instructorAttendance', id), { status }); showToast(`Marked ${status} ✓`); }
+  catch(e) { showToast('Update failed: ' + e.message, true); }
+};
+window.deleteSchInstructorAttendance = async function(id){
+  if (!(await showConfirm('Delete record', 'Delete this instructor attendance record?'))) return;
+  try { await deleteDoc(doc(db, 'instructorAttendance', id)); showToast('Record deleted.'); }
+  catch(e) { showToast('Delete failed: ' + e.message, true); }
+};
+
+window.switchSchAttTab = function(tab){
+  schAttTab = tab;
+  document.getElementById('schAttTabStudent').className = tab === 'student' ? 'btn btn-primary' : 'btn btn-outline';
+  document.getElementById('schAttTabInstructor').className = tab === 'instructor' ? 'btn btn-primary' : 'btn btn-outline';
+  document.getElementById('schAttStudentCard').style.display = tab === 'student' ? 'block' : 'none';
+  document.getElementById('schAttInstructorCard').style.display = tab === 'instructor' ? 'block' : 'none';
+  const cleanupBtn = document.getElementById('schAttCleanupBtn');
+  if (cleanupBtn) cleanupBtn.style.display = (tab === 'student' && getOrphanedAttendanceRecords().length > 0) ? 'inline-flex' : 'none';
+  if (tab === 'instructor') {
+    if (!schoolInstructorAttendanceUnsub) loadSchoolInstructorAttendance();
+    else renderSchoolInstructorAttendance();
+  } else {
+    renderSchoolAttendance();
+  }
+};
+
+function getOrphanedAttendanceRecords(){
+  return schoolAttendance.filter(r => !schoolAttendanceStudentMap[r.studentId]);
+}
+
+function updateAttCleanupButton(){
+  const btn = document.getElementById('schAttCleanupBtn');
+  const countEl = document.getElementById('schAttOrphanCount');
+  if (!btn || !countEl) return;
+  const orphanCount = getOrphanedAttendanceRecords().length;
+  countEl.textContent = orphanCount;
+  btn.style.display = orphanCount > 0 ? 'inline-flex' : 'none';
+}
+
+window.cleanupOrphanedAttendance = async function(){
+  const orphans = getOrphanedAttendanceRecords();
+  if (!orphans.length) { showToast('No orphaned records found.'); return; }
+  if (!(await showConfirm(
+    'Clean up orphaned records',
+    `Delete ${orphans.length} attendance record${orphans.length > 1 ? 's' : ''} whose student no longer exists in this school? This cannot be undone.`
+  ))) return;
+
+  const btn = document.getElementById('schAttCleanupBtn');
+  const originalHTML = btn ? btn.innerHTML : '';
+  try {
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting…'; }
+    await Promise.all(orphans.map(r => deleteDoc(doc(db, 'attendance', r.id))));
+    showToast(`${orphans.length} orphaned record${orphans.length > 1 ? 's' : ''} deleted ✓`);
+  } catch(e) {
+    showToast('Cleanup failed: ' + e.message, true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = originalHTML; }
+  }
+};
+
 function renderSchoolAttendance(){
   const term = (document.getElementById('schAttSearch').value || '').toLowerCase();
   const statusFilter = document.getElementById('schAttStatusFilter').value;
   const tbody = document.getElementById('schAttTableBody');
+
+  updateAttCleanupButton();
 
   const filtered = schoolAttendance.filter(r => {
     const student = schoolAttendanceStudentMap[r.studentId];
@@ -2917,14 +3176,16 @@ function renderSchoolAttendance(){
 
   tbody.innerHTML = filtered.map(r => {
     const student = schoolAttendanceStudentMap[r.studentId];
-    const name = student ? `${student.firstName||''} ${student.lastName||''}`.trim() : (r.studentId || '—');
+    const fullName = student ? `${student.firstName||''} ${student.lastName||''}`.trim() : '';
+    const name = fullName || (student?.email) || 'Unknown student';
     const dateStr = r.date?.toDate ? fmtDate(r.date) : (r.date || '—');
     const statusClass = r.status === 'present' ? 'good' : r.status === 'excused' ? 'warn' : 'bad';
+    const classTitle = r.classTitle || '—';
     return `<tr>
       <td><strong>${escapeHtml(name)}</strong></td>
       <td style="font-size:12px;color:var(--slate-dim);">${dateStr}</td>
       <td><span class="badge">${escapeHtml(r.courseName || student?.courseType || '—')}</span></td>
-      <td style="font-size:12px;">${escapeHtml(r.classTitle || '—')}</td>
+      <td style="font-size:12px;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(classTitle)}">${escapeHtml(classTitle)}</td>
       <td><span class="badge ${statusClass}">${escapeHtml(r.status || '—')}</span></td>
       <td class="row-actions">
         <button class="icon-btn" style="color:var(--good);border-color:rgba(63,166,106,0.4);" title="Mark present" onclick="window.toggleSchAttendance('${r.id}','present')"><i class="fas fa-check"></i></button>
@@ -2934,8 +3195,8 @@ function renderSchoolAttendance(){
     </tr>`;
   }).join('');
 }
-document.getElementById('schAttSearch').addEventListener('input', renderSchoolAttendance);
-document.getElementById('schAttStatusFilter').addEventListener('change', renderSchoolAttendance);
+document.getElementById('schAttSearch').addEventListener('input', () => { if (schAttTab === 'instructor') renderSchoolInstructorAttendance(); else renderSchoolAttendance(); });
+document.getElementById('schAttStatusFilter').addEventListener('change', () => { if (schAttTab === 'instructor') renderSchoolInstructorAttendance(); else renderSchoolAttendance(); });
 
 window.toggleSchAttendance = async function(id, status){
   try { await updateDoc(doc(db, 'attendance', id), { status }); showToast(`Marked ${status} ✓`); }
@@ -2990,59 +3251,278 @@ function renderSchoolClasses(){
       <td style="font-size:12px;">${fmtDateTime(c)}</td>
       <td><span style="font-size:12px;color:var(--slate-dim);"><i class="fas ${c.mode==='online'?'fa-video':'fa-map-marker-alt'}"></i> ${escapeHtml(c.mode||'in-person')}</span></td>
       <td><span class="badge ${statusClass}">${status}</span></td>
-      <td class="row-actions"><button class="icon-btn" title="Edit" onclick="window.openSchClassModal('${c.id}')"><i class="fas fa-eye"></i></button></td>
+      <td class="row-actions"><button class="icon-btn" title="Edit" onclick="window.openSchClassModal('${c.id}', this)"><i class="fas fa-eye"></i></button></td>
     </tr>`;
   }).join('');
 }
 document.getElementById('schClassSearch').addEventListener('input', renderSchoolClasses);
+
+let schClassInstructorsCache = [];
+let schClassVehiclesCache = [];
+let schClassStudentsCache = [];
+let schClassCoursesCache = [];
+
+// ── Availability helpers (day-level overlap — same recipe as Dekay's own admin.html) ──
+function getSchClassDateTimeRange(cls){
+  const start = new Date(`${cls.date}T${cls.time}`);
+  const end = cls.endDate && cls.endTime ? new Date(`${cls.endDate}T${cls.endTime}`) : new Date(start.getTime() + (cls.durationMinutes||60)*60000);
+  return { start, end };
+}
+function schDaysOverlap(startA, endA, startB, endB){
+  const a1 = new Date(startA.getFullYear(), startA.getMonth(), startA.getDate());
+  const a2 = new Date(endA.getFullYear(), endA.getMonth(), endA.getDate());
+  const b1 = new Date(startB.getFullYear(), startB.getMonth(), startB.getDate());
+  const b2 = new Date(endB.getFullYear(), endB.getMonth(), endB.getDate());
+  return a1 <= b2 && b1 <= a2;
+}
+function formatSchTime(timeStr){
+  if (!timeStr) return '';
+  const [h, m] = timeStr.split(':');
+  let hour = parseInt(h);
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  if (hour === 0) hour = 12; else if (hour > 12) hour -= 12;
+  return `${hour}:${m} ${ampm}`;
+}
+function checkSchResourceAvailability(studentIds, vehicleId, start, end, excludeClassId){
+  const conflicts = { students: [], vehicle: false };
+  schoolClasses.forEach(c => {
+    if (excludeClassId && c.id === excludeClassId) return;
+    const range = getSchClassDateTimeRange(c);
+    if (!schDaysOverlap(start, end, range.start, range.end)) return;
+    if (studentIds && studentIds.length) {
+      (c.studentIds || []).forEach(sid => {
+        if (studentIds.includes(sid)) {
+          const student = schClassStudentsCache.find(s => s.id === sid);
+          const name = student ? `${student.firstName||''} ${student.lastName||''}`.trim() : sid;
+          if (!conflicts.students.includes(name)) conflicts.students.push(name);
+        }
+      });
+    }
+    if (vehicleId && c.vehicleId === vehicleId) conflicts.vehicle = true;
+  });
+  return conflicts;
+}
+
+async function loadSchClassStudentsCache(){
+  try {
+    const snap = await getDocs(query(collection(db, "students"), where("schoolId", "==", currentSchoolId)));
+    schClassStudentsCache = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(s => s.status !== 'pending');
+  } catch(e) { console.error(e); schClassStudentsCache = []; }
+}
+async function loadSchClassVehiclesCache(){
+  try {
+    const snap = await getDocs(query(collection(db, "vehicles"), where("schoolId", "==", currentSchoolId)));
+    schClassVehiclesCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch(e) { console.error(e); schClassVehiclesCache = []; }
+}
+async function loadSchClassCoursesCache(){
+  try {
+    const snap = await getDocs(query(collection(db, "courses"), where("schoolId", "==", currentSchoolId)));
+    schClassCoursesCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch(e) { console.error(e); schClassCoursesCache = []; }
+}
 
 async function populateSchClassInstructorSelect(selectedId){
   const sel = document.getElementById('schClassInstructor');
   sel.innerHTML = '<option value="">Select instructor…</option>';
   try {
     const snap = await getDocs(query(collection(db, "instructors"), where("schoolId", "==", currentSchoolId)));
-    snap.docs.forEach(d => {
-      const i = d.data();
+    schClassInstructorsCache = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(i => i.status !== 'pending');
+    schClassInstructorsCache.forEach(i => {
       const name = `${i.firstName||''} ${i.lastName||''}`.trim();
-      sel.innerHTML += `<option value="${d.id}" data-name="${escapeHtml(name)}" ${d.id===selectedId?'selected':''}>${escapeHtml(name)}</option>`;
+      sel.innerHTML += `<option value="${i.id}" data-name="${escapeHtml(name)}" ${i.id===selectedId?'selected':''}>${escapeHtml(name)}</option>`;
     });
   } catch(e) { console.error(e); }
 }
 
-async function populateSchClassVehicleSelect(selectedId){
+// Course dropdown scoped to the selected instructor's assignedCourses —
+// mirrors Dekay's own admin, so an instructor can't be booked for a course
+// they don't teach.
+function populateSchClassCourseSelect(instructorId, selectedCourseName){
+  const sel = document.getElementById('schClassCourse');
+  if (!instructorId) {
+    sel.innerHTML = '<option value="">Select instructor first…</option>';
+    sel.disabled = true;
+    return;
+  }
+  const instructor = schClassInstructorsCache.find(i => i.id === instructorId);
+  let assignedCourses = instructor?.assignedCourses || [];
+  if (assignedCourses && typeof assignedCourses === 'object' && !Array.isArray(assignedCourses)) assignedCourses = Object.values(assignedCourses);
+  if (!Array.isArray(assignedCourses)) assignedCourses = [];
+  if (!assignedCourses.length) {
+    sel.innerHTML = '<option value="">No courses assigned to this instructor</option>';
+    sel.disabled = true;
+    return;
+  }
+  sel.disabled = false;
+  sel.innerHTML = '<option value="">Select course…</option>' +
+    assignedCourses.map(c => `<option value="${escapeHtml(c)}" ${c===selectedCourseName?'selected':''}>${escapeHtml(c)}</option>`).join('');
+}
+
+window.onSchClassInstructorChange = function(){
+  const instructorId = document.getElementById('schClassInstructor').value;
+  populateSchClassCourseSelect(instructorId, '');
+  window.refreshSchClassAvailability();
+};
+
+// Vehicle <select> — marks (rather than hides) vehicles that overlap an
+// existing class on the chosen day, same recipe as Dekay's renderVehicleSelect.
+function renderSchClassVehicleSelect(start, end, selectedId, excludeClassId){
   const sel = document.getElementById('schClassVehicle');
-  sel.innerHTML = '<option value="">Select vehicle…</option>';
-  try {
-    const snap = await getDocs(query(collection(db, "vehicles"), where("schoolId", "==", currentSchoolId)));
-    snap.docs.forEach(d => {
-      const v = d.data();
-      const name = `${v.year||''} ${v.make||''} ${v.model||''}`.trim();
-      sel.innerHTML += `<option value="${d.id}" data-name="${escapeHtml(name)}" ${d.id===selectedId?'selected':''}>${escapeHtml(name)}</option>`;
-    });
-  } catch(e) { console.error(e); }
+  if (!start || !end || isNaN(start) || isNaN(end)) {
+    sel.innerHTML = '<option value="">Set date/time first…</option>';
+    return;
+  }
+  const busyInfo = {};
+  schoolClasses.forEach(c => {
+    if (excludeClassId && c.id === excludeClassId) return;
+    if (!c.vehicleId) return;
+    const range = getSchClassDateTimeRange(c);
+    if (schDaysOverlap(start, end, range.start, range.end) && !busyInfo[c.vehicleId]) {
+      busyInfo[c.vehicleId] = { title: c.title, date: c.date, time: c.time };
+    }
+  });
+  const available = schClassVehiclesCache.filter(v => !busyInfo[v.id] || v.id === selectedId);
+  sel.innerHTML = '<option value="">Select vehicle…</option>' +
+    available.map(v => {
+      const conflict = busyInfo[v.id];
+      const plainName = `${v.year||''} ${v.make||''} ${v.model||''}`.trim();
+      let label = escapeHtml(plainName);
+      if (conflict && v.id !== selectedId) {
+        const dateStr = new Date(conflict.date).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+        label += ` (busy ${dateStr} at ${formatSchTime(conflict.time)})`;
+      }
+      return `<option value="${v.id}" data-name="${escapeHtml(plainName)}" ${v.id===selectedId?'selected':''}>${label}</option>`;
+    }).join('');
 }
 
-async function renderSchClassStudentCheckboxes(preSelectedIds){
+// Assign-students checklist scoped to the selected course's assignedStudents,
+// greying out anyone already booked on an overlapping day — mirrors Dekay's
+// own renderClassStudentCheckboxes.
+function renderSchClassStudentCheckboxes(courseName, start, end, preSelectedIds, excludeClassId){
   const list = document.getElementById('schClassStudentList');
-  list.innerHTML = 'Loading…';
-  try {
-    const snap = await getDocs(query(collection(db, "students"), where("schoolId", "==", currentSchoolId)));
-    const students = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(s => s.status !== 'pending');
-    if (!students.length) { list.innerHTML = '<div style="font-size:12px;color:var(--slate-dim);">No students yet.</div>'; return; }
-    list.innerHTML = students.map(s => {
-      const name = `${s.firstName||''} ${s.lastName||''}`.trim() || s.email;
-      const checked = (preSelectedIds||[]).includes(s.id) ? 'checked' : '';
-      return `<label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:pointer;border-bottom:1px solid var(--border);">
-        <input type="checkbox" value="${s.id}" data-name="${escapeHtml(name)}" class="sch-class-student-check" ${checked} style="accent-color:var(--amber);width:15px;height:15px;">
-        <span style="font-size:13px;">${escapeHtml(name)}</span>
-      </label>`;
-    }).join('');
-  } catch(e) { list.innerHTML = '<div style="font-size:12px;color:var(--brake);">Could not load students.</div>'; }
+  if (!courseName) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--slate-dim);">Select an instructor and course first.</div>';
+    return;
+  }
+  if (!start || !end || isNaN(start) || isNaN(end)) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--slate-dim);">Set start &amp; end date/time first.</div>';
+    return;
+  }
+  const courseObj = schClassCoursesCache.find(c => (c.name || c.title || '') === courseName);
+  const assignedIds = courseObj?.assignedStudents || [];
+  const eligibleStudents = schClassStudentsCache.filter(s => assignedIds.includes(s.id));
+  if (!eligibleStudents.length) {
+    list.innerHTML = '<div style="font-size:12px;color:var(--slate-dim);">No students assigned to this course yet.</div>';
+    return;
+  }
+  const busyInfo = {};
+  schoolClasses.forEach(c => {
+    if (excludeClassId && c.id === excludeClassId) return;
+    const range = getSchClassDateTimeRange(c);
+    if (!schDaysOverlap(start, end, range.start, range.end)) return;
+    (c.studentIds || []).forEach(sid => {
+      if (!busyInfo[sid]) busyInfo[sid] = { title: c.title, date: c.date, time: c.time };
+    });
+  });
+  list.innerHTML = eligibleStudents.map(s => {
+    const name = `${s.firstName||''} ${s.lastName||''}`.trim() || s.email;
+    const conflict = busyInfo[s.id];
+    const busy = !!conflict;
+    const checked = (preSelectedIds||[]).includes(s.id) ? 'checked' : '';
+    let conflictLabel = '';
+    if (busy) {
+      const dateStr = new Date(conflict.date).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+      conflictLabel = `(already booked ${dateStr} at ${formatSchTime(conflict.time)})`;
+    }
+    return `<label style="display:flex;align-items:center;gap:8px;padding:5px 0;cursor:${busy?'not-allowed':'pointer'};border-bottom:1px solid var(--border);opacity:${busy?'0.55':'1'};">
+      <input type="checkbox" value="${s.id}" data-name="${escapeHtml(name)}" class="sch-class-student-check" ${checked} ${busy?'disabled':''} style="accent-color:var(--amber);width:15px;height:15px;">
+      <span style="font-size:13px;">${escapeHtml(name)} ${busy ? `<span style="color:var(--brake);font-size:11px;">${conflictLabel}</span>` : ''}</span>
+    </label>`;
+  }).join('');
 }
 
 window.toggleSchClassOnlineFields = function(){
   const mode = document.getElementById('schClassMode').value;
   document.getElementById('schClassOnlineFields').style.display = mode === 'online' ? 'block' : 'none';
+};
+
+// Re-renders the student checklist and vehicle select whenever course,
+// instructor, or any date/time field changes.
+window.refreshSchClassAvailability = function(){
+  const editId = document.getElementById('schClassId').value || null;
+  const courseName = document.getElementById('schClassCourse').value;
+  const dateVal = document.getElementById('schClassDate').value;
+  const timeVal = document.getElementById('schClassTime').value;
+  const endDateVal = document.getElementById('schClassEndDate').value;
+  const endTimeVal = document.getElementById('schClassEndTime').value;
+  const start = (dateVal && timeVal) ? new Date(`${dateVal}T${timeVal}`) : null;
+  const end = (endDateVal && endTimeVal) ? new Date(`${endDateVal}T${endTimeVal}`) : null;
+
+  const existingClass = editId ? schoolClasses.find(c => c.id === editId) : null;
+  const preSelectedStudents = existingClass?.studentIds || [];
+  const preSelectedVehicle = existingClass?.vehicleId || '';
+
+  renderSchClassStudentCheckboxes(courseName, start, end, preSelectedStudents, editId);
+  renderSchClassVehicleSelect(start, end, preSelectedVehicle, editId);
+};
+
+// ── VIEW ALL CLASSES POPUP ──
+window.showSchAllClassesPopupWithRange = function(){
+  const startDate = document.getElementById('schClassDate').value;
+  const endDate = document.getElementById('schClassEndDate').value || startDate;
+  if (!startDate) { showToast('Pick a start date first.', true); return; }
+  window.showSchAllClassesPopup(startDate, endDate);
+};
+
+window.showSchAllClassesPopup = function(startDate, endDate){
+  const body = document.getElementById('schAllClassesBody');
+  let filtered = schoolClasses;
+  let rangeHtml = '';
+  if (startDate && endDate) {
+    const start = new Date(startDate); start.setHours(0,0,0,0);
+    const end = new Date(endDate); end.setHours(23,59,59,999);
+    filtered = schoolClasses.filter(c => { const d = new Date(c.date); return d >= start && d <= end; });
+    rangeHtml = `<div style="margin-bottom:14px;padding:10px 14px;background:rgba(242,169,59,0.08);border:1px solid var(--border);border-radius:8px;font-size:12.5px;">
+      Showing classes from <strong style="color:var(--amber);">${start.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</strong>
+      to <strong style="color:var(--amber);">${end.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</strong></div>`;
+  }
+  if (!filtered.length) {
+    body.innerHTML = rangeHtml + `<div class="empty-state">No classes scheduled${startDate ? ' in this range' : ''}.</div>`;
+    openModal('schAllClassesModal');
+    return;
+  }
+  const sorted = [...filtered].sort((a,b) => new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`));
+  const grouped = {};
+  sorted.forEach(c => { (grouped[c.date] = grouped[c.date] || []).push(c); });
+  let html = rangeHtml;
+  Object.entries(grouped).forEach(([date, classes]) => {
+    const dateStr = new Date(date).toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+    html += `<div style="margin-bottom:16px;">
+      <div style="font-weight:700;color:var(--amber);margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:4px;">${dateStr}</div>`;
+    classes.forEach(c => {
+      const status = classStatus(c);
+      const statusClass = status === 'ongoing' ? 'good' : status === 'upcoming' ? 'warn' : 'bad';
+      const studentNames = (c.studentIds || []).map(sid => {
+        const s = schClassStudentsCache.find(x => x.id === sid);
+        return s ? `${s.firstName||''} ${s.lastName||''}`.trim() : null;
+      }).filter(Boolean);
+      html += `<div style="background:var(--asphalt-deep);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <div><strong>${escapeHtml(c.title||'—')}</strong> <span style="font-size:11px;color:var(--slate-dim);">${formatSchTime(c.time)}${c.endTime ? ' – ' + formatSchTime(c.endTime) : ''}</span></div>
+          <span class="badge ${statusClass}">${status}</span>
+        </div>
+        <div style="font-size:12px;color:var(--slate-dim);margin-top:6px;">
+          <i class="fas fa-chalkboard-teacher"></i> ${escapeHtml(c.instructorName||'—')} &nbsp;·&nbsp;
+          <i class="fas fa-book"></i> ${escapeHtml(c.courseName||'—')} &nbsp;·&nbsp;
+          <i class="fas fa-users"></i> ${studentNames.length ? escapeHtml(studentNames.join(', ')) : 'No students'}
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+  body.innerHTML = html;
+  openModal('schAllClassesModal');
 };
 
 function renderSchClassDocsList(){
@@ -3099,59 +3579,69 @@ async function loadSchClassAttendanceSummary(classId){
   } catch(e) { box.textContent = 'Could not load attendance.'; }
 }
 
-document.getElementById('schOpenAddClassBtn').addEventListener('click', async () => {
-  document.getElementById('schClassError').textContent = '';
-  document.getElementById('schClassId').value = '';
-  document.getElementById('schClassModalTitle').textContent = 'Schedule class';
-  ['schClassTitle','schClassDesc','schClassCourse','schClassDate','schClassTime','schClassEndDate','schClassEndTime','schClassPlatform','schClassLink'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('schClassMode').value = 'in-person';
-  window.toggleSchClassOnlineFields();
-  document.getElementById('schClassDeleteBtn').style.display = 'none';
-  document.getElementById('schClassAttendanceSummaryWrap').style.display = 'none';
-  schClassPendingDocFiles = [];
-  schClassExistingDocs = [];
-  renderSchClassDocsList();
-  await populateSchClassInstructorSelect('');
-  await populateSchClassVehicleSelect('');
-  await renderSchClassStudentCheckboxes([]);
-  openModal('schClassModal');
+document.getElementById('schOpenAddClassBtn').addEventListener('click', async function(){
+  await withBtnLoading(this, async () => {
+    document.getElementById('schClassError').textContent = '';
+    document.getElementById('schClassId').value = '';
+    document.getElementById('schClassModalTitle').textContent = 'Schedule class';
+    ['schClassTitle','schClassDesc','schClassDate','schClassTime','schClassEndDate','schClassEndTime','schClassPlatform','schClassLink'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('schClassMode').value = 'in-person';
+    window.toggleSchClassOnlineFields();
+    document.getElementById('schClassDeleteBtn').style.display = 'none';
+    document.getElementById('schClassAttendanceSummaryWrap').style.display = 'none';
+    schClassPendingDocFiles = [];
+    schClassExistingDocs = [];
+    renderSchClassDocsList();
+    await Promise.all([loadSchClassStudentsCache(), loadSchClassVehiclesCache(), loadSchClassCoursesCache()]);
+    await populateSchClassInstructorSelect('');
+    populateSchClassCourseSelect('', '');
+    window.refreshSchClassAvailability();
+    openModal('schClassModal');
+  });
 });
 
-window.openSchClassModal = async function(id){
+window.openSchClassModal = async function(id, btn){
   const c = schoolClasses.find(x => x.id === id);
   if (!c) return;
-  document.getElementById('schClassError').textContent = '';
-  document.getElementById('schClassId').value = c.id;
-  document.getElementById('schClassModalTitle').textContent = 'Edit class';
-  document.getElementById('schClassTitle').value = c.title || '';
-  document.getElementById('schClassDesc').value = c.description || '';
-  document.getElementById('schClassCourse').value = c.courseName || '';
-  document.getElementById('schClassDate').value = c.date || '';
-  document.getElementById('schClassTime').value = c.time || '';
-  document.getElementById('schClassEndDate').value = c.endDate || '';
-  document.getElementById('schClassEndTime').value = c.endTime || '';
-  document.getElementById('schClassMode').value = c.mode || 'in-person';
-  document.getElementById('schClassPlatform').value = c.platform || '';
-  document.getElementById('schClassLink').value = c.meetingLink || '';
-  window.toggleSchClassOnlineFields();
-  document.getElementById('schClassDeleteBtn').style.display = 'inline-flex';
-  schClassPendingDocFiles = [];
-  schClassExistingDocs = [...(c.documents || [])];
-  renderSchClassDocsList();
-  await populateSchClassInstructorSelect(c.instructorId || '');
-  await populateSchClassVehicleSelect(c.vehicleId || '');
-  await renderSchClassStudentCheckboxes(c.studentIds || []);
-  await loadSchClassAttendanceSummary(c.id);
-  openModal('schClassModal');
+  await withBtnLoading(btn, async () => {
+    document.getElementById('schClassError').textContent = '';
+    document.getElementById('schClassId').value = c.id;
+    document.getElementById('schClassModalTitle').textContent = 'Edit class';
+    document.getElementById('schClassTitle').value = c.title || '';
+    document.getElementById('schClassDesc').value = c.description || '';
+    document.getElementById('schClassDate').value = c.date || '';
+    document.getElementById('schClassTime').value = c.time || '';
+    document.getElementById('schClassEndDate').value = c.endDate || '';
+    document.getElementById('schClassEndTime').value = c.endTime || '';
+    document.getElementById('schClassMode').value = c.mode || 'in-person';
+    document.getElementById('schClassPlatform').value = c.platform || '';
+    document.getElementById('schClassLink').value = c.meetingLink || '';
+    window.toggleSchClassOnlineFields();
+    document.getElementById('schClassDeleteBtn').style.display = 'inline-flex';
+    schClassPendingDocFiles = [];
+    schClassExistingDocs = [...(c.documents || [])];
+    renderSchClassDocsList();
+    await Promise.all([loadSchClassStudentsCache(), loadSchClassVehiclesCache(), loadSchClassCoursesCache()]);
+    await populateSchClassInstructorSelect(c.instructorId || '');
+    populateSchClassCourseSelect(c.instructorId || '', c.courseName || '');
+    window.refreshSchClassAvailability();
+    await loadSchClassAttendanceSummary(c.id);
+    openModal('schClassModal');
+  });
 };
 
 document.getElementById('schClassSaveBtn').addEventListener('click', async () => {
   const errEl = document.getElementById('schClassError');
   errEl.textContent = '';
+  function fail(msg){
+    errEl.textContent = msg;
+    showToast(msg, true);
+    errEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
   const id = document.getElementById('schClassId').value;
   const title = document.getElementById('schClassTitle').value.trim();
   const description = document.getElementById('schClassDesc').value.trim();
-  const courseName = document.getElementById('schClassCourse').value.trim();
+  const courseName = document.getElementById('schClassCourse').value;
   const instrSel = document.getElementById('schClassInstructor');
   const instructorId = instrSel.value;
   const instructorName = instrSel.selectedOptions[0]?.dataset?.name || '';
@@ -3169,8 +3659,18 @@ document.getElementById('schClassSaveBtn').addEventListener('click', async () =>
   const studentIds = Array.from(studentCbs).map(cb => cb.value);
   const studentNames = Array.from(studentCbs).map(cb => cb.dataset.name);
 
-  if (!title || !date || !time || !endDate || !endTime) { errEl.textContent = 'Title, start and end date/time are required.'; return; }
-  const durationMinutes = Math.max(1, Math.round((new Date(`${endDate}T${endTime}`) - new Date(`${date}T${time}`)) / 60000));
+  if (!title || !date || !time || !endDate || !endTime) { fail('Title, start and end date/time are required.'); return; }
+  if (!instructorId) { fail('Select an instructor.'); return; }
+  if (!courseName) { fail('Select a course.'); return; }
+  const startDT = new Date(`${date}T${time}`);
+  const endDT = new Date(`${endDate}T${endTime}`);
+  if (endDT <= startDT) { fail('End date/time must be after the start date/time.'); return; }
+
+  const conflicts = checkSchResourceAvailability(studentIds, vehicleId, startDT, endDT, id || null);
+  if (conflicts.students.length) { fail(`Student(s) already booked: ${conflicts.students.join(', ')}`); return; }
+  if (conflicts.vehicle) { fail('The selected vehicle is already booked for this time.'); return; }
+
+  const durationMinutes = Math.max(1, Math.round((endDT - startDT) / 60000));
 
   const btn = document.getElementById('schClassSaveBtn');
   btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
@@ -3194,7 +3694,7 @@ document.getElementById('schClassSaveBtn').addEventListener('click', async () =>
     else await addDoc(collection(db, 'classes'), { ...payload, createdAt: serverTimestamp() });
     closeModal('schClassModal');
     showToast('Class saved ✓');
-  } catch(e) { errEl.textContent = 'Save failed: ' + e.message; }
+  } catch(e) { fail('Save failed: ' + e.message); }
   finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save'; }
 });
 
@@ -3570,20 +4070,25 @@ window.switchSchNotifType = function(type){
   document.getElementById('schNotifInstructorList').style.display = (type === 'instructor' || type === 'both') ? 'block' : 'none';
 
   const allLabel = document.getElementById('schNotifyAllLabel');
-  allLabel.textContent = type === 'both' ? 'All recipients (students & instructors)' : (type === 'student' ? 'All students' : 'All instructors');
-  document.getElementById('schNotifyAll').checked = false;
+  allLabel.textContent = type === 'both' ? 'Select all recipients' : (type === 'student' ? 'Select all students' : 'Select all instructors');
+  const allBtn = document.getElementById('schNotifyAllBtn');
+  allBtn.dataset.active = 'false';
+  allBtn.className = 'btn btn-outline';
   document.querySelectorAll('.sch-notif-student-check, .sch-notif-instructor-check').forEach(cb => { cb.checked = false; cb.disabled = false; });
   const searchInput = document.getElementById('schNotifRecipientSearch');
   if (searchInput) { searchInput.value = ''; window.filterSchNotifRecipients(''); }
 };
 
-window.toggleSchAllRecipients = function(allCb){
-  const checked = allCb.checked;
+window.toggleSchAllRecipients = function(){
+  const btn = document.getElementById('schNotifyAllBtn');
+  const nextActive = btn.dataset.active !== 'true';
+  btn.dataset.active = nextActive ? 'true' : 'false';
+  btn.className = nextActive ? 'btn btn-primary' : 'btn btn-outline';
   if (schNotifType === 'student' || schNotifType === 'both') {
-    document.querySelectorAll('.sch-notif-student-check').forEach(cb => { cb.checked = checked; cb.disabled = checked; });
+    document.querySelectorAll('.sch-notif-student-check').forEach(cb => { cb.checked = nextActive; cb.disabled = nextActive; });
   }
   if (schNotifType === 'instructor' || schNotifType === 'both') {
-    document.querySelectorAll('.sch-notif-instructor-check').forEach(cb => { cb.checked = checked; cb.disabled = checked; });
+    document.querySelectorAll('.sch-notif-instructor-check').forEach(cb => { cb.checked = nextActive; cb.disabled = nextActive; });
   }
 };
 
@@ -3616,7 +4121,8 @@ window.sendSchNotification = async function(){
     showToast(`Sent to ${total} recipient${total>1?'s':''} ✓`);
     document.getElementById('schNotifMessage').value = '';
     document.querySelectorAll('.sch-notif-student-check, .sch-notif-instructor-check').forEach(cb => cb.checked = false);
-    document.getElementById('schNotifyAll').checked = false;
+    const allBtn = document.getElementById('schNotifyAllBtn');
+    if (allBtn) { allBtn.dataset.active = 'false'; allBtn.className = 'btn btn-outline'; }
     await loadSchNotifSentList();
   } catch(e) { showToast('Send failed: ' + e.message, true); }
 };

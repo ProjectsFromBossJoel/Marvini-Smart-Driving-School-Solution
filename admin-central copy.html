@@ -181,6 +181,45 @@
   .phase2-placeholder{ text-align:center; padding:60px 20px; color:var(--slate-dim); }
   .phase2-placeholder i{ font-size:32px; margin-bottom:12px; display:block; color:var(--border); }
 
+  /* ===== Overview upgrade ===== */
+  .ov-hero{ display:flex; align-items:center; gap:18px; background:linear-gradient(135deg, var(--panel), var(--asphalt)); border:1px solid var(--border); border-radius:var(--radius-lg); padding:22px 24px; margin-bottom:22px; flex-wrap:wrap; }
+  .ov-hero-cover{ width:64px; height:64px; border-radius:14px; background:var(--asphalt-deep); background-size:cover; background-position:center; flex-shrink:0; display:flex; align-items:center; justify-content:center; border:1px solid var(--border); }
+  .ov-hero-cover i{ font-size:26px; color:var(--slate-dim); }
+  .ov-hero-info h3{ font-family:'Space Grotesk',sans-serif; font-size:19px; margin:0 0 4px; }
+  .ov-hero-info p{ margin:0; font-size:12.5px; color:var(--slate); }
+  .ov-hero-actions{ display:flex; gap:8px; flex-wrap:wrap; margin-left:auto; }
+  .ov-hero-actions .btn{ font-size:12px; padding:8px 13px; }
+
+  .ov-performers{ display:flex; gap:12px; flex-wrap:wrap; margin-left:auto; }
+  .ov-performer-card{ display:flex; align-items:center; gap:10px; background:var(--asphalt-deep); border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; min-width:200px; }
+  .ov-performer-card.top{ border-color:rgba(63,166,106,0.35); }
+  .ov-performer-card.bottom{ border-color:rgba(193,67,45,0.35); }
+  .ov-performer-label{ font-size:9.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--slate-dim); margin:0 0 2px; }
+  .ov-performer-name{ font-size:13px; font-weight:700; color:var(--chalk); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:120px; }
+  .ov-performer-meta{ font-size:11px; color:var(--slate); }
+  .ov-performer-trend{ margin-left:4px; flex-shrink:0; }
+  .ov-performer-empty{ font-size:12px; color:var(--slate-dim); padding:10px 14px; }
+
+  .stat-card.ov-accent-good .accent{ background:var(--good); }
+  .stat-card.ov-accent-info .accent{ background:var(--info); }
+  .stat-card.ov-accent-warn .accent{ background:var(--amber); }
+  .stat-card .stat-icon{ position:absolute; top:16px; right:16px; font-size:16px; color:var(--slate-dim); opacity:.6; }
+
+  .ov-grid{ display:grid; grid-template-columns:1.4fr 1fr; gap:18px; align-items:start; }
+  @media (max-width: 900px){ .ov-grid{ grid-template-columns:1fr; } }
+
+  .ov-detail-row{ display:flex; align-items:center; gap:12px; padding:11px 20px; border-bottom:1px solid var(--border); }
+  .ov-detail-row:last-child{ border-bottom:none; }
+  .ov-detail-row i{ width:18px; color:var(--amber); font-size:13px; text-align:center; flex-shrink:0; }
+  .ov-detail-row .ov-label{ font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--slate-dim); width:80px; flex-shrink:0; }
+  .ov-detail-row .ov-value{ font-size:13.5px; color:var(--chalk); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .ov-copy-btn{ background:transparent; border:none; color:var(--slate-dim); cursor:pointer; padding:4px; flex-shrink:0; }
+  .ov-copy-btn:hover{ color:var(--amber); }
+
+  .ov-notes-textarea{ width:100%; min-height:110px; padding:12px 14px; border-radius:8px; border:1.5px solid var(--border); background:var(--asphalt-deep); color:var(--chalk); font-family:inherit; font-size:13px; resize:vertical; }
+  .ov-notes-foot{ display:flex; align-items:center; justify-content:space-between; margin-top:10px; }
+  .ov-notes-status{ font-size:11px; color:var(--slate-dim); }
+
   @media (max-width: 760px){
     .sidebar{ width:64px; }
     .sidebar-brand strong, .sidebar-brand small, .nav-link span.label, .admin-email, .nav-section-label{ display:none; }
@@ -329,15 +368,43 @@
 
         <!-- Overview -->
         <div class="school-subpage active" id="schoolsub-overview">
+
+          <div class="ov-hero">
+            <div class="ov-hero-cover" id="ovHeroCover"><i class="fas fa-school"></i></div>
+            <div class="ov-hero-info">
+              <h3 id="ovHeroName">—</h3>
+              <p id="ovHeroMeta">—</p>
+            </div>
+            <div class="ov-performers" id="ovPerformers">
+              <div class="ov-performer-empty">Loading performance…</div>
+            </div>
+          </div>
+
           <div class="stat-grid">
-            <div class="stat-card"><div class="accent"></div><p class="label">Total students</p><p class="value" id="schStatStudents">0</p><p class="sub" id="schStatStudentsSub">—</p></div>
-            <div class="stat-card"><div class="accent"></div><p class="label">Instructors</p><p class="value" id="schStatInstructors">0</p><p class="sub">Active + pending</p></div>
-            <div class="stat-card"><div class="accent"></div><p class="label">Pending approvals</p><p class="value" id="schStatPending">0</p><p class="sub">Students awaiting review</p></div>
+            <div class="stat-card"><div class="accent"></div><i class="fas fa-user-graduate stat-icon"></i><p class="label">Total students</p><p class="value" id="schStatStudents">0</p><p class="sub" id="schStatStudentsSub">—</p></div>
+            <div class="stat-card ov-accent-info"><div class="accent"></div><i class="fas fa-chalkboard-teacher stat-icon"></i><p class="label">Instructors</p><p class="value" id="schStatInstructors">0</p><p class="sub">Active + pending</p></div>
+            <div class="stat-card ov-accent-warn"><div class="accent"></div><i class="fas fa-clock stat-icon"></i><p class="label">Pending approvals</p><p class="value" id="schStatPending">0</p><p class="sub">Students awaiting review</p></div>
+            <div class="stat-card ov-accent-good"><div class="accent"></div><i class="fas fa-book stat-icon"></i><p class="label">Active courses</p><p class="value" id="schStatCourses">0</p><p class="sub" id="schStatCoursesSub">—</p></div>
           </div>
-          <div class="panel">
-            <div class="panel-head"><h3>School details</h3><button class="btn btn-outline" onclick="window.openSchoolEditFromDetail()"><i class="fas fa-pen"></i> Edit</button></div>
-            <div id="schoolDetailInfo" style="padding:20px;font-size:13.5px;color:var(--slate);">Loading…</div>
+
+          <div class="ov-grid">
+            <div class="panel">
+              <div class="panel-head"><h3><i class="fas fa-info-circle"></i> School details</h3><button class="btn btn-outline" onclick="window.openSchoolEditFromDetail()"><i class="fas fa-pen"></i> Edit</button></div>
+              <div id="schoolDetailInfo" style="padding:6px 0 10px;">Loading…</div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-head"><h3><i class="fas fa-sticky-note"></i> Admin notes</h3></div>
+              <div style="padding:18px 20px;">
+                <textarea class="ov-notes-textarea" id="ovNotesTextarea" placeholder="Jot down anything worth remembering about this school — a promise made, a follow-up needed, an issue to watch…"></textarea>
+                <div class="ov-notes-foot">
+                  <span class="ov-notes-status" id="ovNotesStatus">Not saved yet</span>
+                  <button class="btn btn-primary" style="padding:8px 14px;font-size:12px;" onclick="window.saveOverviewNotes()"><i class="fas fa-save"></i> Save note</button>
+                </div>
+              </div>
+            </div>
           </div>
+
         </div>
 
         <!-- Students (fully built) -->
@@ -400,18 +467,38 @@
 
         <div class="school-subpage" id="schoolsub-attendance" style="display:none;">
           <div class="schools-toolbar">
-            <input class="search-input" id="schAttSearch" type="text" placeholder="Search by student name…">
+            <input class="search-input" id="schAttSearch" type="text" placeholder="Search by student or instructor name…">
             <select class="search-input" id="schAttStatusFilter" style="max-width:160px;">
               <option value="">All statuses</option>
               <option value="present">Present</option>
               <option value="absent">Absent</option>
               <option value="excused">Excused</option>
             </select>
+            <button class="btn btn-outline" id="schAttCleanupBtn" style="display:none;" onclick="window.cleanupOrphanedAttendance()">
+              <i class="fas fa-broom"></i> Clean up orphaned records (<span id="schAttOrphanCount">0</span>)
+            </button>
           </div>
-          <div class="panel">
+
+          <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+            <button class="btn btn-primary" id="schAttTabStudent" onclick="window.switchSchAttTab('student')" style="min-width:160px;justify-content:center;">
+              <i class="fas fa-users"></i> Student Attendance
+            </button>
+            <button class="btn btn-outline" id="schAttTabInstructor" onclick="window.switchSchAttTab('instructor')" style="min-width:160px;justify-content:center;">
+              <i class="fas fa-chalkboard-teacher"></i> Instructor Attendance
+            </button>
+          </div>
+
+          <div class="panel" id="schAttStudentCard">
             <table>
               <thead><tr><th>Student</th><th>Date</th><th>Course</th><th>Class</th><th>Status</th><th></th></tr></thead>
               <tbody id="schAttTableBody"><tr class="empty-row"><td colspan="6">Loading…</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="panel" id="schAttInstructorCard" style="display:none;">
+            <table>
+              <thead><tr><th>Instructor</th><th>Date</th><th>Class</th><th>Course</th><th>Status</th><th></th></tr></thead>
+              <tbody id="schInstrAttTableBody"><tr class="empty-row"><td colspan="6">Loading…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -462,12 +549,11 @@
                   </div>
                 </div>
                 <div class="field">
-                  <label>Recipient</label>
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                    <label style="margin-bottom:0;">Recipient</label>
+                    <button type="button" class="btn btn-outline" id="schNotifyAllBtn" data-active="false" style="padding:4px 10px;font-size:11px;" onclick="window.toggleSchAllRecipients()"><span id="schNotifyAllLabel">Select all students</span></button>
+                  </div>
                   <input type="text" id="schNotifRecipientSearch" placeholder="Search students / instructors…" style="width:100%;padding:9px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-size:13px;margin-bottom:8px;" oninput="window.filterSchNotifRecipients(this.value)">
-                  <label style="display:flex;align-items:center;gap:8px;padding:6px 0;cursor:pointer;font-weight:600;color:var(--amber);border-bottom:1px solid var(--border);margin-bottom:8px;">
-                    <input type="checkbox" id="schNotifyAll" onchange="window.toggleSchAllRecipients(this)" style="accent-color:var(--amber);">
-                    <span id="schNotifyAllLabel">All students</span>
-                  </label>
                   <div id="schNotifStudentList" style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--asphalt-deep);"></div>
                   <div id="schNotifInstructorList" style="display:none;max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--asphalt-deep);"></div>
                 </div>
@@ -1056,18 +1142,20 @@
       <div class="field"><label>Class title</label><input id="schClassTitle" type="text" placeholder="e.g. Road Signs — Warning Signs"></div>
       <div class="field"><label>Description</label><textarea id="schClassDesc" rows="2" style="width:100%;padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--chalk);font-family:inherit;"></textarea></div>
       <div class="form-row">
-        <div class="field"><label>Course name</label><input id="schClassCourse" type="text" placeholder="e.g. Manual"></div>
         <div class="field"><label>Instructor</label>
-          <select id="schClassInstructor" class="field-select"><option value="">Select instructor…</option></select>
+          <select id="schClassInstructor" class="field-select" onchange="window.onSchClassInstructorChange()"><option value="">Select instructor…</option></select>
+        </div>
+        <div class="field"><label>Course</label>
+          <select id="schClassCourse" class="field-select" onchange="window.refreshSchClassAvailability()" disabled><option value="">Select instructor first…</option></select>
         </div>
       </div>
       <div class="form-row">
-        <div class="field"><label>Date</label><input id="schClassDate" type="date"></div>
-        <div class="field"><label>Time</label><input id="schClassTime" type="time"></div>
+        <div class="field"><label>Date</label><input id="schClassDate" type="date" onchange="window.refreshSchClassAvailability()"></div>
+        <div class="field"><label>Time</label><input id="schClassTime" type="time" onchange="window.refreshSchClassAvailability()"></div>
       </div>
       <div class="form-row">
-        <div class="field"><label>End date</label><input id="schClassEndDate" type="date"></div>
-        <div class="field"><label>End time</label><input id="schClassEndTime" type="time"></div>
+        <div class="field"><label>End date</label><input id="schClassEndDate" type="date" onchange="window.refreshSchClassAvailability()"></div>
+        <div class="field"><label>End time</label><input id="schClassEndTime" type="time" onchange="window.refreshSchClassAvailability()"></div>
       </div>
       <div class="field"><label>Mode</label>
         <select id="schClassMode" class="field-select" onchange="window.toggleSchClassOnlineFields()">
@@ -1095,7 +1183,11 @@
         <select id="schClassVehicle" class="field-select"><option value="">Select vehicle…</option></select>
       </div>
 
-      <div class="field"><label>Assign students</label>
+      <div class="field">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+          <label style="margin-bottom:0;">Assign students <span style="color:var(--slate-dim);font-weight:400;">(greyed = already booked this day)</span></label>
+          <button type="button" class="btn btn-outline" style="padding:4px 10px;font-size:11px;" onclick="window.showSchAllClassesPopupWithRange()"><i class="fas fa-calendar-alt"></i> View all classes</button>
+        </div>
         <div id="schClassStudentList" style="max-height:160px;overflow-y:auto;border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;background:var(--asphalt-deep);"></div>
       </div>
 
@@ -1120,6 +1212,17 @@
       <button class="btn btn-danger" id="schClassDeleteBtn" style="display:none;"><i class="fas fa-trash"></i> Delete</button>
       <button class="btn btn-secondary" onclick="window.closeModal('schClassModal')">Cancel</button>
       <button class="btn btn-primary" id="schClassSaveBtn"><i class="fas fa-save"></i> Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ALL CLASSES (SCHEDULE) POPUP ================= -->
+<div class="overlay" id="schAllClassesModal">
+  <div class="modal" style="width:640px;max-height:85vh;">
+    <div class="modal-head"><h3>All scheduled classes</h3><button class="modal-close" onclick="window.closeModal('schAllClassesModal')">✕</button></div>
+    <div class="modal-body" id="schAllClassesBody" style="font-size:13px;"></div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('schAllClassesModal')">Close</button>
     </div>
   </div>
 </div>

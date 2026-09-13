@@ -1367,13 +1367,17 @@
 
 <!-- ================= EDIT STUDENT/INSTRUCTOR ROLE MODAL ================= -->
 <div class="overlay" id="schEditPortalRoleModal">
-  <div class="modal" style="width:480px;max-height:90vh;">
+  <div class="modal" style="width:580px;max-height:90vh;">
     <div class="modal-head"><h3 id="schEditPortalRoleTitle">Edit role</h3><button class="modal-close" onclick="window.closeModal('schEditPortalRoleModal')">✕</button></div>
     <div class="modal-body">
       <input type="hidden" id="schEditPortalRoleType">
       <input type="hidden" id="schEditPortalRoleKey">
-      <div style="font-size:12px;color:var(--slate-dim);margin-bottom:14px;line-height:1.6;">Editing this role changes access for every student or instructor currently assigned to it.</div>
-      <div id="schEditPortalRoleMatrix" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <div style="margin-bottom:16px;padding:12px 16px;background:var(--asphalt-deep);border:1px solid var(--border);border-radius:8px;">
+        <div style="font-size:13px;color:var(--slate);">Permission matrix — check the boxes for each page and action.</div>
+        <div style="font-size:11px;color:var(--slate-dim);margin-top:4px;">Legend: <span style="color:var(--chalk);">■</span> Page Access &nbsp; <span style="color:var(--amber);">■</span> Create &nbsp; <span style="color:var(--info);">■</span> Read &nbsp; <span style="color:var(--good);">■</span> Update &nbsp; <span style="color:var(--brake);">■</span> Delete</div>
+        <div style="font-size:11px;color:var(--slate-dim);margin-top:6px;"><i class="fas fa-lock" style="color:var(--amber);"></i> Locked rows are required and can't be turned off — editing this role changes access for every student or instructor currently assigned to it.</div>
+      </div>
+      <div id="schEditPortalRoleMatrix"></div>
       <p class="form-error" id="schEditPortalRoleError"></p>
     </div>
     <div class="modal-foot">

@@ -526,6 +526,7 @@
         <div class="school-subpage" id="schoolsub-certificates" style="display:none;">
           <div class="schools-toolbar">
             <input class="search-input" id="schCertSearch" type="text" placeholder="Search by student name or serial…">
+            <button class="btn btn-primary" id="schOpenAddCertBtn"><i class="fas fa-certificate"></i> Generate certificate</button>
           </div>
           <div class="panel">
             <table>
@@ -1353,6 +1354,50 @@
   </div>
 </div>
 
+<!-- ================= GENERATE CERTIFICATE MODAL ================= -->
+<div class="overlay" id="schCertModal">
+  <div class="modal" style="width:480px;">
+    <div class="modal-head"><h3>Generate certificate</h3><button class="modal-close" onclick="window.closeModal('schCertModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="field">
+        <label>Student</label>
+        <select id="schCertStudentSelect" class="field-select"><option value="">Loading students…</option></select>
+      </div>
+      <div class="field"><label>Course</label><input id="schCertCourseInput" type="text" disabled style="opacity:.7;" placeholder="Auto-filled from student"></div>
+      <div class="field"><label>Signing authority</label><input id="schCertAuthority" type="text" placeholder="e.g. Mr. Kwaku Adom Obiri Antwi (Chief Instructor)"></div>
+      <div class="field"><label>Awarding date</label><input id="schCertDate" type="date"></div>
+      <div class="field"><label>Certificate serial number</label>
+        <div id="schCertSerialDisplay" style="padding:11px 13px;border-radius:8px;border:1.5px solid var(--border);background:var(--asphalt-deep);color:var(--amber);font-family:'JetBrains Mono',monospace;font-size:13px;">—</div>
+        <div style="font-size:11px;color:var(--slate-dim);margin-top:4px;">Auto-generated sequential number.</div>
+      </div>
+      <p class="form-error" id="schCertError"></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secondary" onclick="window.closeModal('schCertModal')">Cancel</button>
+      <button class="btn btn-primary" id="schCertSaveBtn"><i class="fas fa-certificate"></i> Generate &amp; save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden off-screen template used to render the certificate image before upload -->
+<div id="certRenderTemplate" style="position:absolute;left:-9999px;top:-9999px;width:900px;height:620px;background:#ffffff;font-family:'Space Grotesk',sans-serif;padding:50px 60px;box-sizing:border-box;">
+  <div style="border-left:6px solid #F2A93B;padding-left:20px;">
+    <h1 style="font-size:30px;color:#11161E;margin:0;">CERTIFICATE OF COMPLETION</h1>
+  </div>
+  <p style="font-size:16px;color:#333;margin:34px 0 6px;">This is to certify that</p>
+  <h2 id="certTplStudentName" style="font-size:38px;color:#11161E;margin:0 0 20px;">—</h2>
+  <p style="font-size:16px;color:#333;line-height:1.6;max-width:620px;">Completed <strong id="certTplCourse">—</strong> and demonstrated a commitment to road safety and driving proficiency.</p>
+  <div style="margin-top:80px;display:flex;justify-content:space-between;align-items:flex-end;">
+    <div style="width:240px;border-top:1.5px solid #333;padding-top:6px;">
+      <strong id="certTplAuthority" style="font-size:14px;color:#11161E;">—</strong>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#666;">
+      <div>CERTIFICATE ID: <span id="certTplSerial">—</span></div>
+      <div>AWARDING DATE: <span id="certTplDate">—</span></div>
+    </div>
+  </div>
+</div>
+
 <!-- ================= ENQUIRY DETAIL MODAL ================= -->
 <div class="overlay" id="schEnquiryDetailModal">
   <div class="modal" style="width:500px;">
@@ -1854,6 +1899,7 @@
 
 <div id="toast"></div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script type="module" src="js/central-app.js"></script>
 </body>
 </html>

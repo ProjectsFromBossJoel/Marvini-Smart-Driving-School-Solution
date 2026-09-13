@@ -3914,6 +3914,115 @@ window.deleteSchCertificate = async function(id){
   catch(e) { showToast('Delete failed: ' + e.message, true); }
 };
 
+// ── Generate certificate (superAdmin — this dashboard is superAdmin-only) ──
+const CERTIFICATE_IMAGE_PRESET = "certificate_images_upload";
+// NOTE: create this UNSIGNED upload preset in the Cloudinary console before
+// certificate generation will work: Settings > Upload > Add upload preset,
+// name it exactly "certificate_images_upload", signing mode = Unsigned.
+
+let schCertStudentsCache = [];
+
+function certPrefixForSchool(school){
+  const words = (school?.name || 'CERT').split(/\s+/).filter(Boolean);
+  const initials = words.map(w => w[0]).join('').toUpperCase();
+  return (initials || 'CERT').slice(0, 5);
+}
+
+document.getElementById('schOpenAddCertBtn')?.addEventListener('click', async () => {
+  const school = allSchools.find(s => s.id === currentSchoolId);
+  document.getElementById('schCertError').textContent = '';
+  document.getElementById('schCertStudentSelect').innerHTML = '<option value="">Loading students…</option>';
+  document.getElementById('schCertCourseInput').value = '';
+  document.getElementById('schCertAuthority').value = '';
+  document.getElementById('schCertDate').value = new Date().toISOString().slice(0,10);
+  document.getElementById('schCertSerialDisplay').textContent = '—';
+  openModal('schCertModal');
+
+  try {
+    const studSnap = await getDocs(query(collection(db, "students"), where("schoolId", "==", currentSchoolId)));
+    schCertStudentsCache = studSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(s => s.status !== 'pending');
+  } catch(e) { schCertStudentsCache = []; }
+
+  const sel = document.getElementById('schCertStudentSelect');
+  sel.innerHTML = schCertStudentsCache.length
+    ? '<option value="">Select student…</option>' + schCertStudentsCache.map(s => {
+        const name = `${s.firstName||''} ${s.lastName||''}`.trim() || s.email;
+        return `<option value="${s.id}" data-course="${escapeHtml(s.courseType||'')}">${escapeHtml(name)}</option>`;
+      }).join('')
+    : '<option value="">No students found for this school</option>';
+
+  try {
+    const certSnap = await getDocs(query(collection(db, "certificates"), where("schoolId", "==", currentSchoolId)));
+    const prefix = certPrefixForSchool(school);
+    const nextNum = String(certSnap.size + 1).padStart(6, '0');
+    document.getElementById('schCertSerialDisplay').textContent = `${prefix}-${nextNum}`;
+  } catch(e) {
+    const prefix = certPrefixForSchool(school);
+    document.getElementById('schCertSerialDisplay').textContent = `${prefix}-000001`;
+  }
+});
+
+document.getElementById('schCertStudentSelect')?.addEventListener('change', function(){
+  const course = this.selectedOptions[0]?.dataset?.course || '';
+  document.getElementById('schCertCourseInput').value = course;
+});
+
+async function uploadCertificateImage(dataUrl){
+  const fd = new FormData();
+  fd.append('file', dataUrl);
+  fd.append('upload_preset', CERTIFICATE_IMAGE_PRESET);
+  fd.append('folder', 'certificates');
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method: 'POST', body: fd });
+  if (!res.ok) throw new Error('Certificate image upload failed — check that the "certificate_images_upload" unsigned preset exists in Cloudinary.');
+  const data = await res.json();
+  return data.secure_url;
+}
+
+document.getElementById('schCertSaveBtn')?.addEventListener('click', async () => {
+  const errEl = document.getElementById('schCertError');
+  errEl.textContent = '';
+  const studentId = document.getElementById('schCertStudentSelect').value;
+  const course = document.getElementById('schCertCourseInput').value.trim();
+  const authority = document.getElementById('schCertAuthority').value.trim();
+  const awardingDate = document.getElementById('schCertDate').value;
+  const serialNumber = document.getElementById('schCertSerialDisplay').textContent;
+
+  if (!studentId || !course || !authority || !awardingDate) { errEl.textContent = 'Fill in all fields — select a student and enter a signing authority and date.'; return; }
+  const student = schCertStudentsCache.find(s => s.id === studentId);
+  const studentName = student ? `${student.firstName||''} ${student.lastName||''}`.trim() : '—';
+  const dateLabel = new Date(awardingDate).toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric' });
+
+  const btn = document.getElementById('schCertSaveBtn');
+  const originalHTML = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Rendering…';
+  try {
+    document.getElementById('certTplStudentName').textContent = studentName;
+    document.getElementById('certTplCourse').textContent = `"${course}"`;
+    document.getElementById('certTplAuthority').textContent = authority;
+    document.getElementById('certTplSerial').textContent = serialNumber;
+    document.getElementById('certTplDate').textContent = dateLabel;
+
+    const canvas = await html2canvas(document.getElementById('certRenderTemplate'), { scale: 2 });
+    const dataUrl = canvas.toDataURL('image/png');
+
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading…';
+    const imageUrl = await uploadCertificateImage(dataUrl);
+
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+    await addDoc(collection(db, 'certificates'), {
+      studentId, studentName, course, serialNumber, signingAuthority: authority,
+      issueDate: dateLabel, imageUrl, schoolId: currentSchoolId, createdAt: serverTimestamp()
+    });
+
+    closeModal('schCertModal');
+    showToast('Certificate generated and saved ✓');
+  } catch(e) {
+    errEl.textContent = 'Could not generate certificate: ' + e.message;
+  } finally {
+    btn.disabled = false; btn.innerHTML = originalHTML;
+  }
+});
+
 // ============================================================
 // ENQUIRIES MODULE (school-scoped, read + status update)
 // ============================================================

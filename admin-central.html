@@ -1356,7 +1356,7 @@
 
 <!-- ================= GENERATE CERTIFICATE MODAL ================= -->
 <div class="overlay" id="schCertModal">
-  <div class="modal" style="width:480px;">
+  <div class="modal" style="width:600px;">
     <div class="modal-head"><h3>Generate certificate</h3><button class="modal-close" onclick="window.closeModal('schCertModal')">✕</button></div>
     <div class="modal-body">
       <div class="field">
@@ -1371,10 +1371,17 @@
         <div style="font-size:11px;color:var(--slate-dim);margin-top:4px;">Auto-generated sequential number.</div>
       </div>
       <p class="form-error" id="schCertError"></p>
+      <div class="field" id="schCertPreviewWrap" style="display:none;margin-top:6px;">
+        <label>Preview</label>
+        <div style="background:#f0f0f0;border-radius:8px;padding:14px;display:flex;align-items:center;justify-content:center;">
+          <img id="schCertPreviewImg" src="" style="max-width:100%;border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.3);">
+        </div>
+      </div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-secondary" onclick="window.closeModal('schCertModal')">Cancel</button>
-      <button class="btn btn-primary" id="schCertSaveBtn"><i class="fas fa-certificate"></i> Generate &amp; save</button>
+      <button class="btn btn-outline" id="schCertPreviewBtn"><i class="fas fa-magic"></i> Generate preview</button>
+      <button class="btn btn-primary" id="schCertSaveBtn" disabled style="opacity:.5;"><i class="fas fa-save"></i> Save certificate</button>
     </div>
   </div>
 </div>
@@ -1496,7 +1503,7 @@
       <input type="hidden" id="schEditStaffUid">
 
       <div class="field" style="text-align:center;">
-        <div id="schEditStaffPhotoUploadArea" onclick="document.getElementById('schEditStaffPhotoFile').click()" title="Change photo" style="width:80px;height:80px;border-radius:50%;margin:0 auto 10px;position:relative;cursor:pointer;">
+        <div id="schEditStaffPhotoUploadArea" onclick="window.viewSchEditStaffPhoto()" title="View photo" style="width:80px;height:80px;border-radius:50%;margin:0 auto 10px;position:relative;cursor:pointer;">
           <div style="width:100%;height:100%;border-radius:50%;overflow:hidden;background:var(--asphalt-deep);border:1.5px dashed var(--border);display:flex;align-items:center;justify-content:center;">
             <i class="fas fa-user" style="color:var(--slate-dim);font-size:22px;"></i>
             <img id="schEditStaffPhotoPreview" src="" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%;">
@@ -1894,6 +1901,14 @@
       <button class="btn btn-secondary" onclick="window.closeModal('quizCsvModal')">Cancel</button>
       <button class="btn btn-primary" onclick="window.importQuizCsv()"><i class="fas fa-file-import"></i> Import</button>
     </div>
+  </div>
+</div>
+
+<!-- ================= IMAGE LIGHTBOX (view full-size photos) ================= -->
+<div class="overlay" id="imageLightboxModal" onclick="if(event.target===this) window.closeModal('imageLightboxModal')">
+  <div style="max-width:90vw;max-height:90vh;position:relative;">
+    <button class="modal-close" style="position:absolute;top:-36px;right:0;background:var(--panel);border:1px solid var(--border);border-radius:50%;width:32px;height:32px;" onclick="window.closeModal('imageLightboxModal')">✕</button>
+    <img id="imageLightboxImg" src="" style="max-width:90vw;max-height:90vh;border-radius:12px;border:2px solid var(--amber);display:block;">
   </div>
 </div>
 

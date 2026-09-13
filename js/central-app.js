@@ -8,6 +8,8 @@ import {
   getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, setDoc,
   onSnapshot, serverTimestamp, query, where, orderBy, getDoc, getDocs
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+import { uploadToCloudinary } from "./upload-utils.js";
+        
 
 const firebaseConfig = {
   apiKey: "AIzaSyA5TnyzHJpcHcM2N-77gkyAaj7yRru3-V0",
@@ -50,6 +52,31 @@ function avatarHtml(photoUrl, firstName, lastName, size){
   return `<div style="width:${size}px;height:${size}px;border-radius:50%;background:rgba(242,169,59,0.15);border:1.5px solid var(--amber);display:flex;align-items:center;justify-content:center;font-size:${Math.round(size*0.38)}px;font-weight:700;color:var(--amber);flex-shrink:0;">${escapeHtml(initials)}</div>`;
 }
 window.avatarHtml = avatarHtml;
+
+// ── LIGHTBOX (full-size photo view) ──
+window.openLightbox = function(imageUrl){
+  if (!imageUrl) return;
+  document.getElementById('imageLightboxImg').src = imageUrl;
+  openModal('imageLightboxModal');
+};
+
+// Avatar circle with a pencil edit badge + click-to-enlarge, for detail/edit
+// modals (Students, Instructors, Staff). `fileInputId` is the hidden
+// <input type="file"> the pencil badge should trigger.
+function editableAvatarHtml(photoUrl, firstName, lastName, size, fileInputId){
+  size = size || 84;
+  const circle = avatarHtml(photoUrl, firstName, lastName, size);
+  const viewClick = photoUrl ? ` onclick="window.openLightbox('${photoUrl}')"` : '';
+  const cursor = photoUrl ? 'cursor:pointer;' : '';
+  return `
+    <div style="position:relative;width:${size}px;height:${size}px;margin:0 auto;">
+      <div style="${cursor}"${viewClick}>${circle}</div>
+      <div onclick="event.stopPropagation();document.getElementById('${fileInputId}').click()" title="Change photo" style="position:absolute;bottom:0;right:0;width:${Math.round(size*0.32)}px;height:${Math.round(size*0.32)}px;background:var(--amber);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid var(--panel);">
+        <i class="fas fa-pencil-alt" style="font-size:${Math.round(size*0.13)}px;color:var(--asphalt-deep);"></i>
+      </div>
+    </div>`;
+}
+window.editableAvatarHtml = editableAvatarHtml;
 
 // ── SCHOOL VISIBILITY CHECKLIST (shared by lesson folders & quiz categories) ──
 function renderSchoolsChecklist(containerId, selectedIds){
@@ -969,7 +996,7 @@ document.getElementById('schCreateStudentBtn').addEventListener('click', async (
     const uid = data.localId;
 
     const photoFile = document.getElementById('schNewStudentPhotoFile').files[0];
-    const avatarUrl = photoFile ? await uploadSchoolImage(photoFile) : null;
+    const avatarUrl = photoFile ? await uploadToCloudinary(db, photoFile, 'students', currentSchoolId) : null;
 
     const { setDoc } = await import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js");
     await setDoc(doc(db, 'students', uid), {
@@ -1025,10 +1052,8 @@ window.openStudentDetail = function(uid){
   document.getElementById('schStudentDetailTitle').textContent = `${s.firstName||''} ${s.lastName||''}`.trim() || 'Student';
   document.getElementById('schStudentDetailBody').innerHTML = `
     <div style="text-align:center;margin-bottom:16px;">
-      <div onclick="document.getElementById('schEditStudentPhotoFile').click()" style="cursor:pointer;display:inline-block;">
-        ${avatarHtml(s.avatarUrl, s.firstName, s.lastName, 84)}
-      </div>
-      <div style="font-size:11px;color:var(--slate-dim);margin-top:6px;">Tap photo to change</div>
+      ${editableAvatarHtml(s.avatarUrl, s.firstName, s.lastName, 84, 'schEditStudentPhotoFile')}
+      <div style="font-size:11px;color:var(--slate-dim);margin-top:8px;">Click photo to view, pencil to change</div>
       <input type="file" id="schEditStudentPhotoFile" accept="image/*" style="display:none">
     </div>
     <div class="form-row">
@@ -1098,7 +1123,7 @@ async function saveStudentDetail(uid){
       status: document.getElementById('schEditStatus').value,
       roleKey: document.getElementById('schEditRole')?.value || 'Standard'
     };
-    if (newPhotoFile) updates.avatarUrl = await uploadSchoolImage(newPhotoFile);
+    if (newPhotoFile) updates.avatarUrl = await uploadToCloudinary(db, newPhotoFile, 'students', currentSchoolId);
     await updateDoc(doc(db, 'students', uid), updates);
     closeModal('schStudentDetailModal');
     showToast('Student updated ✓');
@@ -1313,10 +1338,10 @@ document.getElementById('schCreateInstructorBtn').addEventListener('click', asyn
     const ghBackFile = document.getElementById('schInstrNewGhBackFile').files[0];
     const certFile = document.getElementById('schInstrNewCertFile').files[0];
     const [profilePhoto, ghCardFront, ghCardBack, certDocUrl] = await Promise.all([
-      photoFile ? uploadInstructorImage(photoFile, 'instructors') : Promise.resolve(null),
-      ghFrontFile ? uploadInstructorImage(ghFrontFile, 'instructors/ghcards') : Promise.resolve(null),
-      ghBackFile ? uploadInstructorImage(ghBackFile, 'instructors/ghcards') : Promise.resolve(null),
-      certFile ? uploadInstructorImage(certFile, 'instructors/certifications') : Promise.resolve(null)
+      photoFile ? uploadToCloudinary(db, photoFile, 'instructors', currentSchoolId) : Promise.resolve(null),
+      ghFrontFile ? uploadToCloudinary(db, ghFrontFile, 'instructors', currentSchoolId) : Promise.resolve(null),
+      ghBackFile ? uploadToCloudinary(db, ghBackFile, 'instructors', currentSchoolId) : Promise.resolve(null),
+      certFile ? uploadToCloudinary(db, certFile, 'instructors', currentSchoolId) : Promise.resolve(null)
     ]);
     const certifications = (certificationName || certDocUrl)
       ? [{ name: certificationName || 'Certification', documentUrl: certDocUrl }]
@@ -1375,10 +1400,8 @@ window.openInstructorDetail = function(uid){
   document.getElementById('schInstructorDetailTitle').textContent = `${i.firstName||''} ${i.lastName||''}`.trim() || 'Instructor';
   document.getElementById('schInstructorDetailBody').innerHTML = `
     <div style="text-align:center;margin-bottom:16px;">
-      <div onclick="document.getElementById('schInstrEditPhotoFile').click()" style="cursor:pointer;display:inline-block;">
-        ${avatarHtml(_schInstrEditPhoto, i.firstName, i.lastName, 84)}
-      </div>
-      <div style="font-size:11px;color:var(--slate-dim);margin-top:6px;">Tap photo to change</div>
+      ${editableAvatarHtml(_schInstrEditPhoto, i.firstName, i.lastName, 84, 'schInstrEditPhotoFile')}
+      <div style="font-size:11px;color:var(--slate-dim);margin-top:8px;">Click photo to view, pencil to change</div>
       <input type="file" id="schInstrEditPhotoFile" accept="image/*" style="display:none">
     </div>
 
@@ -1520,15 +1543,15 @@ async function saveInstructorDetail(uid){
     const ghFrontFile = document.getElementById('schInstrEditGhFrontFile').files[0];
     const ghBackFile = document.getElementById('schInstrEditGhBackFile').files[0];
     const certFile = document.getElementById('schInstrEditCertFile')?.files[0];
-    if (photoFile) updates.profilePhoto = await uploadInstructorImage(photoFile, 'instructors');
-    if (ghFrontFile) updates.ghCardFront = await uploadInstructorImage(ghFrontFile, 'instructors/ghcards');
-    if (ghBackFile) updates.ghCardBack = await uploadInstructorImage(ghBackFile, 'instructors/ghcards');
+    if (photoFile) updates.profilePhoto = await uploadToCloudinary(db, photoFile, 'instructors', currentSchoolId);
+    if (ghFrontFile) updates.ghCardFront = await uploadToCloudinary(db, ghFrontFile, 'instructors', currentSchoolId);
+    if (ghBackFile) updates.ghCardBack = await uploadToCloudinary(db, ghBackFile, 'instructors', currentSchoolId);
 
     const certText = document.getElementById('schInstrEditCert').value.trim();
     if (certText || certFile) {
       const currentInstr = schoolInstructors.find(x => x.id === uid);
       const existing = (currentInstr && Array.isArray(currentInstr.certifications)) ? (currentInstr.certifications[0] || {}) : {};
-      const newDocUrl = certFile ? await uploadInstructorImage(certFile, 'instructors/certifications') : existing.documentUrl || null;
+      const newDocUrl = certFile ? await uploadToCloudinary(db, certFile, 'instructors', currentSchoolId) : existing.documentUrl || null;
       updates.certifications = [{ name: certText || existing.name || 'Certification', documentUrl: newDocUrl }];
     }
 
@@ -3921,6 +3944,7 @@ const CERTIFICATE_IMAGE_PRESET = "certificate_images_upload";
 // name it exactly "certificate_images_upload", signing mode = Unsigned.
 
 let schCertStudentsCache = [];
+let schCertPendingDataUrl = null;
 
 function certPrefixForSchool(school){
   const words = (school?.name || 'CERT').split(/\s+/).filter(Boolean);
@@ -3936,6 +3960,12 @@ document.getElementById('schOpenAddCertBtn')?.addEventListener('click', async ()
   document.getElementById('schCertAuthority').value = '';
   document.getElementById('schCertDate').value = new Date().toISOString().slice(0,10);
   document.getElementById('schCertSerialDisplay').textContent = '—';
+  schCertPendingDataUrl = null;
+  document.getElementById('schCertPreviewWrap').style.display = 'none';
+  document.getElementById('schCertPreviewImg').src = '';
+  const saveBtnReset = document.getElementById('schCertSaveBtn');
+  saveBtnReset.disabled = true;
+  saveBtnReset.style.opacity = '.5';
   openModal('schCertModal');
 
   try {
@@ -3978,46 +4008,79 @@ async function uploadCertificateImage(dataUrl){
   return data.secure_url;
 }
 
-document.getElementById('schCertSaveBtn')?.addEventListener('click', async () => {
+function validateSchCertFields(){
   const errEl = document.getElementById('schCertError');
   errEl.textContent = '';
   const studentId = document.getElementById('schCertStudentSelect').value;
   const course = document.getElementById('schCertCourseInput').value.trim();
   const authority = document.getElementById('schCertAuthority').value.trim();
   const awardingDate = document.getElementById('schCertDate').value;
-  const serialNumber = document.getElementById('schCertSerialDisplay').textContent;
-
-  if (!studentId || !course || !authority || !awardingDate) { errEl.textContent = 'Fill in all fields — select a student and enter a signing authority and date.'; return; }
+  if (!studentId || !course || !authority || !awardingDate) {
+    errEl.textContent = 'Fill in all fields — select a student and enter a signing authority and date.';
+    return null;
+  }
   const student = schCertStudentsCache.find(s => s.id === studentId);
   const studentName = student ? `${student.firstName||''} ${student.lastName||''}`.trim() : '—';
   const dateLabel = new Date(awardingDate).toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric' });
+  const serialNumber = document.getElementById('schCertSerialDisplay').textContent;
+  return { studentId, studentName, course, authority, dateLabel, serialNumber };
+}
 
-  const btn = document.getElementById('schCertSaveBtn');
+document.getElementById('schCertPreviewBtn')?.addEventListener('click', async () => {
+  const fields = validateSchCertFields();
+  if (!fields) return;
+
+  const btn = document.getElementById('schCertPreviewBtn');
   const originalHTML = btn.innerHTML;
   btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Rendering…';
   try {
-    document.getElementById('certTplStudentName').textContent = studentName;
-    document.getElementById('certTplCourse').textContent = `"${course}"`;
-    document.getElementById('certTplAuthority').textContent = authority;
-    document.getElementById('certTplSerial').textContent = serialNumber;
-    document.getElementById('certTplDate').textContent = dateLabel;
+    document.getElementById('certTplStudentName').textContent = fields.studentName;
+    document.getElementById('certTplCourse').textContent = `"${fields.course}"`;
+    document.getElementById('certTplAuthority').textContent = fields.authority;
+    document.getElementById('certTplSerial').textContent = fields.serialNumber;
+    document.getElementById('certTplDate').textContent = fields.dateLabel;
 
     const canvas = await html2canvas(document.getElementById('certRenderTemplate'), { scale: 2 });
-    const dataUrl = canvas.toDataURL('image/png');
+    schCertPendingDataUrl = canvas.toDataURL('image/png');
 
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading…';
-    const imageUrl = await uploadCertificateImage(dataUrl);
+    document.getElementById('schCertPreviewImg').src = schCertPendingDataUrl;
+    document.getElementById('schCertPreviewWrap').style.display = 'block';
+    const saveBtn = document.getElementById('schCertSaveBtn');
+    saveBtn.disabled = false;
+    saveBtn.style.opacity = '1';
+    showToast('Preview generated — check it, then save.');
+  } catch(e) {
+    document.getElementById('schCertError').textContent = 'Could not render preview: ' + e.message;
+  } finally {
+    btn.disabled = false; btn.innerHTML = originalHTML;
+  }
+});
+
+document.getElementById('schCertSaveBtn')?.addEventListener('click', async () => {
+  const fields = validateSchCertFields();
+  if (!fields) return;
+  if (!schCertPendingDataUrl) {
+    document.getElementById('schCertError').textContent = 'Generate a preview first.';
+    return;
+  }
+
+  const btn = document.getElementById('schCertSaveBtn');
+  const originalHTML = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading…';
+  try {
+    const imageUrl = await uploadToCloudinary(db, schCertPendingDataUrl, 'certificates', currentSchoolId);
 
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
     await addDoc(collection(db, 'certificates'), {
-      studentId, studentName, course, serialNumber, signingAuthority: authority,
-      issueDate: dateLabel, imageUrl, schoolId: currentSchoolId, createdAt: serverTimestamp()
+      studentId: fields.studentId, studentName: fields.studentName, course: fields.course,
+      serialNumber: fields.serialNumber, signingAuthority: fields.authority,
+      issueDate: fields.dateLabel, imageUrl, schoolId: currentSchoolId, createdAt: serverTimestamp()
     });
 
     closeModal('schCertModal');
     showToast('Certificate generated and saved ✓');
   } catch(e) {
-    errEl.textContent = 'Could not generate certificate: ' + e.message;
+    document.getElementById('schCertError').textContent = 'Could not save certificate: ' + e.message;
   } finally {
     btn.disabled = false; btn.innerHTML = originalHTML;
   }
@@ -4985,7 +5048,7 @@ let avatarUrl = null;
 const photoFile = document.getElementById('schStaffPhotoFile').files[0];
 if (photoFile) {
   try {
-    avatarUrl = await uploadSchoolImage(photoFile);
+    avatarUrl = await uploadToCloudinary(db, photoFile, 'staff', currentSchoolId);
   } catch (uploadErr) {
     console.warn('Staff photo upload failed:', uploadErr);
     // non‑fatal – proceed without photo
@@ -5012,6 +5075,12 @@ await setDoc(doc(db, "schools", currentSchoolId, "staff", uid), {
 });
 
 // ── Open Edit Staff modal ──
+window.viewSchEditStaffPhoto = function(){
+  const preview = document.getElementById('schEditStaffPhotoPreview');
+  if (!preview.src || preview.style.display === 'none') { showToast('No photo uploaded yet.', true); return; }
+  window.openLightbox(preview.src);
+};
+
 window.openEditStaffModal = async function(staffUid){
   const staff = schoolStaff.find(s => s.id === staffUid);
   if (!staff) {
@@ -5098,7 +5167,7 @@ document.getElementById('schSaveStaffBtn').addEventListener('click', async () =>
 
     const photoFile = document.getElementById('schEditStaffPhotoFile').files[0];
     if (photoFile) {
-      updates.avatarUrl = await uploadSchoolImage(photoFile);
+      updates.avatarUrl = await uploadToCloudinary(db, photoFile, 'staff', currentSchoolId);
     }
 
     await updateDoc(doc(db, "schools", currentSchoolId, "staff", uid), updates);
